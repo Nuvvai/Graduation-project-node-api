@@ -8,7 +8,7 @@ const app = new express();
 app.use(express.json());
 app.use('/auth', authRouter);
 
-const CONNECTION_URL = '';
+const CONNECTION_URL = 'mongodb://localhost:27017/';
 const PORT = process.env.PORT || 5000;
 
 mongoose.connect(CONNECTION_URL, { useNewUrlParser: true, useUnifiedTopology: true })
