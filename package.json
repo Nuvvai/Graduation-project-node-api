@@ -4,6 +4,7 @@
   "description": "Node API for the graduation project",
   "main": "app.js",
   "scripts": {
+    "start": "nodemon app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Hazem Sabry",
@@ -12,6 +13,7 @@
     "bcryptjs": "^2.4.3",
     "express": "^4.21.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.6.2"
+    "mongoose": "^8.6.2",
+    "nodemon": "^3.1.7"
   }
 }
