@@ -4,7 +4,7 @@ const project = require('../models/Project');
 // to create a new project
 const createProject = async (req, res) =>{
     const { name, repositoryUrl } = req.body;
-    const newProject = new Project({ name, repositoryUrl, userId: req.user.id });
+    const newProject = new Project({ name, repositoryUrl, username: req.user.id });
     try{
         await newProject.save();
         res.status(201).json(newProject);
@@ -16,7 +16,7 @@ const createProject = async (req, res) =>{
 // to get all projects from a user
 const getProjects = async (req, res) =>{
     try{
-        const projects = await Project.find({userId: req.user.id})
+        const projects = await Project.find({username: req.user.id})
         res.status(200).json(projects);
 
     }catch(error){
