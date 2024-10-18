@@ -1,5 +1,9 @@
-const { type } = require('express/lib/response');
+const path = require('path');
+
+// const { type } = require('express/lib/response');
+const { type } = require(path.join('express', 'lib', 'response'));
 const mongoose = require('mongoose');
+const projectSchema = require(path.join(__dirname, 'Project.js'));
 
 const userSchema = new mongoose.Schema({
     name: { type: String, required: true },

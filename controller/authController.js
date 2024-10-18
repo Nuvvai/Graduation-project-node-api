@@ -8,8 +8,7 @@ const register_controller = async (req, res) => {
 
     try {
         const existingUser = await User.findOne({ email: email });
-        if (existingUser) return res.status(404).json({ message: 'User already exists' }); //wrong status ...!!!
-
+        if (existingUser) return res.status(409).json({ message: 'User already exists' });
         if (!name || !email || !password) return res.status(406).json({ message: "Not accepted, missing parameter" });
         else if (email.length < 6 || email.indexOf('@') === -1) return res.status(406).json({ message: 'Invalid email format' }); //not tested yet ...!!
         else if (password.length < 6) return res.status(406).json({ message: 'Password must be at least 6 characters long' });  //not tested yet ...!!
@@ -36,7 +35,7 @@ const login_controller = async (req, res) => {
         if (!existingUser) return res.status(404).json({ message: 'User not found' });
 
         const isMatch = await bcrypt.compare(password, existingUser.password);
-        if (!isMatch) return res.status(404).json({ message: 'Invalid credentials' }); //wrong status ...!!!
+        if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
 
         const token = jwt.sign({ email: existingUser.email, id: existingUser.id }, 'secret', { expiresIn: '1d' });
         res.status(200).json({ result: existingUser }); // send as http only cookie
