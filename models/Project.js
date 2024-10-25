@@ -6,11 +6,12 @@ const projectSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  username: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
-  },
+  // rewrite later
+  // username: {
+  //   type: mongoose.Schema.Types.ObjectId,
+  //   ref: 'User',
+  //   required: true,
+  // },
   repositoryUrl: {
     type: String,
     required: true,
