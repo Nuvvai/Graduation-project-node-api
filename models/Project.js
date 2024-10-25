@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const User = require('./User')
 
 const projectSchema = new mongoose.Schema({
   name: {
@@ -18,6 +19,7 @@ const projectSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  framework: String
 });
 
 module.exports = mongoose.model('Project', projectSchema);
