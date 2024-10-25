@@ -22,8 +22,8 @@ const deploymentController = {
             res.status(201).json(deployment)
         }catch(error){
             res.status(500).json({
-                error: error.message,
-                message: "Error creating deployment!"
+                message: "Error creating deployment!",
+                error: error.message
             })
         }
     },
@@ -35,8 +35,8 @@ const deploymentController = {
 
         }catch(error){
             res.status(500).json({
-                error: error.message,
-                message: "Error finding deployments!"
+                message: "Error finding deployments!",
+                error: error.message
             });
         };
     },
