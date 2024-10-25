@@ -2,11 +2,6 @@ const mongoose = require('mongoose');
 const Project = require('./Project')
 
 const pipelineSchema = new mongoose.Schema({
-    pipelineId: {
-        type: String,
-        required: true,
-        unique: true
-    },
     projectName: {
         type: String,
         ref: 'Project',
