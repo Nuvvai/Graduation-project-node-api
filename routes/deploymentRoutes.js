@@ -7,7 +7,7 @@ router.post('/deployments', deploymentController.createDeployment);
 router.get('/deployments', deploymentController.getAllDeployments);
 router.delete('/deployments/:id', deploymentController.deleteDeployment);
 router.get('/deployments/:id', deploymentController.getDeploymentById);
-router.get('/deployment/project/:projectName', deploymentController.getDeploymentsByProject);
+router.get('/deployments/project/:projectName', deploymentController.getDeploymentsByProject);
 
 
 module.exports = router;
