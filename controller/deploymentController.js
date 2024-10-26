@@ -7,7 +7,7 @@ const deploymentController = {
             const { projectName, status='Waiting', startTime= new Date()} = req.body;
 
             //to check if the project exists using project name
-            const projectExists = await Project.findOne({ projectName })
+            const projectExists = await Project.findOne({ name: req.body.projectName });
             if (!projectExists){
                 return res.status(404).json({message: "Project not found!"})
             }
@@ -21,6 +21,9 @@ const deploymentController = {
             await deployment.save();
             res.status(201).json(deployment)
         }catch(error){
+            if (error.name === 'ValidationError') {
+                return res.status(400).json({ message: error.message });
+            }
             res.status(500).json({
                 message: "Error creating deployment!",
                 error: error.message
@@ -44,7 +47,7 @@ const deploymentController = {
     async getDeploymentsByProject(req, res){
         try{
             const {projectName} = req.params;
-            const projectExists = await Project.findOne({ projectName })
+            const projectExists = await Project.findOne({ name: req.body.projectName });
             if (!projectExists){
                 return res.status(404).json({message: "Project not found!"})
             }
