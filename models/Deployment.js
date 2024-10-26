@@ -5,7 +5,14 @@ const deploymentSchema = new mongoose.Schema({
     projectName: {
         type: String,
         ref: 'Project',
-        required: true
+        required: true,
+        validate: {
+            validator: async function(name) {
+              const project = await mongoose.model('Project').findOne({ name });
+              return project !== null;
+            },
+            message: 'Project with this name does not exist'
+        }
     },
     status: {
         type: String,
