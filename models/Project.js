@@ -2,9 +2,11 @@ const mongoose = require('mongoose');
 const User = require('./User')
 
 const projectSchema = new mongoose.Schema({
-  name: {
+  projectName: {
     type: String,
     required: true,
+    unique: true,
+    trim: true
   },
   // rewrite later
   // username: {

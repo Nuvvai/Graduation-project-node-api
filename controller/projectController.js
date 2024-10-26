@@ -3,9 +3,9 @@ const project = require('../models/Project');
 
 // to create a new project
 const createProject = async (req, res) =>{
-    const { name, repositoryUrl } = req.body;
+    const { projectName, repositoryUrl } = req.body;
     const newProject = new Project({
-         name, 
+         projectName, 
          repositoryUrl 
         //uncomment when username is ready
         //  username: req.user.id 
