@@ -7,8 +7,8 @@ const deploymentSchema = new mongoose.Schema({
         ref: 'Project',
         required: true,
         validate: {
-            validator: async function(name) {
-              const project = await mongoose.model('Project').findOne({ name });
+            validator: async function(projectName) {
+              const project = await mongoose.model('Project').findOne({ projectName });
               return project !== null;
             },
             message: 'Project with this name does not exist'
