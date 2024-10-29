@@ -3,26 +3,26 @@ const User = require('./User')
 
 const projectSchema = new mongoose.Schema({
   projectName: {
-    type: String,
+    type: 'string',
     required: true,
-    unique: true
-    // trim: true
+    unique: true,
+    trim: true
   },
-  // rewrite later
-  // username: {
-  //   type: mongoose.Schema.Types.ObjectId,
-  //   ref: 'User',
-  //   required: true,
-  // },
+  username: {
+    type: 'string',
+    ref: 'User',
+    required: true
+  },
   repositoryUrl: {
-    type: String,
+    type: 'string',
     required: true,
   },
   createdAt: {
     type: Date,
     default: Date.now,
   },
-  framework: String
+  framework: 'string',
+  description: 'string'
 });
 
 module.exports = mongoose.model('Project', projectSchema);
