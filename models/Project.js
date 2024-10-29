@@ -16,6 +16,7 @@ const projectSchema = new mongoose.Schema({
   repositoryUrl: {
     type: 'string',
     required: true,
+    unique: true
   },
   createdAt: {
     type: Date,
