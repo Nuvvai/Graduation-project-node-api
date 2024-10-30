@@ -11,7 +11,7 @@ const register_controller = async (req, res) => {
         if (existingUser) return res.status(409).json({ message: 'User already exists' });
 
         const hashedPassword = await bcrypt.hash(password, 12);
-        const newUser = new User({ name, email, password: hashedPassword });s
+        const newUser = new User({ name, email, password: hashedPassword });
         await newUser.save();
 
         const token = jwt.sign({ email: newUser.email, id: newUser._id }, 'secret', { expiresIn: '1d' });
