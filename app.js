@@ -21,7 +21,3 @@ mongoose.connect(CONNECTION_URL)
     .then(() => console.log("Connected to MongoDB successfully!"))
     .then(() => app.listen(PORT, () => console.log(`Server listening on port ${PORT}`)))
     .catch((error) => console.error(error.message));
-
-app.get('/', (req, res) => {
-    res.send("Hello it's working!");
-});
