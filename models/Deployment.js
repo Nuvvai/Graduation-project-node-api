@@ -3,24 +3,29 @@ const Project = require('./Project');
 
 const deploymentSchema = new mongoose.Schema({
     projectName: {
-        type: String,
+        type: 'string',
         ref: 'Project',
         required: true,
-        validate: {
-            validator: async function(projectName) {
-              const project = await mongoose.model('Project').findOne({ projectName });
-              return project !== null;
-            },
-            message: 'Project with this name does not exist'
-        }
+        trim: true
+    },
+    username: {
+        type: 'string',
+        ref: 'User',
+        required: true
     },
     status: {
-        type: String,
+        type: 'string',
         required: true,
-        enum: ['No status', 'Waiting', 'Failed', 'Succeeded']
+        enum: ['No status', 'Failed', 'Succeeded']
     },
-    startTime: Date,
-    endTime: Date
+    startTime: {
+        type: Date,
+        default: Date.now
+    },
+    endTime: {
+        type: Date,
+        default: Date.now
+    }
 });
 
 module.exports = mongoose.model('Deployment', deploymentSchema)

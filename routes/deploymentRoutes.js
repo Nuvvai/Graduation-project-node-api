@@ -4,10 +4,9 @@ const deploymentController = require('../controller/deploymentController');
 const router = express.Router();
 
 router.post('/deployments', deploymentController.createDeployment);
-router.get('/deployments', deploymentController.getAllDeployments);
-router.delete('/deployments/:id', deploymentController.deleteDeployment);
-router.get('/deployments/:id', deploymentController.getDeploymentById);
-router.get('/deployments/project/:projectName', deploymentController.getDeploymentsByProject);
+router.get('/:username/deployments', deploymentController.getAllDeployments);
+router.delete('/:username/:projectName/deployments', deploymentController.deleteDeployments);
+router.get('/:username/:projectName/deployments', deploymentController.getDeploymentsByProject);
 
 
 module.exports = router;

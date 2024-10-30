@@ -1,19 +1,32 @@
 const Deployment = require('../models/Deployment');
 const Project = require('../models/Project');
+const User = require('../models/User')
 
 const deploymentController = {
     async createDeployment(req, res) {
         try {
-            const { projectName, status='Waiting', startTime= new Date()} = req.body;
-
+            const { projectName, username, status='No status', startTime=new Date()} = req.body;
+            if(!projectName){
+                return res.status(400).json({message: "Project name is required!"})
+            }
+            if(!username){
+                return res.status(400).json({message: "username is required!"})
+            }
             //to check if the project exists using project name
-            const projectExists = await Project.findOne({ name: req.body.projectName });
+            const projectExists = await Project.findOne({projectName });
             if (!projectExists){
                 return res.status(404).json({message: "Project not found!"})
+            }
+            const userExists = await User.findOne({name: username});
+            if (!userExists){
+                return res.status(404).json({
+                    message: 'User not found!'
+                })
             }
 
             const deployment = new Deployment({
                 projectName,
+                username,
                 status,
                 startTime
             });
@@ -21,19 +34,26 @@ const deploymentController = {
             await deployment.save();
             res.status(201).json(deployment)
         }catch(error){
-            if (error.name === 'ValidationError') {
-                return res.status(400).json({ message: error.message });
-            }
             res.status(500).json({
                 message: "Error creating deployment!",
                 error: error.message
             })
         }
     },
-
+    // get all deployments of a specific user
     async getAllDeployments(req, res) {
         try{
-            const deployments = Deployment.find().sort({startTime: -1}); //starting from the recent deployment
+            const {username} = req.params;
+            const userExists = await User.findOne({name: username});
+            if (!userExists){
+                return res.status(404).json({
+                    message: 'User not found!'
+                })
+            }
+            const deployments = await Deployment.find({username}).sort({startTime: -1}); //starting from the recent deployment
+            if (!deployments.length){
+                return res.status(404).json({message: "Deployments not found for this user!"})
+            }
             res.status(200).json(deployments)
 
         }catch(error){
@@ -44,14 +64,21 @@ const deploymentController = {
         };
     },
 
+    // get all deployments of a specific project
     async getDeploymentsByProject(req, res){
         try{
-            const {projectName} = req.params;
-            const projectExists = await Project.findOne({ name: req.body.projectName });
+            const {username, projectName} = req.params;
+            const projectExists = await Project.findOne({ projectName });
             if (!projectExists){
                 return res.status(404).json({message: "Project not found!"})
             }
-            const deployments = Deployment.find({projectName}).sort({startTime: -1});
+            const userExists = await User.findOne({name: username});
+            if (!userExists){
+                return res.status(404).json({
+                    message: 'User not found!'
+                })
+            }
+            const deployments = await Deployment.find({username, projectName}).sort({startTime: -1});
             if (!deployments.length){
                 return res.status(404).json({message: "Deployments not found for this project!"})
             }
@@ -65,30 +92,28 @@ const deploymentController = {
         }
     },
 
-    async getDeploymentById(req, res){
+    // delete all deployments from a specific project
+    async deleteDeployments(req, res){
         try{
-            const deployment = await Deployment.findById(req.params.id)
-            if (!deployment){
-                return res.status(404).json({message: "Deployment not found!"})
+            const {username, projectName} = req.params;
+            const projectExists = await Project.findOne({ projectName });
+            if (!projectExists){
+                return res.status(404).json({message: "Project not found!"})
             }
-            res.status(200).json(deployment)
-
-        }catch(error){
-            res.status(500).json({
-                message: "Error fetching deployment!",
-                error: error.message
-            })
-        }
-    },
-
-    async deleteDeployment(req, res){
-        try{
-            const deployment = Deployment.findById(req.params.id);
-            if(!deployment){
-                return res.status(404).json({message: "Deployment not found!"})
+            const userExists = await User.findOne({name: username});
+            if (!userExists){
+                return res.status(404).json({
+                    message: 'User not found!'
+                })
             }
-            await deployment.remove()
-            res.status(200).json({message: "Deployment deleted successfully!"})
+            const deploymentsDeleted = await Deployment.deleteMany({username, projectName});
+            if (deploymentsDeleted.deletedCount === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'No deployments found for this project'
+                });
+            }
+            res.status(200).json({message: "Deployments deleted successfully!"})
         }catch(error){
             res.status(500).json({
                 message: "Error deleting deployment!",
