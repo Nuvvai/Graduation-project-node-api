@@ -20,7 +20,7 @@ const register_controller = async (req, res) => {
         const newUser = new User({ name, email, password: hashedPassword });
         await newUser.save();
 
-        const token = jwt.sign({ name: existingUser.name, email: newUser.email, id: newUser._id }, 'secret', { expiresIn: '1d' });
+        const token = jwt.sign({ name: newUser.name, email: newUser.email, id: newUser._id }, 'secret', { expiresIn: '1d' });
         res.cookie('jwt-token', token, { httpOnly: true, secure: true, sameSite: 'None', maxAge: 7 * 24 * 60 * 60 * 1000 });
         res.status(201).json({ result: newUser });
     } catch (error) {
