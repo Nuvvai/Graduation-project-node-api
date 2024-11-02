@@ -16,10 +16,6 @@ const projectSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
   frontendFramework: {
     type: 'string',
     required: true
@@ -32,7 +28,13 @@ const projectSchema = new mongoose.Schema({
     type: 'string',
     required: true
   },
-  description: { type: 'string' }
+  description: {
+    type: 'string'
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 module.exports = mongoose.model('Project', projectSchema);
