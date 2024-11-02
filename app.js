@@ -2,10 +2,10 @@ const path = require("node:path");
 const express = require("express");
 const { default: mongoose } = require("mongoose");
 const authRouter = require(path.join(__dirname, 'routes', 'auth.js'));
-const projectsRoutes = require('./routes/projectRoutes');
-const deploymentRoutes = require('./routes/deploymentRoutes');
-const pipelineRoutes = require('./routes/pipelineRoutes');
-const userRoutes = require('./routes/userRoutes');
+const projectsRoutes = require(path.join(__dirname, 'routes', 'projectRoutes'));
+const deploymentRoutes = require(path.join(__dirname, 'routes', 'deploymentRoutes'));
+const pipelineRoutes = require(path.join(__dirname, 'routes', 'pipelineRoutes'));
+const userRoutes = require(path.join(__dirname, 'routes', 'userRoutes'));
 
 const app = new express();
 

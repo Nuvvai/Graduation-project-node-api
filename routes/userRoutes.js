@@ -1,10 +1,13 @@
-const userController = require('../controller/userController');
+const path = require('path');
+
 const express = require('express')
 const router = express.Router();
 
-router.get('/:name', userController.getUserProfile);
-router.get('/', userController.getAllUsers);
-router.delete('/:name', userController.deleteUser);
-router.put('/:name', userController.updateUserProfile);
+const { getUserProfile, deleteUser, updateUserProfile, getAllUsers } = require(path.join('..', 'controller', 'userController'));
+
+router.get('/:name', getUserProfile);
+router.get('/', getAllUsers);
+router.delete('/:name', deleteUser);
+router.put('/:name', updateUserProfile);
 
 module.exports = router;
