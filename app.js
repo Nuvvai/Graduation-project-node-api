@@ -5,6 +5,7 @@ const authRouter = require(path.join(__dirname, 'routes', 'auth.js'));
 const projectsRoutes = require('./routes/projectRoutes');
 const deploymentRoutes = require('./routes/deploymentRoutes');
 const pipelineRoutes = require('./routes/pipelineRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 const app = new express();
 
@@ -13,6 +14,7 @@ app.use('/auth', authRouter);
 app.use('/projects', projectsRoutes);
 app.use('/deployments', deploymentRoutes);
 app.use('/pipelines', pipelineRoutes);
+app.use('/user', userRoutes);
 
 const CONNECTION_URL = process.env.MONGO_URL || 'mongodb://localhost:27017/';
 const PORT = process.env.PORT || 5000;
