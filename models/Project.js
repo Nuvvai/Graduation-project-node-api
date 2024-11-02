@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const User = require('./User')
+// const User = require('./User')
 
 const projectSchema = new mongoose.Schema({
   projectName: {
@@ -22,7 +22,18 @@ const projectSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-  framework: 'string',
+  frontendFramework: {
+    type: 'string',
+    required: true
+  },
+  backendFramework: {
+    type: 'string',
+    required: true
+  },
+  database: {
+    type: 'string',
+    required: true
+  },
   description: 'string'
 });
 
