@@ -10,11 +10,12 @@ const userRoutes = require(path.join(__dirname, 'routes', 'userRoutes'));
 const app = new express();
 
 app.use(express.json());
-app.use('/auth', authRouter);
-app.use('/projects', projectsRoutes);
-app.use('/deployments', deploymentRoutes);
-app.use('/pipelines', pipelineRoutes);
-app.use('/user', userRoutes);
+app.use('/api/auth', authRouter);
+app.use('/api/:username/projects', projectsRoutes);
+app.use('/api/:username/deployments', deploymentRoutes);
+app.use('/api/:username/pipelines', pipelineRoutes);
+app.use('/api/:username/user', userRoutes);
+
 
 const CONNECTION_URL = process.env.MONGO_URL || 'mongodb://localhost:27017/';
 const PORT = process.env.PORT || 5000;

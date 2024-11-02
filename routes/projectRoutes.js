@@ -5,8 +5,8 @@ const express = require('express')
 const router = express.Router();
 
 router.post('/', createProject)
-router.get('/:username', getAllProjects)
-router.delete('/', deleteProject);
-router.delete('/:username', deleteAllProjects);
+router.get('/', getAllProjects)
+router.delete('/:projectName', deleteProject);
+router.delete('/', deleteAllProjects);
 
 module.exports = router;

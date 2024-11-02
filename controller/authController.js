@@ -3,6 +3,19 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require(path.join(__dirname, '..', 'models', 'User'));
 
+/**
+ * Controller function for user registration.
+ *
+ * @param {Object} req - The request object containing the user's registration data.
+ * @param {Object} res - The response object to send back the registration result.
+ * @param {string} req.body.name - The user's name.
+ * @param {string} req.body.email - The user's email.
+ * @param {string} req.body.password - The user's password.
+ *
+ * @returns {Object} - The response object with the registration result.
+ * @returns {number} res.status - The HTTP status code.
+ * @returns {Object} res.json.result - The registered user object if successful, otherwise an error message.
+ */
 const register_controller = async (req, res) => {
     const { name, email, password } = req.body;
 
@@ -20,7 +33,7 @@ const register_controller = async (req, res) => {
         const newUser = new User({ name, email, password: hashedPassword });
         await newUser.save();
 
-        const token = jwt.sign({ name: newUser.name, email: newUser.email, id: newUser._id }, 'secret', { expiresIn: '1d' });
+        const token = jwt.sign({ id: newUser._id, name: newUser.name, email: newUser.email }, process.env.JWT_Token, { expiresIn: '1d' });
         res.cookie('jwt-token', token, { httpOnly: true, secure: true, sameSite: 'None', maxAge: 7 * 24 * 60 * 60 * 1000 });
         res.status(201).json({ result: newUser });
     } catch (error) {
@@ -29,6 +42,12 @@ const register_controller = async (req, res) => {
     }
 }
 
+/**
+ * 
+ * @des Controller function for user login.
+ * @route GET /auth/login
+ * @access public 
+ */
 const login_controller = async (req, res) => {
     const { nameOrEmail, password } = req.body;
 
@@ -49,7 +68,7 @@ const login_controller = async (req, res) => {
         const isMatch = await bcrypt.compare(password, existingUser.password);
         if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
 
-        const token = jwt.sign({ name: existingUser.name, email: existingUser.email, id: existingUser.id }, 'secret', { expiresIn: '1d' });
+        const token = jwt.sign({ id: existingUser._id, name: existingUser.name, email: existingUser.email, id: existingUser.id }, process.env.JWT_Token, { expiresIn: '1d' });
         res.cookie('jwt-token', token, { httpOnly: true, secure: true, sameSite: 'None', maxAge: 7 * 24 * 60 * 60 * 1000 });
         res.status(200).json({ result: existingUser })
 
