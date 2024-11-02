@@ -14,7 +14,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/:username/projects', projectsRoutes);
 app.use('/api/:username/deployments', deploymentRoutes);
 app.use('/api/:username/pipelines', pipelineRoutes);
-app.use('/api/:username/user', userRoutes);
+app.use('/api/user', userRoutes);
 
 
 const CONNECTION_URL = process.env.MONGO_URL || 'mongodb://localhost:27017/';
