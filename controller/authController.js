@@ -15,7 +15,8 @@ const register_controller = async (req, res) => {
         await newUser.save();
 
         const token = jwt.sign({ email: newUser.email, id: newUser._id }, 'secret', { expiresIn: '1d' });
-        res.status(201).json({ result: newUser, token });
+        res.cookie('jwt-token', token, { httpOnly: true, secure: true, sameSite: 'None', maxAge: 7 * 24 * 60 * 60 * 1000 });
+        res.status(201).json({ result: newUser });
 
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -32,13 +33,14 @@ const login_controller = async (req, res) => {
         const isMatch = await bcrypt.compare(password, existingUser.password);
         if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
 
-        const token = jwt.sign({ email: existingUser.email, id: existingUser.id }, 'secret', { expiresIn: '1d' });
+        const token = jwt.sign({ email: existingUser.email, id: existingUser.id }, 'secret', { expiresIn: '7d' });
+        res.cookie('jwt-token', token, { httpOnly: true, secure: true, sameSite: 'None', maxAge: 7 * 24 * 60 * 60 * 1000 });
         res.status(200).json({ result: existingUser })
 
     } catch (error) {
         res.status(500).json({
             message: 'Something went wrong',
-            error: error.message 
+            error: error.message
         });
     }
 }
