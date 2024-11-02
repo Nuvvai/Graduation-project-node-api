@@ -9,16 +9,21 @@ const register_controller = async (req, res) => {
     try {
         const existingUser = await User.findOne({ email: email });
         if (existingUser) return res.status(409).json({ message: 'User already exists' });
+        if (!name || !email || !password) return res.status(406).json({ message: "Not accepted, missing parameter" });
+        else if (email.length < 6 || email.indexOf('@') === -1) return res.status(406).json({ message: 'Invalid email format' }); //not tested yet ...!!
+        else if (password.length < 6) return res.status(406).json({ message: 'Password must be at least 6 characters long' });  //not tested yet ...!!
+        else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}/.test(password)) return res.status(406).json({ message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character' });  //not tested yet ...!!
 
         const hashedPassword = await bcrypt.hash(password, 12);
         const newUser = new User({ name, email, password: hashedPassword });
         await newUser.save();
 
         const token = jwt.sign({ email: newUser.email, id: newUser._id }, 'secret', { expiresIn: '1d' });
-        res.status(201).json({ result: newUser, token });
+        res.status(201).json({ result: newUser, token }); // send as http only cookie
 
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error(error);
+        res.status(500).json({ message: 'Something went wrong' });
     }
 }
 
@@ -33,13 +38,11 @@ const login_controller = async (req, res) => {
         if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
 
         const token = jwt.sign({ email: existingUser.email, id: existingUser.id }, 'secret', { expiresIn: '1d' });
-        res.status(200).json({ result: existingUser })
+        res.status(200).json({ result: existingUser }); // send as http only cookie
 
     } catch (error) {
-        res.status(500).json({
-            message: 'Something went wrong',
-            error: error.message 
-        });
+        console.error(error);
+        res.status(500).json({ message: 'Something went wrong' });
     }
 }
 

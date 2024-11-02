@@ -1,10 +1,12 @@
-const projectController = require('../controller/projectController')
+const path = require('path');
+
+const { createProject, getAllProjects, deleteProject, deleteAllProjects } = require(path.join(__dirname, '..', 'controller', 'projectController'))
 const express = require('express')
 const router = express.Router();
 
-router.post('/projects', projectController.createProject)
-router.get('/projects/:username', projectController.getAllProjects)
-router.delete('/projects', projectController.deleteProject);
-router.delete('/projects/:username', projectController.deleteAllProjects);
+router.post('/', createProject)
+router.get('/:username', getAllProjects)
+router.delete('/', deleteProject);
+router.delete('/:username', deleteAllProjects);
 
 module.exports = router;
