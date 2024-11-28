@@ -1,8 +1,8 @@
-const Project = require('../models/Project');
-const User = require('../models/User')
+const path = require('path');
+const Project = require(path.join(__dirname, '..', 'models', 'Project'));
+const User = require(path.join(__dirname, '..', 'models', 'User'));
 
 // to create a new project
-
 const createProject = async (req, res) => {
     try {
         const { projectName, username, repositoryUrl } = req.body;

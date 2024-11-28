@@ -1,6 +1,7 @@
-const Deployment = require('../models/Deployment');
-const Project = require('../models/Project');
-const User = require('../models/User')
+const path = require('path');
+const Deployment = require(path.join(__dirname, '..', 'models', 'Deployment'));
+const Project = require(path.join(__dirname, '..', 'models', 'Project'));
+const User = require(path.join(__dirname, '..', 'models', 'User'));
 
 const createDeployment = async (req, res) => {
     try {
@@ -122,5 +123,39 @@ const deleteDeployments = async (req, res) => {
     }
 }
 
-// TODO: implement getDeploymentStats and updateDeploymentStatus
-module.exports = { createDeployment, getAllDeployments, getDeploymentsByProject, deleteDeployments };
+const updateDeploymentStatus = async (req, res)=>{
+    try{
+        const {projectName, username, status} = req.body;
+        const projectExists = await Project.findOne({ projectName });
+        if (!projectExists) {
+            return res.status(404).json({ message: "Project not found!" })
+        }
+        const userExists = await User.findOne({ name: username });
+        if (!userExists) {
+            return res.status(404).json({
+                message: 'User not found!'
+            })
+        }
+        if(!['No status', 'Failed', 'Succeeded'].includes(status)){
+            return res.status(400).json({message: "Invalid status!"})
+        }
+        const deployment = await Deployment.findOne({projectName, username});
+        if(!deployment){
+            return res.status(404).json({message: "Deployments not found!"})
+        }
+        deployment.status = status;
+        if(status === "Failed" || status === "Succeeded"){
+            deployment.endTime = endTime || new Date();
+        }
+        const updatedDeployment = await deployment.save();
+        res.status(200).json(updatedDeployment);
+    }catch(error){
+        res.status(500).json({
+            message: "Error updating deployment status!",
+            error: error.message
+        })
+    }
+}
+
+// TODO: implement getDeploymentStats
+module.exports = { createDeployment, getAllDeployments, getDeploymentsByProject, deleteDeployments, updateDeploymentStatus };

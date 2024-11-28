@@ -1,5 +1,4 @@
 const path = require('path');
-
 const User = require(path.join(__dirname, '..', 'models', 'User'));
 const bcrypt = require('bcryptjs');
 
