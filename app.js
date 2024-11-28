@@ -11,10 +11,10 @@ const app = new express();
 
 app.use(express.json());
 app.use('/api/auth', authRouter);
-app.use('/api/:username/projects', projectsRoutes);
-app.use('/api/:username/deployments', deploymentRoutes);
-app.use('/api/:username/pipelines', pipelineRoutes);
-app.use('/api/user', userRoutes);
+app.use('/api/projects', projectsRoutes);
+app.use('/api/deployments', deploymentRoutes);
+app.use('/api/pipelines', pipelineRoutes);
+app.use('/api/users', userRoutes);
 
 
 const CONNECTION_URL = process.env.MONGO_URL || 'mongodb://localhost:27017/';
