@@ -8,5 +8,6 @@ router.post('/', createProject)
 router.get('/', getAllProjects)
 router.delete('/:projectName', deleteProject);
 router.delete('/', deleteAllProjects);
+// TODO: edit endpoints
 
 module.exports = router;
