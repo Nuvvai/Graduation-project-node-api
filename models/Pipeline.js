@@ -7,6 +7,11 @@ const pipelineSchema = new mongoose.Schema({
         ref: 'Project',
         required: true
     },
+    username: {
+        type: 'string',
+        ref: 'User',
+        required: true
+    },
     stages: [String],
     createdAt: {
         type: Date,
