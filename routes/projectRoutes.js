@@ -4,10 +4,9 @@ const { createProject, getAllProjects, deleteProject, deleteAllProjects } = requ
 const express = require('express')
 const router = express.Router();
 
-router.post('/', createProject)
-router.get('/', getAllProjects)
-router.delete('/:projectName', deleteProject);
-router.delete('/', deleteAllProjects);
-// TODO: edit endpoints
+router.post('/:username', createProject)
+router.get('/:username', getAllProjects)
+router.delete('/:username/:projectName', deleteProject);
+router.delete('/:username', deleteAllProjects);
 
 module.exports = router;

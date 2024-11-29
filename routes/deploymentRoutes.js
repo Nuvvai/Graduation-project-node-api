@@ -5,11 +5,10 @@ const { createDeployment, getAllDeployments, deleteDeployments, getDeploymentsBy
 
 const router = express.Router();
 
-router.post('/', createDeployment);
-router.get('/', getAllDeployments);
-router.delete('/:projectName', deleteDeployments);
-router.get('/:projectName', getDeploymentsByProject);
-router.post('/', updateDeploymentStatus);
-// TODO: edit endpoints
+router.post('/:username/:projectName', createDeployment);
+router.get('/:username', getAllDeployments);
+router.delete('/:username/:projectName', deleteDeployments);
+router.get('/:username/:projectName', getDeploymentsByProject);
+router.put('/:username/:projectName', updateDeploymentStatus);
 
 module.exports = router;
