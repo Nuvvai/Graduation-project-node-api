@@ -2,7 +2,18 @@ const path = require('path');
 const Project = require(path.join(__dirname, '..', 'models', 'Project'));
 const User = require(path.join(__dirname, '..', 'models', 'User'));
 
-// to create a new project
+
+/**
+ * Creates a new project.
+ *
+ * @param {Object} req - The request object.
+ * @param {Object} req.body - The body of the request.
+ * @param {string} req.body.projectName - The name of the project.
+ * @param {string} req.body.username - The username of the project owner.
+ * @param {string} req.body.repositoryUrl - The URL of the project's repository.
+ * @param {Object} res - The response object.
+ * @returns {Promise<void>} - A promise that resolves when the project is created.
+ */
 const createProject = async (req, res) => {
     try {
         const { projectName, username, repositoryUrl } = req.body;
@@ -43,7 +54,16 @@ const createProject = async (req, res) => {
     }
 }
 
-// to get all projects from a user
+
+/**
+ * Retrieves all projects for a given user.
+ *
+ * @param {Object} req - The request object.
+ * @param {Object} req.params - The request parameters.
+ * @param {string} req.params.username - The username of the user.
+ * @param {Object} res - The response object.
+ * @returns {Promise<void>} - A promise that resolves to void.
+ */
 const getAllProjects = async (req, res) => {
     try {
         const { username } = req.params
@@ -64,7 +84,21 @@ const getAllProjects = async (req, res) => {
     }
 }
 
-// delete a project from a specific user
+
+/**
+ * Deletes a project based on the provided username and project name.
+ * 
+ * @async
+ * @function deleteProject
+ * @param {Object} req - The request object.
+ * @param {Object} req.body - The body of the request.
+ * @param {string} req.body.username - The username of the user.
+ * @param {string} req.body.projectName - The name of the project to be deleted.
+ * @param {Object} res - The response object.
+ * @returns {Promise<void>} - A promise that resolves to void.
+ * 
+ * @throws {Error} - If there is an error during the deletion process.
+ */
 const deleteProject = async (req, res) => {
     try {
         const { username, projectName } = req.body;
@@ -102,7 +136,18 @@ const deleteProject = async (req, res) => {
     }
 }
 
-// to delete all projects from a specfic user
+
+/**
+ * Deletes all projects associated with a specific user.
+ *
+ * @param {Object} req - The request object.
+ * @param {Object} req.params - The request parameters.
+ * @param {string} req.params.username - The username of the user whose projects are to be deleted.
+ * @param {Object} res - The response object.
+ * @returns {Promise<void>} - A promise that resolves when the operation is complete.
+ *
+ * @throws {Error} - If there is an error during the deletion process.
+ */
 const deleteAllProjects = async (req, res) => {
     try {
         const { username } = req.params;

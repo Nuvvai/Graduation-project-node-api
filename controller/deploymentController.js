@@ -3,6 +3,21 @@ const Deployment = require(path.join(__dirname, '..', 'models', 'Deployment'));
 const Project = require(path.join(__dirname, '..', 'models', 'Project'));
 const User = require(path.join(__dirname, '..', 'models', 'User'));
 
+/**
+ * Creates a new deployment.
+ * 
+ * @async
+ * @function createDeployment
+ * @param {Object} req - The request object.
+ * @param {Object} req.body - The body of the request.
+ * @param {string} req.body.projectName - The name of the project.
+ * @param {string} req.body.username - The name of the user.
+ * @param {string} [req.body.status='No status'] - The status of the deployment.
+ * @param {Date} [req.body.startTime=new Date()] - The start time of the deployment.
+ * @param {Object} res - The response object.
+ * @returns {Promise<void>} - Returns a promise that resolves to void.
+ * @throws {Error} - Throws an error if there is an issue creating the deployment.
+ */
 const createDeployment = async (req, res) => {
     try {
         const { projectName, username, status = 'No status', startTime = new Date() } = req.body;
@@ -41,7 +56,18 @@ const createDeployment = async (req, res) => {
     }
 }
 
-// get all deployments of a specific user
+
+/**
+ * Retrieves all deployments for a specific user.
+ *
+ * @param {Object} req - The request object.
+ * @param {Object} req.params - The request parameters.
+ * @param {string} req.params.username - The username to find deployments for.
+ * @param {Object} res - The response object.
+ * @returns {Promise<void>} - A promise that resolves to void.
+ *
+ * @throws {Error} - If there is an error finding deployments.
+ */
 const getAllDeployments = async (req, res) => {
     try {
         const { username } = req.params;
@@ -65,7 +91,17 @@ const getAllDeployments = async (req, res) => {
     };
 }
 
-// get all deployments of a specific project
+
+/**
+ * Retrieves deployments for a specific project and user.
+ *
+ * @param {Object} req - The request object.
+ * @param {Object} req.params - The request parameters.
+ * @param {string} req.params.username - The username of the user.
+ * @param {string} req.params.projectName - The name of the project.
+ * @param {Object} res - The response object.
+ * @returns {Promise<void>} - A promise that resolves when the response is sent.
+ */
 const getDeploymentsByProject = async (req, res) => {
     try {
         const { username, projectName } = req.params;
@@ -93,7 +129,16 @@ const getDeploymentsByProject = async (req, res) => {
     }
 }
 
-// delete all deployments from a specific project
+/**
+ * Deletes deployments for a specific user and project.
+ *
+ * @param {Object} req - The request object.
+ * @param {Object} req.params - The parameters from the request.
+ * @param {string} req.params.username - The username of the user.
+ * @param {string} req.params.projectName - The name of the project.
+ * @param {Object} res - The response object.
+ * @returns {Promise<void>} - A promise that resolves when the operation is complete.
+ */
 const deleteDeployments = async (req, res) => {
     try {
         const { username, projectName } = req.params;
@@ -123,6 +168,17 @@ const deleteDeployments = async (req, res) => {
     }
 }
 
+/**
+ * Updates the deployment status for a given project and user.
+ *
+ * @param {Object} req - The request object.
+ * @param {Object} req.body - The request body.
+ * @param {string} req.body.projectName - The name of the project.
+ * @param {string} req.body.username - The name of the user.
+ * @param {string} req.body.status - The status of the deployment. Must be one of 'No status', 'Failed', or 'Succeeded'.
+ * @param {Object} res - The response object.
+ * @returns {Promise<void>} - Returns a promise that resolves to void.
+ */
 const updateDeploymentStatus = async (req, res)=>{
     try{
         const {projectName, username, status} = req.body;
