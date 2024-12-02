@@ -2,21 +2,26 @@ const path = require('path');
 const Project = require(path.join(__dirname, '..', 'models', 'Project'));
 const User = require(path.join(__dirname, '..', 'models', 'User'));
 
-
 /**
- * Creates a new project.
+ * Creates a new project for a user.
  *
  * @param {Object} req - The request object.
- * @param {Object} req.body - The body of the request.
+ * @param {Object} req.params - The request parameters.
+ * @param {string} req.params.username - The username of the user.
+ * @param {Object} req.body - The request body.
  * @param {string} req.body.projectName - The name of the project.
- * @param {string} req.body.username - The username of the project owner.
  * @param {string} req.body.repositoryUrl - The URL of the project's repository.
+ * @param {string} req.body.frontendFramework - The frontend framework used in the project.
+ * @param {string} req.body.backendFramework - The backend framework used in the project.
+ * @param {string} req.body.database - The database used in the project.
+ * @param {string} [req.body.description] - The description of the project.
  * @param {Object} res - The response object.
  * @returns {Promise<void>} - A promise that resolves when the project is created.
  */
 const createProject = async (req, res) => {
     try {
-        const { projectName, username, repositoryUrl } = req.body;
+        const { username } = req.params;
+        const { projectName, repositoryUrl, frontendFramework, backendFramework, database, description } = req.body;
         if (!projectName) {
             return res.status(400).json({
                 message: 'Project name is required',
@@ -24,12 +29,27 @@ const createProject = async (req, res) => {
         }
         if (!username) {
             return res.status(400).json({
-                message: 'username is required',
+                message: 'Username is required',
             });
         }
         if (!repositoryUrl) {
             return res.status(400).json({
-                message: 'repository url is required',
+                message: 'Repository url is required',
+            });
+        }
+        if (!frontendFramework) {
+            return res.status(400).json({
+                message: 'Frontend framework is required',
+            });
+        }
+        if (!backendFramework) {
+            return res.status(400).json({
+                message: 'Backend framework is required',
+            });
+        }
+        if (!database) {
+            return res.status(400).json({
+                message: 'Database is required',
             });
         }
         const userExists = await User.findOne({ name: username });
@@ -38,11 +58,18 @@ const createProject = async (req, res) => {
                 message: 'User not found!'
             })
         }
-
+        const projectExists = await Project.findOne({ username, projectName });
+        if (projectExists) {
+            return res.status(403).json({ message: "Project with the same name already exists!" })
+        }
         const newProject = new Project({
             projectName,
+            username,
             repositoryUrl,
-            username
+            frontendFramework,
+            backendFramework,
+            database,
+            description
         });
         await newProject.save();
         res.status(201).json(newProject);
@@ -66,7 +93,7 @@ const createProject = async (req, res) => {
  */
 const getAllProjects = async (req, res) => {
     try {
-        const { username } = req.params
+        const { username } = req.params;
         const userExists = await User.findOne({ name: username });
         if (!userExists) {
             return res.status(404).json({
@@ -101,12 +128,12 @@ const getAllProjects = async (req, res) => {
  */
 const deleteProject = async (req, res) => {
     try {
-        const { username, projectName } = req.body;
+        const { username, projectName } = req.params;
         if (!username) {
-            return res.status(400).json({ message: "username is required!" })
+            return res.status(400).json({ message: "Username is required!" })
         }
         if (!projectName) {
-            return res.status(400).json({ message: "project name is required!" })
+            return res.status(400).json({ message: "Project name is required!" })
         }
         const userExists = await User.findOne({ name: username });
         if (!userExists) {
@@ -151,7 +178,6 @@ const deleteProject = async (req, res) => {
 const deleteAllProjects = async (req, res) => {
     try {
         const { username } = req.params;
-        console.log(username)
         if (!username) {
             return res.status(400).json({ message: "username is required!" })
         }

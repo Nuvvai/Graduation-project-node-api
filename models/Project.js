@@ -1,32 +1,43 @@
 const mongoose = require('mongoose');
-// const User = require('./User')
 
 const projectSchema = new mongoose.Schema({
-  name: {
-    type: String,
+  projectName: {
+    type: 'string',
     required: true,
+    trim: true,
+    validate: {
+      validator: function (value) {
+        // Ensure the project name does not contain any whitespace
+        return !/\s/.test(value);
+      },
+      message: "Project name must not contain spaces.",
+    },
   },
   username: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: 'string',
     ref: 'User',
     required: true,
+    trim: true
   },
   repositoryUrl: {
-    type: String,
+    type: 'string',
     required: true,
     unique: true
   },
   frontendFramework: {
     type: 'string',
-    required: true
+    required: true,
+    enum: ['React', 'Angular', 'Vue.js', 'Wordpress', 'Svelte', 'Vanilla JS']
   },
   backendFramework: {
     type: 'string',
-    required: true
+    required: true,
+    enum: ['Node.js', 'Golang', 'Laravel', 'Flask', 'Django']
   },
   database: {
     type: 'string',
-    required: true
+    required: true,
+    enum: ['MongoDB', 'Redis', 'MySQL', 'PostgreSQL', 'SQLite']
   },
   description: {
     type: 'string'
