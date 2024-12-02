@@ -1,7 +1,11 @@
 const mongoose = require('mongoose');
-const Project = require('./Project');
 
 const deploymentSchema = new mongoose.Schema({
+    deploymentName: {
+        type: 'string',
+        required: true,
+        trim: true
+    },
     projectName: {
         type: 'string',
         ref: 'Project',
@@ -11,7 +15,8 @@ const deploymentSchema = new mongoose.Schema({
     username: {
         type: 'string',
         ref: 'User',
-        required: true
+        required: true,
+        trim: true
     },
     status: {
         type: 'string',
