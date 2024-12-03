@@ -20,17 +20,13 @@ const User = require(path.join(__dirname, '..', 'models', 'User'));
  */
 const createDeployment = async (req, res) => {
     try {
-        const { projectName, username, status = 'No status', startTime = new Date() } = req.body;
+        const { username, projectName} = req.params;
+        const { deploymentName, status = 'No status', startTime = new Date(), endTime = new Date() } = req.body;
         if (!projectName) {
             return res.status(400).json({ message: "Project name is required!" })
         }
         if (!username) {
-            return res.status(400).json({ message: "username is required!" })
-        }
-        //to check if the project exists using project name
-        const projectExists = await Project.findOne({ projectName });
-        if (!projectExists) {
-            return res.status(404).json({ message: "Project not found!" })
+            return res.status(400).json({ message: "Username is required!" })
         }
         const userExists = await User.findOne({ name: username });
         if (!userExists) {
@@ -38,12 +34,24 @@ const createDeployment = async (req, res) => {
                 message: 'User not found!'
             })
         }
-
+        const projectExists = await Project.findOne({ username, projectName });
+        if (!projectExists) {
+            return res.status(404).json({ message: "Project not found!" })
+        }
+        const deploymentExists = await Deployment.findOne({username, projectName, deploymentName})
+        if(deploymentExists){
+            return res.status(403).json({message: "Deployment with the same name already exists!"})
+        }
+        if(!deploymentName){
+            return res.status(400).json({message: "Deployment name is required!"});
+        }
         const deployment = new Deployment({
+            deploymentName,
             projectName,
             username,
             status,
-            startTime
+            startTime,
+            endTime
         });
 
         await deployment.save();
@@ -105,22 +113,21 @@ const getAllDeployments = async (req, res) => {
 const getDeploymentsByProject = async (req, res) => {
     try {
         const { username, projectName } = req.params;
-        const projectExists = await Project.findOne({ projectName });
-        if (!projectExists) {
-            return res.status(404).json({ message: "Project not found!" })
-        }
         const userExists = await User.findOne({ name: username });
         if (!userExists) {
             return res.status(404).json({
                 message: 'User not found!'
             })
         }
+        const projectExists = await Project.findOne({ projectName });
+        if (!projectExists) {
+            return res.status(404).json({ message: "Project not found!" })
+        }
         const deployments = await Deployment.find({ username, projectName }).sort({ startTime: -1 });
         if (!deployments.length) {
             return res.status(404).json({ message: "Deployments not found for this project!" })
         }
         res.status(200).json(deployments)
-
     } catch (error) {
         res.status(500).json({
             message: "Error fetching deployments!",
@@ -142,15 +149,15 @@ const getDeploymentsByProject = async (req, res) => {
 const deleteDeployments = async (req, res) => {
     try {
         const { username, projectName } = req.params;
-        const projectExists = await Project.findOne({ projectName });
-        if (!projectExists) {
-            return res.status(404).json({ message: "Project not found!" })
-        }
         const userExists = await User.findOne({ name: username });
         if (!userExists) {
             return res.status(404).json({
                 message: 'User not found!'
             })
+        }
+        const projectExists = await Project.findOne({ projectName });
+        if (!projectExists) {
+            return res.status(404).json({ message: "Project not found!" })
         }
         const deploymentsDeleted = await Deployment.deleteMany({ username, projectName });
         if (deploymentsDeleted.deletedCount === 0) {
@@ -168,50 +175,76 @@ const deleteDeployments = async (req, res) => {
     }
 }
 
-/**
- * Updates the deployment status for a given project and user.
- *
- * @param {Object} req - The request object.
- * @param {Object} req.body - The request body.
- * @param {string} req.body.projectName - The name of the project.
- * @param {string} req.body.username - The name of the user.
- * @param {string} req.body.status - The status of the deployment. Must be one of 'No status', 'Failed', or 'Succeeded'.
- * @param {Object} res - The response object.
- * @returns {Promise<void>} - Returns a promise that resolves to void.
- */
-const updateDeploymentStatus = async (req, res)=>{
+const deleteDeployment = async (req, res) => {
     try{
-        const {projectName, username, status} = req.body;
-        const projectExists = await Project.findOne({ projectName });
-        if (!projectExists) {
-            return res.status(404).json({ message: "Project not found!" })
-        }
+        const { username, projectName, deploymentName } = req.params;
         const userExists = await User.findOne({ name: username });
         if (!userExists) {
             return res.status(404).json({
                 message: 'User not found!'
             })
         }
-        if(!['No status', 'Failed', 'Succeeded'].includes(status)){
-            return res.status(400).json({message: "Invalid status!"})
+        const projectExists = await Project.findOne({ projectName });
+        if (!projectExists) {
+            return res.status(404).json({ message: "Project not found!" })
         }
-        const deployment = await Deployment.findOne({projectName, username});
-        if(!deployment){
-            return res.status(404).json({message: "Deployments not found!"})
+        const deploymentExists = await Deployment.findOne({deploymentName})
+        if(!deploymentExists){
+            return res.status(404).json({message: "Deployment not found!"})
         }
-        deployment.status = status;
-        if(status === "Failed" || status === "Succeeded"){
-            deployment.endTime = endTime || new Date();
-        }
-        const updatedDeployment = await deployment.save();
-        res.status(200).json(updatedDeployment);
+        await Deployment.findOneAndDelete(deploymentName);
+        res.status(200).json({ message: "Deployment deleted successfully!" })
     }catch(error){
         res.status(500).json({
-            message: "Error updating deployment status!",
+            message: "Error deleting the deployment!",
             error: error.message
         })
     }
 }
 
-// TODO: implement getDeploymentStats
-module.exports = { createDeployment, getAllDeployments, getDeploymentsByProject, deleteDeployments, updateDeploymentStatus };
+// /**
+//  * Updates the deployment status for a given project and user.
+//  *
+//  * @param {Object} req - The request object.
+//  * @param {Object} req.body - The request body.
+//  * @param {string} req.body.projectName - The name of the project.
+//  * @param {string} req.body.username - The name of the user.
+//  * @param {string} req.body.status - The status of the deployment. Must be one of 'No status', 'Failed', or 'Succeeded'.
+//  * @param {Object} res - The response object.
+//  * @returns {Promise<void>} - Returns a promise that resolves to void.
+//  */
+// const updateDeploymentStatus = async (req, res)=>{
+//     try{
+//         const {projectName, username, status} = req.body;
+//         const userExists = await User.findOne({ name: username });
+//         if (!userExists) {
+//             return res.status(404).json({
+//                 message: 'User not found!'
+//             })
+//         }
+//         const projectExists = await Project.findOne({ projectName });
+//         if (!projectExists) {
+//             return res.status(404).json({ message: "Project not found!" })
+//         }
+//         if(!['No status', 'Failed', 'Succeeded'].includes(status)){
+//             return res.status(400).json({message: "Invalid status!"})
+//         }
+//         const deployment = await Deployment.findOne({projectName, username});
+//         if(!deployment){
+//             return res.status(404).json({message: "Deployments not found!"})
+//         }
+//         deployment.status = status;
+//         if(status === "Failed" || status === "Succeeded"){
+//             deployment.endTime = endTime || new Date();
+//         }
+//         const updatedDeployment = await deployment.save();
+//         res.status(200).json(updatedDeployment);
+//     }catch(error){
+//         res.status(500).json({
+//             message: "Error updating deployment status!",
+//             error: error.message
+//         })
+//     }
+// }
+
+module.exports = { createDeployment, getAllDeployments, getDeploymentsByProject, deleteDeployments, deleteDeployment };

@@ -4,7 +4,14 @@ const deploymentSchema = new mongoose.Schema({
     deploymentName: {
         type: 'string',
         required: true,
-        trim: true
+        trim: true,
+        validate: {
+            validator: function (value) {
+              // Ensure the deployment name does not contain any whitespace
+              return !/\s/.test(value);
+            },
+            message: "Deployment name must not contain spaces.",
+        },
     },
     projectName: {
         type: 'string',
