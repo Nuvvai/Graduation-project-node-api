@@ -19,11 +19,11 @@ const pipelineSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    lastBuildStatus: {
-        type: 'string',
-        enum: ['SUCCESS', 'FAILURE', 'ABORTED', 'IN_PROGRESS', 'NOT_BUILT'],
-        default: 'NOT_BUILT'
-    },
+    // lastBuildStatus: {
+    //     type: 'string',
+    //     enum: ['SUCCESS', 'FAILURE', 'ABORTED', 'IN_PROGRESS', 'NOT_BUILT'],
+    //     default: 'NOT_BUILT'
+    // },
     lastBuildTime: Date,
     createdAt: {
         type: Date,

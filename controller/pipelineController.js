@@ -27,7 +27,8 @@ const { create } = require('xmlbuilder2');
 const createPipeline = async (req, res) =>{
     try{
         const { username, projectName } = req.params;
-        const { pipelineName, gitUsername, gitPassword, gitBranch } = req.body;
+        const { pipelineName, gitBranch } = req.body;
+        // const { gitUsername, gitPassword } = req.body;
         const userExists = await User.findOne({ name: username });
         if (!userExists) {
             return res.status(404).json({message: 'User not found!'})
@@ -50,15 +51,15 @@ const createPipeline = async (req, res) =>{
         });
 
         // not tested yet-------------------------------------------------------
-        const credentialId = `${username}-${projectName}-credentials`;
-        const credentialsOptions = {
-          id: credentialId,
-          type: 'usernamePassword',
-          username: gitUsername,
-          password: gitPassword,
-          description: `Credentials for ${username}'s project: ${projectName}`,
-        };
-        await jenkins.credentials.create(credentialsOptions);
+        // const credentialId = `${username}-${projectName}-credentials`;
+        // const credentialsOptions = {
+        //   id: credentialId,
+        //   type: 'usernamePassword',
+        //   username: gitUsername,
+        //   password: gitPassword,
+        //   description: `Credentials for ${username}'s project: ${projectName}`,
+        // };
+        // await jenkins.credentials.create(credentialsOptions);
         //------------------------------------------------------------------------
         const pipelineScript = `pipeline {
             agent any
@@ -66,8 +67,7 @@ const createPipeline = async (req, res) =>{
               stage('Checkout') {
                 steps {
                     git branch: '${gitBranch}', 
-                    url: '${repoUrl}', 
-                    credentialsId: '${credentialId}'
+                    url: '${repoUrl}'
                 }
               }
               stage('Build') {
@@ -96,8 +96,8 @@ const createPipeline = async (req, res) =>{
               .ele('disabled').txt('false').up()
             .end({ prettyPrint: true });
 
-        await newPipeline.save();
         await jenkins.job.create(pipelineName, pipelineJobXML);
+        await newPipeline.save();
         res.status(201).json({ message: 'Pipeline created successfully', pipeline: newPipeline });   
     }catch(error){
         res.status(500).json({
@@ -107,8 +107,97 @@ const createPipeline = async (req, res) =>{
     }
 }
 
+const triggerBuild = async (req, res) =>{
+  try{
+    const { username, projectName, pipelineName } = req.params;
+    const userExists = await User.findOne({ name: username });
+    if (!userExists) {
+        return res.status(404).json({message: 'User not found!'})
+    }
+    const projectExists = await Project.findOne({ username, projectName });
+    if (!projectExists) {
+        return res.status(404).json({
+            message: 'Project not found!'
+        })
+    }
+    const existingPipeline = await Pipeline.findOne({ username, projectName, pipelineName});
+    if (!existingPipeline) {
+        return res.status(404).json({ message: 'Pipeline not found!' });
+    }
+    await jenkins.job.build(pipelineName);
+    existingPipeline.lastBuildNumber += 1;
+    existingPipeline.lastBuildTime  = Date.now();
+    await existingPipeline.save();
+    res.status(201).json({ message: `Build triggered for pipeline: ${pipelineName}`, existingPipeline });
+  }catch(error){
+    res.status(500).json({
+      message: "Error triggering Build!",
+      error: error.message
+    })
+  }
+}
 
+const getBuildStatus = async (req, res) => {
+  try{
+    const {username, projectName, pipelineName, buildNumber} = req.params;
+    const userExists = await User.findOne({ name: username });
+    if (!userExists) {
+        return res.status(404).json({message: 'User not found!'})
+    }
+    const projectExists = await Project.findOne({ username, projectName });
+    if (!projectExists) {
+        return res.status(404).json({
+            message: 'Project not found!'
+        })
+    }
+    const existingPipeline = await Pipeline.findOne({ username, projectName, pipelineName});
+    if (!existingPipeline) {
+        return res.status(404).json({ message: 'Pipeline not found!' });
+    }
+    if (existingPipeline.lastBuildNumber === 0){
+      return res.status(400).json({message: "There are no builds for this pipeline!"})
+    }
+    if (existingPipeline.lastBuildNumber < buildNumber){
+      return res.status(400).json({message: "There is no build with this number!"})
+    }
+    const build  = await jenkins.build.get(pipelineName, buildNumber);
+    res.status(200).json({status: build.result, build})
+  }catch(error){
+    res.status(500).json({
+      message: "Error getting build status!",
+      error: error.message
+    })
+  }
+}
 
-// //TODO: implement triggerBuild, getBuildStatus, getBuildLogs, updatePipeline, stopBuild, deletePipeline
+const deletePipeline = async (req, res) =>{
+  try{
+    const{username, projectName, pipelineName} =  req.params;
+    const userExists = await User.findOne({ name: username });
+    if (!userExists) {
+        return res.status(404).json({message: 'User not found!'})
+    }
+    const projectExists = await Project.findOne({ username, projectName });
+    if (!projectExists) {
+        return res.status(404).json({
+            message: 'Project not found!'
+        })
+    }
+    const existingPipeline = await Pipeline.findOne({ username, projectName, pipelineName});
+    if (!existingPipeline) {
+        return res.status(404).json({ message: 'Pipeline not found!' });
+    }
+    await jenkins.job.destroy(pipelineName);
+    await Pipeline.findOneAndDelete(pipelineName);
+    res.status(200).json({message: "Pipeline deleted successfully!"});
+  }catch{
+    res.status(500).json({
+      message: "Error deleting pipeline!",
+      error: error.message
+    })
+  }
 
-module.exports = { createPipeline }
+}
+// //TODO: implement getBuildLogs, updatePipeline, stopBuild
+
+module.exports = { createPipeline, triggerBuild, getBuildStatus, deletePipeline }
