@@ -4,6 +4,7 @@ const Project = require(path.join(__dirname, '..', 'models', 'Project'));
 const User = require(path.join(__dirname, '..', 'models', 'User'));
 const jenkins = require(path.join(__dirname, '..', 'utils', 'jenkinsClient'))
 const { create } = require('xmlbuilder2');
+const xml2js = require('xml2js');
 
 
 /**
@@ -198,6 +199,81 @@ const deletePipeline = async (req, res) =>{
   }
 
 }
-// //TODO: implement getBuildLogs, updatePipeline, stopBuild
 
-module.exports = { createPipeline, triggerBuild, getBuildStatus, deletePipeline }
+// not tested yet------------------------------------------------------------------
+const stopBuild = async (req, res) => {
+  try{
+    const { username, projectName, pipelineName, buildNumber } = req.params;
+    const userExists = await User.findOne({ name: username });
+    if (!userExists) {
+        return res.status(404).json({message: 'User not found!'})
+    }
+    const projectExists = await Project.findOne({ username, projectName });
+    if (!projectExists) {
+        return res.status(404).json({
+            message: 'Project not found!'
+        })
+    }
+    const existingPipeline = await Pipeline.findOne({ username, projectName, pipelineName});
+    if (!existingPipeline) {
+        return res.status(404).json({ message: 'Pipeline not found!' });
+    }
+    if (existingPipeline.lastBuildNumber === 0){
+      return res.status(400).json({message: "There are no builds for this pipeline!"})
+    }
+    if (existingPipeline.lastBuildNumber < buildNumber){
+      return res.status(400).json({message: "There is no build with this number!"})
+    }
+    await jenkins.build.stop(pipelineName, buildNumber);
+    res.status(200).json({message: "Build is stopped successfully!"})
+
+  }catch(error){
+    res.status(500).json({
+      message: "Error stopping build!",
+      error: error.message
+    })
+  }
+}
+
+const updatePipelineScript = async (req, res) => {
+  try{
+    const { username, projectName, pipelineName } = req.params;
+    const { newScript } = req.body;
+    const userExists = await User.findOne({ name: username });
+    if (!userExists) {
+        return res.status(404).json({message: 'User not found!'})
+    }
+    const projectExists = await Project.findOne({ username, projectName });
+    if (!projectExists) {
+        return res.status(404).json({
+            message: 'Project not found!'
+        })
+    }
+    const existingPipeline = await Pipeline.findOne({ username, projectName, pipelineName});
+    if (!existingPipeline) {
+        return res.status(404).json({ message: 'Pipeline not found!' });
+    }
+
+    const jobConfigXML = await jenkins.job.config(pipelineName);
+    const configJson = await xml2js.parseStringPromise(jobConfigXML);
+    if (newScript) {
+      configJson['flow-definition']['definition'][0]['script'][0] = newScript;
+    }
+    //convert updated json back to XML
+    const updatedJobConfigXML = new xml2js.Builder().buildObject(configJson);
+
+    await jenkins.job.config(pipelineName, updatedJobConfigXML);
+
+    res.status(200).json({message: 'Pipeline updated successfully!'});
+
+  }catch{
+    res.status(500).json({
+      message: "Error updating pipeline!",
+      error: error.message
+    })
+  }
+}
+
+// //TODO: implement getBuildLogs
+
+module.exports = { createPipeline, triggerBuild, getBuildStatus, deletePipeline, stopBuild, updatePipelineScript }
