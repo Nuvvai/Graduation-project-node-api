@@ -15,8 +15,10 @@
     "jenkins": "^1.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.6.2",
-    "nodemon": "^3.1.7",
     "xml2js": "^0.6.2",
     "xmlbuilder2": "^3.1.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
   }
 }
