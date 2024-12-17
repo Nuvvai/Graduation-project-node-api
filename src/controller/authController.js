@@ -5,6 +5,7 @@ const User = require(path.join(__dirname, '..', 'models', 'User'));
 
 /**
  * Controller function for user registration.
+ * @author Hazem Sabry
  *
  * @param {Object} req - The request object containing the user's registration data.
  * @param {Object} res - The response object to send back the registration result.

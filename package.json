@@ -1,14 +1,19 @@
 {
-  "name": "api",
+  "name": "graduation-project-backend",
   "version": "1.0.0",
-  "description": "Node API for the graduation project",
-  "main": "app.js",
+  "description": "Graduation_Project_Backend api for the DevOps as a Service (DaaS) project",
+  "main": "src/app.ts",
   "scripts": {
-    "start": "nodemon app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node dist/src/app.js",
+    "dev": "nodemon src/app.ts",
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint src/**/*.ts",
+    "typeCheck": "tsc --noEmit",
+    "precommit": "npm run lint && npm test"
   },
   "author": "Hazem Sabry",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "express": "^4.21.0",
@@ -19,6 +24,10 @@
     "xmlbuilder2": "^3.1.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "nodemon": "^3.1.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
   }
 }
