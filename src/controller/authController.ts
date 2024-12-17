@@ -22,18 +22,34 @@ interface LoginRequestBody {
  * @route GET /auth/register
  * @access public 
  */
-const register_controller = async (req:Request<{}, {}, RegisterRequestBody>, res:Response, next:NextFunction) => {
+export const register_controller = async (req:Request<{}, {}, RegisterRequestBody>, res:Response, next:NextFunction):Promise<void> => {
     const { name, email, password }:RegisterRequestBody = req.body;
 
     try {
         const existingUser = await User.findOne<IUser>({ email: email });
-        if (existingUser) return res.status(409).json({ message: 'User already exists' });
+        if (existingUser) {
+            res.status(409).json({ message: 'User already exists' });
+            return;
+        }
 
-        if (!name || !email || !password) return res.status(406).json({ message: "Not accepted, missing parameter" });
-        else if (name.indexOf('@') !== -1) return res.status(406).json({ message: 'Invalid name can not include \"@\"' }); //not tested yet ...!!
-        else if (email.length < 6 || email.indexOf('@') === -1) return res.status(406).json({ message: 'Invalid email format' }); //not tested yet ...!!
-        else if (password.length < 6) return res.status(406).json({ message: 'Password must be at least 6 characters long' });  //not tested yet ...!!
-        else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}/.test(password)) return res.status(406).json({ message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character' });  //not tested yet ...!!
+        if (!name || !email || !password) {
+            res.status(406).json({ message: "Not accepted, missing parameter" });
+            return;
+        } else if (name.indexOf('@') !== -1) {
+            res.status(406).json({ message: 'Invalid name can not include \"@\"' }); //not tested yet ...!!
+            return;
+        } else if (email.length < 6 || email.indexOf('@') === -1) {
+            res.status(406).json({ message: 'Invalid email format' }); //not tested yet ...!!
+            return
+        }
+        else if (password.length < 6) {
+            res.status(406).json({ message: 'Password must be at least 6 characters long' });  //not tested yet ...!!
+            return
+        }
+        else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}/.test(password)) {
+            res.status(406).json({ message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character' });  //not tested yet ...!!
+            return;
+        }
 
         const hashedPassword:string = await bcrypt.hash(password, 12);
         const newUser = new User({ name, email, password: hashedPassword });
@@ -59,11 +75,11 @@ const register_controller = async (req:Request<{}, {}, RegisterRequestBody>, res
  * @route GET /auth/login
  * @access public 
  */
-const login_controller = async (req: Request<{}, {}, LoginRequestBody>, res:Response, next:NextFunction) => {
+export const login_controller = async (req: Request<{}, {}, LoginRequestBody>, res:Response, next:NextFunction):Promise<void> => {
     const { nameOrEmail, password }: LoginRequestBody = req.body;
 
     try {
-        if (!nameOrEmail || !password) return res.status(406).json({ message: "Not accepted, missing parameter" });
+        if (!nameOrEmail || !password) res.status(406).json({ message: "Not accepted, missing parameter" });
 
         let existingUser;
         if (nameOrEmail.indexOf('@') === -1) {
@@ -74,10 +90,16 @@ const login_controller = async (req: Request<{}, {}, LoginRequestBody>, res:Resp
             existingUser = await User.findOne({ email: UserEmail });
         }
 
-        if (!existingUser) return res.status(404).json({ message: 'User not found' });
+        if (!existingUser) {
+            res.status(404).json({ message: 'User not found' });
+            return;
+        }
 
         const isMatch = await bcrypt.compare(password, existingUser.password);
-        if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
+        if (!isMatch) {
+            res.status(401).json({ message: 'Invalid credentials' });
+            return;
+        }
 
         const secretKey: string | undefined = process.env.JWT_Token;
         if (!secretKey) {
@@ -93,5 +115,3 @@ const login_controller = async (req: Request<{}, {}, LoginRequestBody>, res:Resp
         next(error);
     }
 }
-
-module.exports = { register_controller, login_controller };
