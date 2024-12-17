@@ -6,8 +6,8 @@ const router = express.Router();
 const { getUserProfile, deleteUser, updateUserProfile, getAllUsers } = require(path.join('..', 'controller', 'userController'));
 
 router.get('/', getAllUsers);
-router.get('/:name', getUserProfile);
-router.delete('/:name', deleteUser);
-router.put('/:name', updateUserProfile);
+router.get('/:username', getUserProfile);
+router.delete('/:username', deleteUser);
+router.put('/:username', updateUserProfile);
 
 module.exports = router;

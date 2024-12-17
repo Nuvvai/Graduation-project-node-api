@@ -1,5 +1,5 @@
-const path = require('path');
-const express = require('express');
+import path from 'path';
+import express from 'express';
 const router = express.Router();
 
 const { register_controller, login_controller } = require(path.join(__dirname, '..', 'controller', 'authController.js'));
@@ -7,4 +7,4 @@ const { register_controller, login_controller } = require(path.join(__dirname, '
 router.post('/register', register_controller)
 router.post('/login', login_controller)
 
-module.exports = router;
+export default router;
