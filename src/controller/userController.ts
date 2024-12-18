@@ -25,7 +25,7 @@ interface IUserResponseBody {
  * @route GET /users/:username
  * @access private for the authenticated user only
  */
-const getUserProfile = async (req:Request<IUserRequestParams>, res:Response,next:NextFunction):Promise<void> => {
+export const getUserProfile = async (req:Request<IUserRequestParams>, res:Response,next:NextFunction):Promise<void> => {
     try {
         const { name }:IUserRequestParams = req.params;
         const userExists:IUser | null = await User.findOne({ name: name });
@@ -46,19 +46,19 @@ const getUserProfile = async (req:Request<IUserRequestParams>, res:Response,next
  * @param req.params.name - The name of the user to delete.
  * @param res - The response object.
  * @returns A promise that resolves when the user is deleted.
- * @throws {Error} - If there is an error fetching the user profile or deleting it.
+ * @throws {Error} - If there is an error fetching the user profile, or deleting it.
  * @route DELETE /users/:username
  * @access private for the authenticated user only
  */
-const deleteUser = async (req:Request<IUserRequestParams>, res:Response, next:NextFunction):Promise<void> => {
+export const deleteUser = async (req:Request<IUserRequestParams>, res:Response, next:NextFunction):Promise<void> => {
     try {
         const { name }:IUserRequestParams = req.params;
-        const userExists:IUser | null = await User.findOne({ name: name });
+        const userExists:IUser | null = await User.findOne<IUser>({ name: name });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
             return;
         }
-        await User.findOneAndDelete(userExists) // might edit this
+        await User.findOneAndDelete<IUser>({name: name})
         res.status(200).json({ message: "User deleted successfully!" });
     } catch (error) {
         next(error);
@@ -77,11 +77,11 @@ const deleteUser = async (req:Request<IUserRequestParams>, res:Response, next:Ne
  * @param req.body.newPasswordAgain - The new password again for confirmation.
  * @param res - The response object.
  * @returns A promise that resolves when the profile is updated.
- * @throws {Error} - If there is an error fetching the user profile or error saving the update.
+ * @throws {Error} - If there is an error fetching the user profile, or error saving the update.
  * @route PUT /users/:username
  * @access private for the authenticated user only
  */
-const updateUserProfile = async (req:Request<IUserRequestParams,{},IUserResponseBody>, res:Response, next:NextFunction):Promise<void> => {
+export const updateUserProfile = async (req:Request<IUserRequestParams,{},IUserResponseBody>, res:Response, next:NextFunction):Promise<void> => {
     try {
         const { name }:IUserRequestParams = req.params;
         const userExists:IUser | null = await User.findOne({ name: name });
@@ -136,7 +136,7 @@ const updateUserProfile = async (req:Request<IUserRequestParams,{},IUserResponse
  * @route GET /users/:username
  * @access private admin only
  */
-const getAllUsers = async (req:Request<{},{},{},{},{}>, res:Response,next:NextFunction):Promise<void> => {
+export const getAllUsers = async (req:Request<{},{},{},{},{}>, res:Response,next:NextFunction):Promise<void> => {
     try {
         const users = await User.find().select('-password');//exclude password
         res.json(users)
@@ -144,6 +144,3 @@ const getAllUsers = async (req:Request<{},{},{},{},{}>, res:Response,next:NextFu
         next(error);
     }
 }
-
-
-export default { getUserProfile, deleteUser, updateUserProfile, getAllUsers };
