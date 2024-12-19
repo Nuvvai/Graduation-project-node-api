@@ -91,10 +91,10 @@ export const login_controller = async (req: Request<{}, {}, LoginRequestBody>, r
         let existingUser:IUser | null = null;
         if (nameOrEmail.indexOf('@') === -1) {  //user login with username.
             const UserName:string = nameOrEmail;
-            existingUser = await User.findOne({ name: UserName });
+            existingUser = await User.findOne<IUser>({ name: UserName });
         } else if (nameOrEmail.indexOf('@') !== -1) {   //user login with email.
             const UserEmail:string = nameOrEmail;
-            existingUser = await User.findOne({ email: UserEmail });
+            existingUser = await User.findOne<IUser>({ email: UserEmail });
         }
 
         if (!existingUser) {

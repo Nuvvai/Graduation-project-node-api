@@ -84,7 +84,7 @@ export const deleteUser = async (req:Request<IUserRequestParams>, res:Response, 
 export const updateUserProfile = async (req:Request<IUserRequestParams,{},IUserResponseBody>, res:Response, next:NextFunction):Promise<void> => {
     try {
         const { name }:IUserRequestParams = req.params;
-        const userExists:IUser | null = await User.findOne({ name: name });
+        const userExists:IUser | null = await User.findOne<IUser>({ name: name });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
             return;
@@ -138,7 +138,7 @@ export const updateUserProfile = async (req:Request<IUserRequestParams,{},IUserR
  */
 export const getAllUsers = async (req:Request<{},{},{},{},{}>, res:Response,next:NextFunction):Promise<void> => {
     try {
-        const users = await User.find().select('-password');//exclude password
+        const users = await User.find<IUser>().select('-password');//exclude password
         res.json(users)
     } catch (error) {
         next(error);
