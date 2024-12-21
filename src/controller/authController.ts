@@ -64,7 +64,7 @@ export const register_controller = async (req:Request<{}, {}, RegisterRequestBod
             throw new Error('Server error, secret key not found, cannot send token');
         }
 
-        const token:string = jwt.sign({ id: newUser._id, name: newUser.name, email: newUser.email }, secretKey, { expiresIn: '1d' });
+        const token:string = jwt.sign({ id: newUser._id, name: newUser.username, email: newUser.email }, secretKey, { expiresIn: '1d' });
         res.cookie('jwt-token', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
         res.status(201).json({ result: newUser });
     } catch (error) {
@@ -114,7 +114,7 @@ export const login_controller = async (req: Request<{}, {}, LoginRequestBody>, r
             throw new Error('Server error, secret key not found, cannot send token');
         }
 
-        const token:string = jwt.sign({ id: existingUser._id, name: existingUser.name, email: existingUser.email }, secretKey, { expiresIn: '1d' });
+        const token:string = jwt.sign({ id: existingUser._id, name: existingUser.username, email: existingUser.email }, secretKey, { expiresIn: '1d' });
         res.cookie('jwt-token', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
         res.status(200).json({ result: existingUser })
 

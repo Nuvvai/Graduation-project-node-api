@@ -1,19 +1,30 @@
 import express, { Router } from 'express';
-
 import { getUserProfile, deleteUser, updateUserProfile, getAllUsers } from '../controller/userController';
 
-const router:Router = express.Router();
+const router: Router = express.Router();
 
-//@access — private admin only
+/**
+ * Route for retrieving all users.
+ * @route GET /users
+ */
 router.get('/', getAllUsers);
 
-//@access — private for the authenticated user only
+/**
+ * Route for retrieving a user profile by name.
+ * @route GET /users/:name
+ */
 router.get('/:username', getUserProfile);
 
-//@access — private for the authenticated user only
+/**
+ * Route for deleting a user by name.
+ * @route DELETE /users/:name
+ */
 router.delete('/:username', deleteUser);
 
-//@access — private for the authenticated user only
+/**
+ * Route for updating a user profile by name.
+ * @route PUT /users/:name
+ */
 router.put('/:username', updateUserProfile);
 
 export default router;
