@@ -1,6 +1,8 @@
-const Jenkins = require('jenkins');
+import Jenkins from 'jenkins';
+
 const jenkins = new Jenkins({
     baseUrl: "http://menna:menna@localhost:8080",
     crumbIssuer: true
 });
-module.exports = jenkins;
+
+export default jenkins;

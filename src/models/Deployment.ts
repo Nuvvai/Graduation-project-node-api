@@ -1,6 +1,19 @@
-const mongoose = require('mongoose');
+import mongoose, { Document, Schema } from 'mongoose';
 
-const deploymentSchema = new mongoose.Schema({
+export interface IDeployment extends Document {
+    deploymentName: string;
+    projectName: string;
+    username: string;
+    status: 'No status' | 'Failed' | 'Succeeded';
+    startTime: Date;
+    endTime: Date;
+}
+
+/**
+ * @author Mennatallah Ashraf
+ * @description Mongoose model for deployments.
+ */
+const deploymentSchema: Schema<IDeployment> = new Schema<IDeployment>({
     deploymentName: {
         type: 'string',
         required: true,
@@ -40,4 +53,4 @@ const deploymentSchema = new mongoose.Schema({
     }
 });
 
-module.exports = mongoose.model('Deployment', deploymentSchema)
+export default mongoose.model<IDeployment>('Deployment', deploymentSchema);
