@@ -83,7 +83,7 @@ export const updateUserProfile = async (req: Request<UpdateUserProfileRequestPar
             return;
         }
 
-        const user = userExists;
+        const user: IUser = userExists;
 
         if (newName) user.username = newName;
         if (newEmail) user.email = newEmail;

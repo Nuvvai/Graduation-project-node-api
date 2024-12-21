@@ -6,10 +6,11 @@ interface CustomError extends Error {
 
 /**
  * @author Hazem Sabry
- * @description middleware Server error Handler
- * @param err  the cached error
+ * @description middleware Server error Handler.
+ * @param err  the cached error.
+ * @returns A promise that resolves to the cached error object with the error message and status code returned from the server error handler.
  */
-function errorHandler(err:CustomError, req:Request, res:Response, next:NextFunction):void {
+const errorHandler = async(err:CustomError, req:Request, res:Response, next:NextFunction):Promise<void>=> {
   // Log the error to the console for debugging purposes
   console.error(err.stack);
 
