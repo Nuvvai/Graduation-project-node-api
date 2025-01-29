@@ -1,11 +1,10 @@
-import {join} from 'path';
 import express,{Express, Router} from 'express';
 import mongoose from 'mongoose';
 
-const authRouter:Router = require(join(__dirname, 'routes', 'auth'));
-const projectsRoutes:Router = require(join(__dirname, 'routes', 'projectRoutes'));
-const deploymentRoutes:Router = require(join(__dirname, 'routes', 'deploymentRoutes'));
-const pipelineRoutes:Router = require(join(__dirname, 'routes', 'pipelineRoutes'));
+import authRouter from './routes/auth';
+import projectsRoutes from './routes/projectRoutes';
+import deploymentRoutes from './routes/deploymentRoutes';
+import pipelineRoutes from './routes/pipelineRoutes';
 import userRoutes from './routes/userRoutes';
 import errorHandler from './middleware/errorHandler';
 
