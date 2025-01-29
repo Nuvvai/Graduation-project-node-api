@@ -7,6 +7,9 @@ import deploymentRoutes from './routes/deploymentRoutes';
 import pipelineRoutes from './routes/pipelineRoutes';
 import userRoutes from './routes/userRoutes';
 import errorHandler from './middleware/errorHandler';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 type PORT = string | number;
 
