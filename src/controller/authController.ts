@@ -22,7 +22,7 @@ interface LoginRequestBody {
  * @param req.password - The password of the register user.
  * @returns A promise that resolves when the registration is successful.
  * @throws { Error } if failed to encrypt the password, or create new user, or the environment variable JWT_Token is undefined, or failed sign a JWT token.
- * @route GET /auth/register
+ * @route POST /auth/register
  * @access public 
  */
 export const register_controller = async (req:Request<{}, {}, RegisterRequestBody>, res:Response, next:NextFunction):Promise<void> => {
@@ -55,7 +55,7 @@ export const register_controller = async (req:Request<{}, {}, RegisterRequestBod
         }
 
         const hashedPassword:string = await bcrypt.hash(password, 12);
-        const newUser:IUser = new User({ name, email, password: hashedPassword });
+        const newUser:IUser = new User({ username: name, email, password: hashedPassword });
         await newUser.save();
 
         const secretKey: string | undefined = process.env.JWT_Token;
@@ -63,9 +63,10 @@ export const register_controller = async (req:Request<{}, {}, RegisterRequestBod
             throw new Error('Server error, secret key not found, cannot send token');
         }
 
-        const token:string = jwt.sign({ id: newUser._id, name: newUser.username, email: newUser.email }, secretKey, { expiresIn: '1d' });
-        res.cookie('refreshToken', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
-        res.status(201).json({ result: newUser });
+        const refreshToken: string = jwt.sign({ id: newUser._id, name: newUser.username, email: newUser.email }, secretKey, { expiresIn: '1d' });
+        const accessToken:string = jwt.sign({ id: newUser._id, name: newUser.username, email: newUser.email }, secretKey, { expiresIn: '15m' });
+        res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
+        res.status(200).json({ accessToken })
     } catch (error) {
         next(error);
     }
@@ -78,7 +79,7 @@ export const register_controller = async (req:Request<{}, {}, RegisterRequestBod
  * @param req.password The password of the user to login with.
  * @returns A promise that resolves when the user is logged in successfully.
  * @throws { Error } - If there is an error fetching the user profile, or the password is failed to encrypt, or the environment variable JWT_Token is undefined, or failed sign a JWT token.
- * @route GET /auth/login
+ * @route POST /auth/login
  * @access public 
  */
 export const login_controller = async (req: Request<{}, {}, LoginRequestBody>, res:Response, next:NextFunction):Promise<void> => {
@@ -86,6 +87,10 @@ export const login_controller = async (req: Request<{}, {}, LoginRequestBody>, r
 
     try {
         if (!nameOrEmail || !password) res.status(406).json({ message: "Not accepted, missing parameter" });
+        if (typeof nameOrEmail !== 'string' || nameOrEmail.trim() === '' || typeof password !== 'string' || password.trim() === '') {
+            res.status(400).json({ message: "Invalid parameter: nameOrEmail and password should be a non-empty string" });
+            return;
+        }
 
         let existingUser:IUser | null = null;
         if (nameOrEmail.indexOf('@') === -1) {  //user login with username.
@@ -114,9 +119,9 @@ export const login_controller = async (req: Request<{}, {}, LoginRequestBody>, r
         }
 
         const refreshToken: string = jwt.sign({ id: existingUser._id, name: existingUser.username, email: existingUser.email }, secretKey, { expiresIn: '7d' });
-        const accessToken:string = jwt.sign({ id: existingUser._id, name: existingUser.username, email: existingUser.email }, secretKey, { expiresIn: '7d' });
+        const accessToken:string = jwt.sign({ id: existingUser._id, name: existingUser.username, email: existingUser.email }, secretKey, { expiresIn: '15m' });
         res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
-        res.status(200).json({ result: existingUser, accessToken })
+        res.status(200).json({ accessToken })
 
     } catch (error) {
         next(error);
@@ -126,8 +131,9 @@ export const login_controller = async (req: Request<{}, {}, LoginRequestBody>, r
 /**
  * @author Hazem Sabry
  * @description Controller function for refreshing the accessToken
+ * @param req.
  * @returns a promise that is resolved when the accessToken is refreshed.
- * @route Post /auth/refresh-token
+ * @route POST /auth/refresh-token
  * @access public
  */
 
@@ -153,7 +159,7 @@ export const refreshToken_controller = async (req: Request, res: Response, next:
             if (!decoded ) {
                 res.status(403).json({ message: 'Invalid refresh token' });
             }
-            
+
             const user = decoded as { id: string; username: string , email: string};
             const accessToken: string = jwt.sign({ id: user.id, name: user.username, email: user.email }, secretKey, { expiresIn: '7d' });
             res.status(200).json({ accessToken });
@@ -168,10 +174,9 @@ export const refreshToken_controller = async (req: Request, res: Response, next:
  * @author Hazem Sabry
  * @description Controller function for user logout.
  * @returns A promise that resolves when the user is logged out successfully.
- * @route Post /auth/logout
+ * @route DELETE /auth/logout
  * @access private
  */
-
 export const logout_controller = async(req: Request, res:Response, next:NextFunction):Promise<void> => {
     try {
         res.clearCookie('refreshToken', { httpOnly: true, secure: true, sameSite: 'none' });

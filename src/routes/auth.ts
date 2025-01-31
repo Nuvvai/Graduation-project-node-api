@@ -1,12 +1,18 @@
 import express from 'express';
 const router = express.Router();
 
-import { register_controller, login_controller } from '../controller/authController'
+import { register_controller, login_controller, refreshToken_controller, logout_controller } from '../controller/authController'
 
 // @access public
 router.post('/register', register_controller);
 
 // @access public
 router.post('/login', login_controller);
+
+// @access private
+router.get('/refresh-token', refreshToken_controller);
+
+// @access private
+router.delete('/logout', logout_controller)
 
 export default router;
