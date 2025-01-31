@@ -22,7 +22,7 @@ RUN npm install
 # - Copies the entire project to the working directory
 # - Sets the default command to run the development server
 FROM dependencies AS development
-COPY . .
+COPY ./dist/src .
 
 # Stage 4: Production
 # - Uses the development stage as the starting point
@@ -30,6 +30,8 @@ COPY . .
 # - Installs only production dependencies using npm ci
 # - Changes ownership of the /usr/src/app/src and /usr/src/app/healthcheck directories to node:node
 FROM development as production
+#change at the production stage...
+ENV JWT_Token 3db489c8dfa4e552eb7f3528f1a91277229ec154b0098b46d441e53a6db5659b1442d9285a99b52a551e2c3ac63af9fbdd1d3e9d79e2ca7d8f69381860d20cbb
 ENV NODE_ENV production
 RUN npm ci --only=production
 USER node
