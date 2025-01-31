@@ -4,20 +4,20 @@ import { Request, Response, NextFunction } from 'express';
 
 import User, { IUser } from '../models/User';
 interface RegisterRequestBody {
-    name: string;
+    username: string;
     email: string;
     password: string;
 }
 
 interface LoginRequestBody {
-    nameOrEmail: string;
+    usernameOrEmail: string;
     password: string;
 }
 
 /**
  * @author Hazem Sabry
  * @description Controller function for user registration.
- * @param req.name - The name of the register user.
+ * @param req.name - The username of the register user.
  * @param req.email - The email of the register user.
  * @param req.password - The password of the register user.
  * @returns A promise that resolves when the registration is successful.
@@ -26,7 +26,7 @@ interface LoginRequestBody {
  * @access public 
  */
 export const register_controller = async (req:Request<{}, {}, RegisterRequestBody>, res:Response, next:NextFunction):Promise<void> => {
-    const { name, email, password }:RegisterRequestBody = req.body;
+    const { username, email, password }:RegisterRequestBody = req.body;
 
     try {
         const existingUser:IUser | null = await User.findOne<IUser>({ email: email });
@@ -35,11 +35,11 @@ export const register_controller = async (req:Request<{}, {}, RegisterRequestBod
             return;
         }
 
-        if (!name || !email || !password) {
+        if (!username || !email || !password) {
             res.status(406).json({ message: "Not accepted, missing parameter" });
             return;
-        } else if (name.indexOf('@') !== -1) {
-            res.status(406).json({ message: 'Invalid name can not include \"@\"' }); //not tested yet ...!!
+        } else if (username.indexOf('@') !== -1) {
+            res.status(406).json({ message: 'Invalid username can not include \"@\"' }); //not tested yet ...!!
             return;
         } else if (email.length < 6 || email.indexOf('@') === -1) {
             res.status(406).json({ message: 'Invalid email format' }); //not tested yet ...!!
@@ -55,7 +55,7 @@ export const register_controller = async (req:Request<{}, {}, RegisterRequestBod
         }
 
         const hashedPassword:string = await bcrypt.hash(password, 12);
-        const newUser:IUser = new User({ username: name, email, password: hashedPassword });
+        const newUser:IUser = new User({ username, email, password: hashedPassword });
         await newUser.save();
 
         const secretKey: string | undefined = process.env.JWT_Token;
@@ -63,8 +63,8 @@ export const register_controller = async (req:Request<{}, {}, RegisterRequestBod
             throw new Error('Server error, secret key not found, cannot send token');
         }
 
-        const refreshToken: string = jwt.sign({ id: newUser._id, name: newUser.username, email: newUser.email }, secretKey, { expiresIn: '1d' });
-        const accessToken:string = jwt.sign({ id: newUser._id, name: newUser.username, email: newUser.email }, secretKey, { expiresIn: '15m' });
+        const refreshToken: string = jwt.sign({ id: newUser._id, username: newUser.username, email: newUser.email }, secretKey, { expiresIn: '1d' });
+        const accessToken:string = jwt.sign({ id: newUser._id, username: newUser.username, email: newUser.email }, secretKey, { expiresIn: '15m' });
         res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
         res.status(200).json({ accessToken })
     } catch (error) {
@@ -75,7 +75,7 @@ export const register_controller = async (req:Request<{}, {}, RegisterRequestBod
 /**
  * @author Hazem Sabry
  * @description Controller function for user login.
- * @param req.nameOrEmail The name or email of the user to login with.
+ * @param req.nameOrEmail The username or email of the user to login with.
  * @param req.password The password of the user to login with.
  * @returns A promise that resolves when the user is logged in successfully.
  * @throws { Error } - If there is an error fetching the user profile, or the password is failed to encrypt, or the environment variable JWT_Token is undefined, or failed sign a JWT token.
@@ -83,21 +83,24 @@ export const register_controller = async (req:Request<{}, {}, RegisterRequestBod
  * @access public 
  */
 export const login_controller = async (req: Request<{}, {}, LoginRequestBody>, res:Response, next:NextFunction):Promise<void> => {
-    const { nameOrEmail, password }: LoginRequestBody = req.body;
+    const { usernameOrEmail, password }: LoginRequestBody = req.body;
 
     try {
-        if (!nameOrEmail || !password) res.status(406).json({ message: "Not accepted, missing parameter" });
-        if (typeof nameOrEmail !== 'string' || nameOrEmail.trim() === '' || typeof password !== 'string' || password.trim() === '') {
-            res.status(400).json({ message: "Invalid parameter: nameOrEmail and password should be a non-empty string" });
+        if (!usernameOrEmail || !password) {
+            res.status(406).json({ message: "Not accepted, missing parameter" });
+            return;
+        };
+        if (typeof usernameOrEmail !== 'string' || usernameOrEmail.trim() === '' || typeof password !== 'string' || password.trim() === '') {
+            res.status(400).json({ message: "Invalid parameter: usernameOrEmail and password should be a non-empty string" });
             return;
         }
 
         let existingUser:IUser | null = null;
-        if (nameOrEmail.indexOf('@') === -1) {  //user login with username.
-            const UserName:string = nameOrEmail;
-            existingUser = await User.findOne<IUser>({ name: UserName });
-        } else if (nameOrEmail.indexOf('@') !== -1) {   //user login with email.
-            const UserEmail:string = nameOrEmail;
+        if (usernameOrEmail.indexOf('@') === -1) {  //user login with username.
+            const UserName:string = usernameOrEmail;
+            existingUser = await User.findOne<IUser>({ username: UserName });
+        } else if (usernameOrEmail.indexOf('@') !== -1) {   //user login with email.
+            const UserEmail:string = usernameOrEmail;
             existingUser = await User.findOne<IUser>({ email: UserEmail });
         }
 
@@ -118,8 +121,8 @@ export const login_controller = async (req: Request<{}, {}, LoginRequestBody>, r
             throw new Error('Server error, secret key not found, cannot send token');
         }
 
-        const refreshToken: string = jwt.sign({ id: existingUser._id, name: existingUser.username, email: existingUser.email }, secretKey, { expiresIn: '7d' });
-        const accessToken:string = jwt.sign({ id: existingUser._id, name: existingUser.username, email: existingUser.email }, secretKey, { expiresIn: '15m' });
+        const refreshToken: string = jwt.sign({ id: existingUser._id, username: existingUser.username, email: existingUser.email }, secretKey, { expiresIn: '7d' });
+        const accessToken:string = jwt.sign({ id: existingUser._id, username: existingUser.username, email: existingUser.email }, secretKey, { expiresIn: '15m' });
         res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
         res.status(200).json({ accessToken })
 
@@ -158,10 +161,11 @@ export const refreshToken_controller = async (req: Request, res: Response, next:
             }
             if (!decoded ) {
                 res.status(403).json({ message: 'Invalid refresh token' });
+                return;
             }
 
             const user = decoded as { id: string; username: string , email: string};
-            const accessToken: string = jwt.sign({ id: user.id, name: user.username, email: user.email }, secretKey, { expiresIn: '7d' });
+            const accessToken: string = jwt.sign({ id: user.id, username: user.username, email: user.email }, secretKey, { expiresIn: '7d' });
             res.status(200).json({ accessToken });
         });
 
