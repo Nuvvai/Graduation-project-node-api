@@ -7,15 +7,23 @@ import deploymentRoutes from './routes/deploymentRoutes';
 import pipelineRoutes from './routes/pipelineRoutes';
 import userRoutes from './routes/userRoutes';
 import errorHandler from './middleware/errorHandler';
+import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
+
+//for development phase only
 import dotenv from 'dotenv';
 
 dotenv.config();
+
 
 type PORT = string | number;
 
 const app:Express = express();
 
 app.use(express.json());
+app.use(cookieParser());
+app.use(helmet());
+
 app.use('/auth', authRouter);
 app.use('/projects', projectsRoutes);
 app.use('/deployments', deploymentRoutes);

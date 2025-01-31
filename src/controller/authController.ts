@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 
 import User, { IUser } from '../models/User';
@@ -60,12 +60,11 @@ export const register_controller = async (req:Request<{}, {}, RegisterRequestBod
 
         const secretKey: string | undefined = process.env.JWT_Token;
         if (!secretKey) {
-            res.status(201).json({ result: newUser });
             throw new Error('Server error, secret key not found, cannot send token');
         }
 
         const token:string = jwt.sign({ id: newUser._id, name: newUser.username, email: newUser.email }, secretKey, { expiresIn: '1d' });
-        res.cookie('jwt-token', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
+        res.cookie('refreshToken', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
         res.status(201).json({ result: newUser });
     } catch (error) {
         next(error);
@@ -110,14 +109,73 @@ export const login_controller = async (req: Request<{}, {}, LoginRequestBody>, r
 
         const secretKey: string | undefined = process.env.JWT_Token;
         if (!secretKey) {
-            res.status(200).json({ result: existingUser })
+            res.status(500);
             throw new Error('Server error, secret key not found, cannot send token');
         }
 
-        const token:string = jwt.sign({ id: existingUser._id, name: existingUser.username, email: existingUser.email }, secretKey, { expiresIn: '1d' });
-        res.cookie('jwt-token', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
-        res.status(200).json({ result: existingUser })
+        const refreshToken: string = jwt.sign({ id: existingUser._id, name: existingUser.username, email: existingUser.email }, secretKey, { expiresIn: '7d' });
+        const accessToken:string = jwt.sign({ id: existingUser._id, name: existingUser.username, email: existingUser.email }, secretKey, { expiresIn: '7d' });
+        res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
+        res.status(200).json({ result: existingUser, accessToken })
 
+    } catch (error) {
+        next(error);
+    }
+}
+
+/**
+ * @author Hazem Sabry
+ * @description Controller function for refreshing the accessToken
+ * @returns a promise that is resolved when the accessToken is refreshed.
+ * @route Post /auth/refresh-token
+ * @access public
+ */
+
+export const refreshToken_controller = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const secretKey: string | undefined = process.env.JWT_Token;
+        if (!secretKey) {
+            res.status(500);
+            throw new Error('Server error, secret key not found, cannot refresh accessToken');
+        }
+
+        const refreshToken: string | undefined = req.cookies.refreshToken;
+        if (!refreshToken) {
+            res.status(401).json({ message: 'Unauthorized, no refreshToken provided' });
+            return; 
+        }
+
+        jwt.verify(refreshToken, secretKey, (err: any, decoded: any) => {
+            if (err) {
+                res.status(500);
+                throw new Error('Server error, failed to verify refresh token');
+            }
+            if (!decoded ) {
+                res.status(403).json({ message: 'Invalid refresh token' });
+            }
+            
+            const user = decoded as { id: string; username: string , email: string};
+            const accessToken: string = jwt.sign({ id: user.id, name: user.username, email: user.email }, secretKey, { expiresIn: '7d' });
+            res.status(200).json({ accessToken });
+        });
+
+    } catch (err) {
+        next(err);
+    }
+}
+
+/**
+ * @author Hazem Sabry
+ * @description Controller function for user logout.
+ * @returns A promise that resolves when the user is logged out successfully.
+ * @route Post /auth/logout
+ * @access private
+ */
+
+export const logout_controller = async(req: Request, res:Response, next:NextFunction):Promise<void> => {
+    try {
+        res.clearCookie('refreshToken', { httpOnly: true, secure: true, sameSite: 'none' });
+        res.status(200).json({ message: 'Logged out successfully' });
     } catch (error) {
         next(error);
     }
