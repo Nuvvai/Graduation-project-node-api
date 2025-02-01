@@ -8,7 +8,6 @@ import pipelineRoutes from './routes/pipelineRoutes';
 import userRoutes from './routes/userRoutes';
 import errorHandler from './middleware/errorHandler';
 import cookieParser from 'cookie-parser';
-import csurf from 'csurf';
 import helmet from 'helmet';
 import cors from 'cors';
 
@@ -22,19 +21,10 @@ type PORT = string | number;
 
 const app: Express = express();
 
-const csrfProtection = csurf({ cookie: true });
-
 app.use(express.json());
 app.use(cookieParser());
 app.use(helmet());
 app.use(cors({ origin: "http://localhost:80", credentials: true }));
-
-// app.use(csrfProtection);
-
-app.get("/csrf-token", (req, res) => {
-  res.json({ csrfToken: req.csrfToken() });
-});
-
 
 app.use('/auth', authRouter);
 app.use('/projects', projectsRoutes);
