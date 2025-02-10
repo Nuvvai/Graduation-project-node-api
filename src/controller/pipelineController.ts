@@ -67,10 +67,11 @@ export const createPipeline = async (
     next: NextFunction
 ): Promise<void> => {
     const { username, projectName } : CreatePipelineRequestParams= req.params;
-    const { pipelineName, gitBranch } : CreatePipelineRequestBody = req.body;
+    const { gitBranch } : CreatePipelineRequestBody = req.body;
+    const pipelineName = `${projectName}-pipeline`;
     // const { gitUsername, gitPassword } : CreatePipelineRequestBody = req.body;
     try{
-        const userExists = await User.findOne<IUser>({ name: username });
+        const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({message: 'User not found!'})  
             return;
@@ -84,6 +85,10 @@ export const createPipeline = async (
         if (existingPipeline) {
             res.status(400).json({ message: 'Pipeline already exists!' });
             return;
+        }
+        const existingView = await jenkins.view.exists(username);
+        if (!existingView) {
+            await jenkins.view.create(username, "list");
         }
         const repoUrl = projectExists.repositoryUrl;
         const newPipeline = new Pipeline({
@@ -139,6 +144,7 @@ export const createPipeline = async (
             .end({ prettyPrint: true });
 
         await jenkins.job.create(pipelineName, pipelineJobXML);
+        await jenkins.view.add(username, pipelineName);
         await newPipeline.save();
         res.status(201).json({ message: 'Pipeline created successfully', pipeline: newPipeline });   
     }catch(error){
@@ -159,7 +165,7 @@ export const triggerBuild = async (
 ): Promise<void> => {
   const { username, projectName, pipelineName } : TriggerBuildRequestParams = req.params;
   try{
-    const userExists = await User.findOne<IUser>({ name: username });
+    const userExists = await User.findOne<IUser>({ username });
     if (!userExists) {
         res.status(404).json({message: 'User not found!'})  
         return;
@@ -198,7 +204,7 @@ export const getBuildStatus = async (
   const {username, projectName, pipelineName} : GetBuildStatusRequestParams = req.params;
   const buildNumber = parseInt(req.params.buildNumber);
   try{
-    const userExists = await User.findOne<IUser>({ name: username });
+    const userExists = await User.findOne<IUser>({ username });
     if (!userExists) {
         res.status(404).json({message: 'User not found!'})  
         return;
@@ -241,7 +247,7 @@ export const deletePipeline = async (
 ): Promise<void> => {
   const{username, projectName, pipelineName} : DeletePipelineRequestParams =  req.params;
   try{
-    const userExists = await User.findOne<IUser>({ name: username });
+    const userExists = await User.findOne<IUser>({ username });
     if (!userExists) {
         res.status(404).json({message: 'User not found!'})  
         return;
@@ -265,53 +271,6 @@ export const deletePipeline = async (
 
 }
 
-// not tested yet------------------------------------------------------------------
-
-/**
- * @author Mennatallah Ashraf
- * @des Controller function for stopping a build.
- * @route POST /pipelines/:username/:projectName/:pipelineName/:buildNumber
- * @access private
- */
-export const stopBuild = async (
-  req: Request<StopBuildRequestParams>,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const { username, projectName, pipelineName} : StopBuildRequestParams= req.params;
-  const buildNumber = parseInt(req.params.buildNumber);
-  try{
-    const userExists = await User.findOne<IUser>({ name: username });
-    if (!userExists) {
-        res.status(404).json({message: 'User not found!'})  
-        return;
-    }
-    const projectExists = await Project.findOne<IProject>({ username, projectName });
-    if (!projectExists) {
-        res.status(404).json({message: 'Project not found!'})
-        return;
-    }
-    const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName, pipelineName});
-    if (!existingPipeline) {
-        res.status(404).json({ message: 'Pipeline not found!' });
-        return;
-    }
-    if (existingPipeline.lastBuildNumber === 0){
-        res.status(400).json({message: "There are no builds for this pipeline!"})
-        return;
-    }
-    if (existingPipeline.lastBuildNumber < buildNumber){
-        res.status(400).json({message: "There is no build with this number!"})
-        return;
-    }
-    await jenkins.build.stop(pipelineName, buildNumber);
-    res.status(200).json({message: "Build is stopped successfully!"})
-
-  }catch(error){
-    next(error);
-  }
-}
-
 /**
  * @author Mennatallah Ashraf
  * @des Controller function for updating pipeline script.
@@ -326,7 +285,7 @@ export const updatePipelineScript = async (
   const { username, projectName, pipelineName } :UpdatePipelineScriptRequestParams = req.params;
   const { newScript } : UpdatePipelineScriptRequestBody = req.body;
   try{
-    const userExists = await User.findOne<IUser>({ name: username });
+    const userExists = await User.findOne<IUser>({ username });
     if (!userExists) {
         res.status(404).json({message: 'User not found!'})  
         return;
@@ -359,4 +318,51 @@ export const updatePipelineScript = async (
   }
 }
 
-// //TODO: implement getBuildLogs
+
+// not tested yet------------------------------------------------------------------
+
+/**
+ * @author Mennatallah Ashraf
+ * @des Controller function for stopping a build.
+ * @route POST /pipelines/:username/:projectName/:pipelineName/:buildNumber
+ * @access private
+ */
+export const stopBuild = async (
+  req: Request<StopBuildRequestParams>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const { username, projectName, pipelineName} : StopBuildRequestParams= req.params;
+  const buildNumber = parseInt(req.params.buildNumber);
+  try{
+    const userExists = await User.findOne<IUser>({ username });
+    if (!userExists) {
+        res.status(404).json({message: 'User not found!'})  
+        return;
+    }
+    const projectExists = await Project.findOne<IProject>({ username, projectName });
+    if (!projectExists) {
+        res.status(404).json({message: 'Project not found!'})
+        return;
+    }
+    const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName, pipelineName});
+    if (!existingPipeline) {
+        res.status(404).json({ message: 'Pipeline not found!' });
+        return;
+    }
+    if (existingPipeline.lastBuildNumber === 0){
+        res.status(400).json({message: "There are no builds for this pipeline!"})
+        return;
+    }
+    if (existingPipeline.lastBuildNumber < buildNumber){
+        res.status(400).json({message: "There is no build with this number!"})
+        return;
+    }
+    await jenkins.build.stop(pipelineName, buildNumber); // error here
+    res.status(200).json({message: "Build is stopped successfully!"})
+
+  }catch(error){
+    next(error);
+  }
+}
+
