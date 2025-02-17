@@ -1,6 +1,7 @@
 import Pipeline, {IPipeline} from '../models/Pipeline';
 import Project, {IProject} from '../models/Project';
 import User, { IUser } from '../models/User';
+import { generatePipelineScript } from "../utils/generatePipelineScript";
 import jenkins from '../utils/jenkinsClient';
 import { create } from 'xmlbuilder2';
 import xml2js from 'xml2js';
@@ -68,7 +69,7 @@ export const createPipeline = async (
 ): Promise<void> => {
     const { username, projectName } : CreatePipelineRequestParams= req.params;
     const { gitBranch } : CreatePipelineRequestBody = req.body;
-    const pipelineName = `${projectName}-pipeline`;
+    const pipelineName = `${username}-${projectName}-pipeline`;
     // const { gitUsername, gitPassword } : CreatePipelineRequestBody = req.body;
     try{
         const userExists = await User.findOne<IUser>({ username });
@@ -90,7 +91,10 @@ export const createPipeline = async (
         if (!existingView) {
             await jenkins.view.create(username, "list");
         }
-        const repoUrl = projectExists.repositoryUrl;
+
+        // remove database if not needed
+        const { frontendFramework, backendFramework, database, repositoryUrl } = projectExists;
+
         const newPipeline = new Pipeline({
             pipelineName,
             username,
@@ -108,27 +112,7 @@ export const createPipeline = async (
         // };
         // await jenkins.credentials.create(credentialsOptions);
         //------------------------------------------------------------------------
-        const pipelineScript = `pipeline {
-            agent any
-            stages {
-              stage('Checkout') {
-                steps {
-                    git branch: '${gitBranch}', 
-                    url: '${repoUrl}'
-                }
-              }
-              stage('Build') {
-                steps {
-                  sh 'echo "Building the project..."'
-                }
-              }
-              stage('Deploy') {
-                steps {
-                  sh 'echo "Deploying the project..."'
-                }
-              }
-            }
-        }`;
+        const pipelineScript = generatePipelineScript(frontendFramework, backendFramework, username, projectName, gitBranch, repositoryUrl);;
       
         const pipelineJobXML = create({ version: '1.0', encoding: 'UTF-8' })
             .ele('flow-definition', { plugin: 'workflow-job@2.40' })
@@ -275,7 +259,7 @@ export const deletePipeline = async (
  * @author Mennatallah Ashraf
  * @des Controller function for updating pipeline script.
  * @route PUT /pipelines/:username/:projectName/:pipelineName
- * @access private
+ * @access admin
  */
 export const updatePipelineScript = async (
   req: Request<UpdatePipelineScriptRequestParams, {}, UpdatePipelineScriptRequestBody>,
