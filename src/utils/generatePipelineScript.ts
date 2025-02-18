@@ -1,5 +1,16 @@
 import { getInstallCommand, getBuildCommand } from "./commandHelpers";
 
+/**
+ * @author: Mennatallah Ashraf
+ * @description: Generate a Jenkins pipeline script.
+ * @param frontendFramework: The frontend framework used in the project.
+ * @param backendFramework: The backend framework used in the project.
+ * @param username: The username of the project owner.
+ * @param projectName: The name of the project.
+ * @param gitBranch: The git branch to be used in the pipeline.
+ * @param repositoryUrl: The URL of the project's repository.
+ * @returns: A string representing the Jenkins pipeline script.
+ */
 export const generatePipelineScript = (frontendFramework: string, backendFramework: string, username: string, projectName: string, gitBranch: string, repositoryUrl: string): string => {
   return `
 pipeline {

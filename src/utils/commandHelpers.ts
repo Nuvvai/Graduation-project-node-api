@@ -1,3 +1,10 @@
+/**
+* @author Mennatallah Ashraf
+* @description Get the install command for a given technology and type.
+* @param tech The technology to get the install command for.
+* @param type The type of the technology (frontend or backend).
+* @returns The install command for the given technology and type.
+*/
 export const getInstallCommand = (tech: string, type: "frontend" | "backend"): string => {
     switch (tech.toLowerCase()) {
       case "react":
@@ -14,8 +21,15 @@ export const getInstallCommand = (tech: string, type: "frontend" | "backend"): s
         return `echo "Unknown ${type} technology: ${tech}"`;
     }
   };
-  
-  export const getBuildCommand = (tech: string, type: "frontend" | "backend"): string => {
+
+/**
+ * @author Mennatallah Ashraf
+ * @description Get the build command for a given technology and type.
+ * @param tech The technology to get the build command for.
+ * @param type The type of the technology (frontend or backend).
+ * @returns The build command for the given technology and type.
+ */
+export const getBuildCommand = (tech: string, type: "frontend" | "backend"): string => {
     switch (tech.toLowerCase()) {
       case "react":
       case "vue":
