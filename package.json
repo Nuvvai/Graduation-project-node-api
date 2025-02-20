@@ -7,7 +7,7 @@
     "start": "npm run build && node dist/src/app.js",
     "dev": "nodemon src/app.ts",
     "build": "tsc",
-    "test": "jest",
+    "test": "jest --detectOpenHandles",
     "lint": "eslint src/**/*.ts",
     "typeCheck": "tsc --noEmit",
     "precommit": "npm run lint && npm test"

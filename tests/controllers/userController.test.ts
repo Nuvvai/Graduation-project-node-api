@@ -1,6 +1,7 @@
 import request from 'supertest';
 import app from '../../src/app';
 import User from '../../src/models/User';
+import mongoose from 'mongoose';
 
 
 jest.mock('../../src/models/User');
@@ -37,3 +38,8 @@ describe('User Controller - getAllUsers', () => {
     expect(response.status).toBe(500);
   });
 });
+
+afterAll(async () => {
+  await mongoose.connection.close();
+});
+
