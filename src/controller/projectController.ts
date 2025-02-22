@@ -48,7 +48,7 @@ export const createProject = async (
             return;
         }
 
-        const userExists = await User.findOne<IUser>({ name: username });
+        const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
             return;
@@ -90,7 +90,7 @@ export const getAllProjects = async (
 ): Promise<void> => {
     const { username } : GetAllProjectsRequestParams = req.params;
     try {
-        const userExists = await User.findOne<IUser>({ name: username });
+        const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
             return;
@@ -122,7 +122,7 @@ export const deleteProject = async (
             return;
         }
 
-        const userExists = await User.findOne<IUser>({ name: username });
+        const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
             return;
@@ -160,7 +160,7 @@ export const deleteAllProjects = async (
             return;
         }
 
-        const userExists = await User.findOne<IUser>({ name: username });
+        const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
             return;

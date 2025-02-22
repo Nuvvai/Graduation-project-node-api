@@ -8,6 +8,9 @@ export interface IProject extends Document {
     backendFramework: 'Node.js' | 'Golang' | 'Laravel' | 'Flask' | 'Django';
     database: 'MongoDB' | 'Redis' | 'MySQL' | 'PostgreSQL' | 'SQLite';
     description?: string;
+    // add them if needed
+    // buildCommand: string;
+    // startCommand: string;
     createdAt: Date;
 }
 
@@ -57,6 +60,14 @@ const projectSchema: Schema<IProject> = new Schema<IProject>({
     description: {
         type: String,
     },
+    // buildCommand:{
+    //     type: String,
+    //     required: true,
+    // },
+    // startCommand:{
+    //     type: String,
+    //     required: true,
+    // },
     createdAt: {
         type: Date,
         default: Date.now,
