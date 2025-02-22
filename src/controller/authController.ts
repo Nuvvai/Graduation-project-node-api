@@ -1,21 +1,24 @@
 import bcrypt from 'bcryptjs';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
+import ms from 'ms';
 
 import User, { IUser } from '../models/User';
+
+const refreshTokenExpiresIn: ms.StringValue = '7d'
+const accessTokenExpiresIn: ms.StringValue = '15m'
 
 interface IRefreshToken_cookiesProperty{
     httpOnly: boolean;
     secure: boolean;
-    sameSite: boolean | 'lax' | 'strict' | undefined;
-    Domain?: string;
-    path?: string;
-    partitioned?: boolean;
+    sameSite: boolean | 'lax' | 'strict' | undefined | "none";
+    Domain: string;
+    path: string;
     maxAge: number;
 }
 
-const domainName: string = 'http://localhost:80';
-const refreshToken_cookiesProperty: IRefreshToken_cookiesProperty = { httpOnly: true, secure: true, sameSite: 'lax', Domain: domainName, path: '/', partitioned: true, maxAge: 7 * 24 * 60 * 60 * 1000 };
+const FRONTEND_DOMAIN_NAME: string = process.env.FRONTEND_DOMAIN_NAME || 'http://localhost:5173';
+const refreshToken_cookiesProperty: IRefreshToken_cookiesProperty = { httpOnly: true, secure: true, sameSite: 'none', Domain: FRONTEND_DOMAIN_NAME, path: '/', maxAge: 7 * 24 * 60 * 60 * 1000 };
 
 interface RegisterRequestBody {
     username: string;
@@ -28,12 +31,18 @@ interface LoginRequestBody {
     password: string;
 }
 
+export interface IJwtSignPayload  {
+    id: string,
+    username: string,
+    email: string
+}
+
 /**
  * @author Hazem Sabry
  * @description Controller function for user registration.
- * @param req.username - The username of the register user.
- * @param req.email - The email of the register user.
- * @param req.password - The password of the register user.
+ * @param req.body.username - The username of the register user.
+ * @param req.body.email - The email of the register user.
+ * @param req.body.password - The password of the register user.
  * @returns A promise that resolves when the registration is successful.
  * @throws { Error } if failed to encrypt the password, or create new user, or the environment variable JWT_Token is undefined, or failed sign a JWT token.
  * @route POST /auth/register
@@ -77,8 +86,8 @@ export const register_controller = async (req:Request<{}, {}, RegisterRequestBod
             throw new Error('Server error, secret key not found, cannot send token');
         }
 
-        const refreshToken: string = jwt.sign({ id: newUser._id, username: newUser.username, email: newUser.email }, secretKey, { expiresIn: '1d' });
-        const accessToken:string = jwt.sign({ id: newUser._id, username: newUser.username, email: newUser.email }, secretKey, { expiresIn: '15m' });
+        const refreshToken: string = jwt.sign({ id: newUser._id, username: newUser.username, email: newUser.email }, secretKey, { expiresIn: refreshTokenExpiresIn });
+        const accessToken:string = jwt.sign({ id: newUser._id, username: newUser.username, email: newUser.email }, secretKey, { expiresIn: accessTokenExpiresIn });
         res.cookie('refreshToken', refreshToken, refreshToken_cookiesProperty);
         res.status(200).json({ accessToken })
     } catch (error) {
@@ -89,8 +98,8 @@ export const register_controller = async (req:Request<{}, {}, RegisterRequestBod
 /**
  * @author Hazem Sabry
  * @description Controller function for user login.
- * @param req.usernameOrEmail The username or email of the user to login with.
- * @param req.password The password of the user to login with.
+ * @param req.body.usernameOrEmail The username or email of the user to login with.
+ * @param req.body.password The password of the user to login with.
  * @returns A promise that resolves when the user is logged in successfully.
  * @throws { Error } - If there is an error fetching the user profile, or the password is failed to encrypt, or the environment variable JWT_Token is undefined, or failed sign a JWT token.
  * @route POST /auth/login
@@ -135,10 +144,10 @@ export const login_controller = async (req: Request<{}, {}, LoginRequestBody>, r
             throw new Error('Server error, secret key not found, cannot send token');
         }
 
-        const refreshToken: string = jwt.sign({ id: existingUser._id, username: existingUser.username, email: existingUser.email }, secretKey, { expiresIn: '7d' });
-        const accessToken:string = jwt.sign({ id: existingUser._id, username: existingUser.username, email: existingUser.email }, secretKey, { expiresIn: '15m' });
+        const refreshToken: string = jwt.sign({ id: existingUser._id, username: existingUser.username, email: existingUser.email }, secretKey, { expiresIn: refreshTokenExpiresIn });
+        //const accessToken:string = jwt.sign({ id: existingUser._id, username: existingUser.username, email: existingUser.email }, secretKey, { expiresIn: accessTokenExpiresIn });
         res.cookie('refreshToken', refreshToken, refreshToken_cookiesProperty);
-        res.status(200).json({ accessToken })
+        res.status(200).json({ username: existingUser.username });
 
     } catch (error) {
         next(error);
@@ -148,7 +157,7 @@ export const login_controller = async (req: Request<{}, {}, LoginRequestBody>, r
 /**
  * @author Hazem Sabry
  * @description Controller function for refreshing the accessToken
- * @param req.
+ * @param req.cookies.refreshToken The refresh token to be used to refresh the accessToken.
  * @returns a promise that is resolved when the accessToken is refreshed.
  * @route GET /auth/refresh-token
  * @access public
@@ -178,8 +187,8 @@ export const refreshToken_controller = async (req: Request, res: Response, next:
                 return;
             }
 
-            const user = decoded as { id: string; username: string , email: string};
-            const accessToken: string = jwt.sign({ id: user.id, username: user.username, email: user.email }, secretKey, { expiresIn: '7d' });
+            const user = decoded as IJwtSignPayload;
+            const accessToken: string = jwt.sign({ id: user.id, username: user.username, email: user.email }, secretKey, { expiresIn: accessTokenExpiresIn });
             res.status(200).json({ accessToken });
         });
 

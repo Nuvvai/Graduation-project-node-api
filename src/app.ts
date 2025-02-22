@@ -13,9 +13,12 @@ import cors from 'cors';
 
 //Section for development phase only
 import dotenv from 'dotenv';
+import { verifyToken } from './middleware/verifyToken';
 
 dotenv.config();
 //
+
+const FRONTEND_DOMAIN_NAME: string = process.env.FRONTEND_DOMAIN_NAME || "http://localhost:5173";
 
 type PORT = string | number;
 
@@ -24,9 +27,11 @@ const app: Express = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(helmet());
-app.use(cors({ origin: "http://localhost:80", credentials: true }));
+app.use(cors({ origin: FRONTEND_DOMAIN_NAME, credentials: true }));
+
 
 app.use('/auth', authRouter);
+app.use(verifyToken);
 app.use('/projects', projectsRoutes);
 app.use('/deployments', deploymentRoutes);
 app.use('/pipelines', pipelineRoutes);
