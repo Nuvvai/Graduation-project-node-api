@@ -2,10 +2,10 @@
   "name": "graduation-project-backend",
   "version": "1.0.0",
   "description": "Graduation_Project_Backend api for the DevOps as a Service (DaaS) project",
-  "main": "src/app.ts",
+  "main": "src/server.ts",
   "scripts": {
-    "start": "npm run build && node dist/src/app.js",
-    "dev": "nodemon src/app.ts",
+    "start": "npm run build && node dist/src/server.js",
+    "dev": "nodemon src/server.ts",
     "build": "tsc",
     "test": "jest --detectOpenHandles",
     "lint": "eslint src/**/*.ts",
