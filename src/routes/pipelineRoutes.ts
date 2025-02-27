@@ -1,41 +1,43 @@
+import { verifyToken } from '../middleware/verifyToken';
 import express, { Router } from 'express';
 import { createPipeline, triggerBuild, getBuildStatus, deletePipeline, stopBuild, updatePipelineScript } from '../controller/pipelineController';
 const router: Router = express.Router();
 
+
 /**
  * Route for creating a pipeline for a user and project.
- * @route POST /pipelines/:username/:projectName
+ * @route POST /pipelines/:projectName
  */
-router.post('/:username/:projectName', createPipeline);
+router.post<{ projectName: string }>('/:projectName', verifyToken, createPipeline);
 
 /**
  * Route for triggering a build for a specific pipeline.
- * @route POST /pipelines/:username/:projectName/:pipelineName
+ * @route POST /pipelines/:projectName/:pipelineName
  */
-router.post('/:username/:projectName/:pipelineName', triggerBuild);
+router.post<{ projectName: string, pipelineName: string }>('/:projectName/:pipelineName', verifyToken, triggerBuild);
 
 /**
  * Route for retrieving the build status of a specific pipeline.
- * @route GET /pipelines/:username/:projectName/:pipelineName/:buildNumber/status
+ * @route GET /pipelines/:projectName/:pipelineName/:buildNumber/status
  */
-router.get('/:username/:projectName/:pipelineName/:buildNumber/status', getBuildStatus);
+router.get<{ projectName: string, pipelineName: string, buildNumber: string }>('/:projectName/:pipelineName/:buildNumber/status', verifyToken, getBuildStatus);
 
 /**
  * Route for deleting a specific pipeline by username, project name, and pipeline name.
- * @route DELETE /pipelines/:username/:projectName/:pipelineName
+ * @route DELETE /pipelines/:projectName/:pipelineName
  */
-router.delete('/:username/:projectName/:pipelineName', deletePipeline);
+router.delete<{ projectName: string, pipelineName: string }>('/:projectName/:pipelineName', verifyToken, deletePipeline);
 
 /**
  * Route for stopping a build of a specific pipeline.
- * @route POST /pipelines/:username/:projectName/:pipelineName/:buildNumber
+ * @route POST /pipelines/:projectName/:pipelineName/:buildNumber
  */
-router.post('/:username/:projectName/:pipelineName/:buildNumber', stopBuild);
+router.post<{ projectName: string, pipelineName: string, buildNumber: string }>('/:projectName/:pipelineName/:buildNumber', verifyToken, stopBuild);
 
 /**
  * Route for updating the pipeline script for a specific pipeline.
- * @route PUT /pipelines/:username/:projectName/:pipelineName
+ * @route PUT /pipelines/:projectName/:pipelineName
  */
-router.put('/:username/:projectName/:pipelineName', updatePipelineScript);
+router.put<{ projectName: string, pipelineName: string }>('/:projectName/:pipelineName', verifyToken, updatePipelineScript);
 
 export default router;
