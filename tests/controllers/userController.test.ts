@@ -2,11 +2,24 @@ import request from 'supertest';
 import app from '../../src/app';
 import User from '../../src/models/User';
 import mongoose from 'mongoose';
-
+import jwt from 'jsonwebtoken';
 
 jest.mock('../../src/models/User');
+jest.mock('jsonwebtoken');
 
 describe('User Controller - getAllUsers', () => {
+  let token: string;
+
+  beforeEach(() => {
+    process.env.JWT_Token = "secret_key";
+
+    (jwt.verify as jest.Mock).mockImplementation((token, secret, callback) => {
+      callback(null, { username: "testuser" });
+    });
+
+    token = 'mockedToken';
+  });
+
   afterEach(() => {
     jest.clearAllMocks();
   });
@@ -21,7 +34,12 @@ describe('User Controller - getAllUsers', () => {
       select: jest.fn().mockResolvedValue(mockUsers),
     });
 
-    const response = await request(app).get('/users');
+    const response = await request(app)
+      .get('/users')
+      .set('Authorization', `Bearer ${token}`);
+
+    console.log("Response status:", response.status);
+    console.log("Response body:", response.body);
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(mockUsers);
@@ -33,7 +51,9 @@ describe('User Controller - getAllUsers', () => {
       select: jest.fn().mockRejectedValue(new Error('Database error')),
     });
 
-    const response = await request(app).get('/users');
+    const response = await request(app)
+      .get('/users')
+      .set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(500);
   });
@@ -42,4 +62,3 @@ describe('User Controller - getAllUsers', () => {
 afterAll(async () => {
   await mongoose.connection.close();
 });
-
