@@ -4,5 +4,12 @@ module.exports = {
   testEnvironment: 'node',
   moduleFileExtensions: ['ts', 'js'],
   testMatch: ['**/tests/**/*.test.ts'],
-  verbose: true
+  verbose: true,
+  collectCoverage: true,
+  coverageDirectory: "coverage",
+  coverageReporters: ["json", "lcov", "text", "clover"],
+  reporters: [
+    "default",
+    ["jest-junit", { outputDirectory: "test-results", outputName: "junit.xml" }]
+  ]
 };
