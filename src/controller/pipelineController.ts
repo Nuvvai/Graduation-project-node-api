@@ -92,8 +92,7 @@ export const createPipeline = async (
             await jenkins.view.create(username, "list");
         }
 
-        // remove database if not needed
-        const { frontendFramework, backendFramework, database, repositoryUrl } = projectExists;
+        const { framework, repositoryUrl } = projectExists;
 
         const newPipeline = new Pipeline({
             pipelineName,
@@ -112,7 +111,7 @@ export const createPipeline = async (
         // };
         // await jenkins.credentials.create(credentialsOptions);
         //------------------------------------------------------------------------
-        const pipelineScript = generatePipelineScript(frontendFramework, backendFramework, username, projectName, gitBranch, repositoryUrl);;
+        const pipelineScript = generatePipelineScript(framework, username, gitBranch, repositoryUrl);;
       
         const pipelineJobXML = create({ version: '1.0', encoding: 'UTF-8' })
             .ele('flow-definition', { plugin: 'workflow-job@2.40' })

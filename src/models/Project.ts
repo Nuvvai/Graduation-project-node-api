@@ -4,9 +4,7 @@ export interface IProject extends Document {
     projectName: string;
     username: string;
     repositoryUrl: string;
-    frontendFramework: 'React' | 'Angular' | 'Vue.js' | 'Wordpress' | 'Svelte' | 'Vanilla JS';
-    backendFramework: 'Node.js' | 'Golang' | 'Laravel' | 'Flask' | 'Django';
-    database: 'MongoDB' | 'Redis' | 'MySQL' | 'PostgreSQL' | 'SQLite';
+    framework: 'React' | 'Angular' | 'VueJS' | 'Wordpress' | 'Svelte' | 'VanillaJS'| 'NodeJS' | 'Golang' | 'Laravel' | 'Flask' | 'Django' | 'PHP';
     description?: string;
     // add them if needed
     // buildCommand: string;
@@ -42,20 +40,10 @@ const projectSchema: Schema<IProject> = new Schema<IProject>({
         required: true,
         unique: true,
     },
-    frontendFramework: {
+    framework: {
         type: String,
         required: true,
-        enum: ['React', 'Angular', 'Vue.js', 'Wordpress', 'Svelte', 'Vanilla JS'],
-    },
-    backendFramework: {
-        type: String,
-        required: true,
-        enum: ['Node.js', 'Golang', 'Laravel', 'Flask', 'Django'],
-    },
-    database: {
-        type: String,
-        required: true,
-        enum: ['MongoDB', 'Redis', 'MySQL', 'PostgreSQL', 'SQLite'],
+        enum: ['React', 'Angular', 'VueJS', 'Wordpress', 'Svelte', 'VanillaJS', 'NodeJS', 'Golang', 'Laravel', 'Flask', 'Django', 'PHP'],
     },
     description: {
         type: String,
