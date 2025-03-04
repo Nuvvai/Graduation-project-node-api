@@ -60,7 +60,7 @@ export const getUserProfile = async (req: Request<GetUserProfileRequestParams>, 
 /**
  * @author Mennatallah Ashraf
  * @des Controller function for deleting a user by name.
- * @route DELETE /users/:name
+ * @route DELETE /users/:username
  * @access private
  */
 export const deleteUser = async (req: Request<DeleteUserRequestParams>, res: Response, next: NextFunction): Promise<void> => {
@@ -97,7 +97,7 @@ export const deleteUser = async (req: Request<DeleteUserRequestParams>, res: Res
 /**
  * @author Mennatallah Ashraf
  * @des Controller function for updating a user profile.
- * @route PUT /users/:name
+ * @route PUT /users/:username
  * @access private
  */
 export const updateUserProfile = async (req: Request<UpdateUserProfileRequestParams, {}, UpdateUserProfileRequestBody>, res: Response, next: NextFunction): Promise<void> => {
