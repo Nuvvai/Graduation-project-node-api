@@ -7,17 +7,9 @@ import { create } from 'xmlbuilder2';
 import xml2js from 'xml2js';
 import { Request, Response, NextFunction } from 'express';
 import { error } from 'console';
-import { IJwtSignPayload } from './authController';
-
-declare global {
-  namespace Express {
-    interface Request {
-      user?: IJwtSignPayload;
-    }
-  }
-}
 
 interface CreatePipelineRequestParams {
+    username: string;
     projectName: string;
 }
 
@@ -29,28 +21,33 @@ interface CreatePipelineRequestBody {
 }
 
 interface TriggerBuildRequestParams {
+    username: string;
     projectName: string;
     pipelineName: string;
 }
 
 interface GetBuildStatusRequestParams {
+    username: string;
     projectName: string;
     pipelineName: string;
     buildNumber: string;
 }
 
 interface DeletePipelineRequestParams {
+    username: string;
     projectName: string;
     pipelineName: string;
 }
 
 interface StopBuildRequestParams {
+    username: string;
     projectName: string;
     pipelineName: string;
     buildNumber: string;
 }
 
 interface UpdatePipelineScriptRequestParams {
+    username: string;
     projectName: string;
     pipelineName: string;
 }
@@ -59,12 +56,10 @@ interface UpdatePipelineScriptRequestBody {
     newScript: string;
 }
 
-
-
 /**
  * @author Mennatallah Ashraf
  * @des Controller function for creating a new pipeline for a project.
- * @route POST /pipelines/:projectName
+ * @route POST /pipelines/:username/:projectName
  * @access private
  */
 export const createPipeline = async (
@@ -72,12 +67,7 @@ export const createPipeline = async (
     res: Response,
     next: NextFunction
 ): Promise<void> => {
-    if (!req.user) {
-      res.status(401).json({ message: "Authentication required!" });
-      return;
-    }
-    const username = req.user.username;
-    const { projectName } : CreatePipelineRequestParams= req.params;
+    const { username, projectName } : CreatePipelineRequestParams= req.params;
     const { gitBranch } : CreatePipelineRequestBody = req.body;
     const pipelineName = `${username}-${projectName}-pipeline`;
     // const { gitUsername, gitPassword } : CreatePipelineRequestBody = req.body;
@@ -148,7 +138,7 @@ export const createPipeline = async (
 /**
  * @author Mennatallah Ashraf
  * @des Controller function for triggering build for a pipeline.
- * @route POST /pipelines/:projectName/pipelineName
+ * @route POST /pipelines/:username/:projectName/pipelineName
  * @access private
  */
 export const triggerBuild = async (
@@ -156,12 +146,7 @@ export const triggerBuild = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  if (!req.user) {
-    res.status(401).json({ message: "Authentication required!" });
-    return;
-  }
-  const username = req.user.username;
-  const { projectName, pipelineName } : TriggerBuildRequestParams = req.params;
+  const { username, projectName, pipelineName } : TriggerBuildRequestParams = req.params;
   try{
     const userExists = await User.findOne<IUser>({ username });
     if (!userExists) {
@@ -191,7 +176,7 @@ export const triggerBuild = async (
 /**
  * @author Mennatallah Ashraf
  * @des Controller function for getting build status for a pipeline.
- * @route GET /pipelines/:projectName/:pipelineName/:buildNumber/status
+ * @route GET /pipelines/:username/:projectName/:pipelineName/:buildNumber/status
  * @access private
  */
 export const getBuildStatus = async (
@@ -199,12 +184,7 @@ export const getBuildStatus = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  if (!req.user) {
-    res.status(401).json({ message: "Authentication required!" });
-    return;
-  }
-  const username = req.user.username;
-  const {projectName, pipelineName} : GetBuildStatusRequestParams = req.params;
+  const {username, projectName, pipelineName} : GetBuildStatusRequestParams = req.params;
   const buildNumber = parseInt(req.params.buildNumber);
   try{
     const userExists = await User.findOne<IUser>({ username });
@@ -240,7 +220,7 @@ export const getBuildStatus = async (
 /**
  * @author Mennatallah Ashraf
  * @des Controller function for deleting a pipeline.
- * @route  DELETE /pipelines/:projectName/:pipelineName
+ * @route  DELETE /pipelines/:username/:projectName/:pipelineName
  * @access private
  */
 export const deletePipeline = async (
@@ -248,12 +228,7 @@ export const deletePipeline = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  if (!req.user) {
-    res.status(401).json({ message: "Authentication required!" });
-    return;
-  }
-  const username = req.user.username;
-  const{projectName, pipelineName} : DeletePipelineRequestParams =  req.params;
+  const{username, projectName, pipelineName} : DeletePipelineRequestParams =  req.params;
   try{
     const userExists = await User.findOne<IUser>({ username });
     if (!userExists) {
@@ -282,7 +257,7 @@ export const deletePipeline = async (
 /**
  * @author Mennatallah Ashraf
  * @des Controller function for updating pipeline script.
- * @route PUT /pipelines/:projectName/:pipelineName
+ * @route PUT /pipelines/:username/:projectName/:pipelineName
  * @access admin
  */
 export const updatePipelineScript = async (
@@ -290,12 +265,7 @@ export const updatePipelineScript = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  if (!req.user) {
-    res.status(401).json({ message: "Authentication required!" });
-    return;
-  }
-  const username = req.user.username;
-  const { projectName, pipelineName } :UpdatePipelineScriptRequestParams = req.params;
+  const { username, projectName, pipelineName } :UpdatePipelineScriptRequestParams = req.params;
   const { newScript } : UpdatePipelineScriptRequestBody = req.body;
   try{
     const userExists = await User.findOne<IUser>({ username });
@@ -337,7 +307,7 @@ export const updatePipelineScript = async (
 /**
  * @author Mennatallah Ashraf
  * @des Controller function for stopping a build.
- * @route POST /pipelines/:projectName/:pipelineName/:buildNumber
+ * @route POST /pipelines/:username/:projectName/:pipelineName/:buildNumber
  * @access private
  */
 export const stopBuild = async (
@@ -345,12 +315,7 @@ export const stopBuild = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  if (!req.user) {
-    res.status(401).json({ message: "Authentication required!" });
-    return;
-  }
-  const username  = req.user.username;
-  const { projectName, pipelineName} : StopBuildRequestParams= req.params;
+  const { username, projectName, pipelineName} : StopBuildRequestParams= req.params;
   const buildNumber = parseInt(req.params.buildNumber);
   try{
     const userExists = await User.findOne<IUser>({ username });
@@ -383,4 +348,3 @@ export const stopBuild = async (
     next(error);
   }
 }
-

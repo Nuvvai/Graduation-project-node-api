@@ -1,6 +1,5 @@
 import bcrypt from 'bcryptjs';
 import { Request, Response, NextFunction } from 'express';
-
 import User, { IUser } from '../models/User';
 
 interface GetUserProfileRequestParams {
@@ -26,16 +25,30 @@ interface UpdateUserProfileRequestBody {
 /**
  * @author Mennatallah Ashraf
  * @des Controller function for retrieving a user profile by name.
- * @route GET /users/:name
+ * @route GET /users/:username
  * @access private
  */
 export const getUserProfile = async (req: Request<GetUserProfileRequestParams>, res: Response, next: NextFunction): Promise<void> => {
-    const { username } : GetUserProfileRequestParams = req.params;
+    const { username } = req.params;
+    const user = req.user as IUser;
 
     try {
-        const userExists = await User.findOne<IUser>({ username });
+        if (!user) {
+            res.status(401).json({ message: "Authentication required!" });
+            return;
+        }
+        const userExists = await User.findOne<IUser>({username});
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
+            return;
+        }
+        const currentUser = await User.findOne<IUser>({ username: user.username });
+        if (!currentUser) {
+            res.status(404).json({ message: "Current user not found!" });
+            return;
+        }
+        if ((user.username !== username) && (currentUser.role !== 'admin')) {
+            res.status(403).json({ message: "Unauthorized action!" });
             return;
         }
         res.status(200).json(userExists);
@@ -52,14 +65,29 @@ export const getUserProfile = async (req: Request<GetUserProfileRequestParams>, 
  */
 export const deleteUser = async (req: Request<DeleteUserRequestParams>, res: Response, next: NextFunction): Promise<void> => {
     const { username } : DeleteUserRequestParams = req.params;
+    const user = req.user as IUser;
 
     try {
+        if (!user) {
+            res.status(401).json({ message: "Authentication required!" });
+            return;
+          }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
             return;
         }
+        const currentUser = await User.findOne<IUser>({ username: user.username });
+        if (!currentUser) {
+            res.status(404).json({ message: "Current user not found!" });
+            return;
+        }
+        if ((user.username !== username) && (currentUser.role !== 'admin')) {
+            res.status(403).json({ message: "Unauthorized action!" });
+            return;
+        }
         await User.findOneAndDelete<IUser>({ username });
+        res.clearCookie('refreshToken', { httpOnly: true, secure: true, sameSite: 'none' });
         res.status(200).json({ message: "User deleted successfully!" });
     } catch (error) {
         next(error);
@@ -75,26 +103,37 @@ export const deleteUser = async (req: Request<DeleteUserRequestParams>, res: Res
 export const updateUserProfile = async (req: Request<UpdateUserProfileRequestParams, {}, UpdateUserProfileRequestBody>, res: Response, next: NextFunction): Promise<void> => {
     const { username } : UpdateUserProfileRequestParams = req.params;
     const { newName, newEmail, newPassword, newPasswordAgain, oldPassword } : UpdateUserProfileRequestBody = req.body;
+    const user = req.user as IUser;
 
     try {
+        if (!user) {
+            res.status(401).json({ message: "Authentication required!" });
+            return;
+          }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
             return;
         }
-
-        const user: IUser = userExists;
-
-        if (newName) user.username = newName;
-        if (newEmail) user.email = newEmail;
+        const currentUser = await User.findOne<IUser>({ username: user.username });
+        if (!currentUser) {
+            res.status(404).json({ message: "Current user not found!" });
+            return;
+        }
+        if ((user.username !== username) && (currentUser.role !== 'admin')) {
+            res.status(403).json({ message: "Unauthorized action!" });
+            return;
+        }
+        if (newName) userExists.username = newName;
+        if (newEmail) userExists.email = newEmail;
 
         if (newPassword && newPasswordAgain && oldPassword && newPassword === newPasswordAgain) {
-            const isMatch = await bcrypt.compare(oldPassword, user.password);
+            const isMatch = await bcrypt.compare(oldPassword, userExists.password);
             if (!isMatch) {
                 res.status(400).json({ message: 'Incorrect old password!' });
                 return;
             }
-            user.password = await bcrypt.hash(newPassword, 12);
+            userExists.password = await bcrypt.hash(newPassword, 12);
         } else if (newPassword && !oldPassword) {
             res.status(400).json({ message: "Please enter old password!" });
             return;
@@ -103,8 +142,8 @@ export const updateUserProfile = async (req: Request<UpdateUserProfileRequestPar
             return;
         }
 
-        await user.save();
-        res.status(200).json({ message: "Profile updated successfully!", user });
+        await userExists.save();
+        res.status(200).json({ message: "Profile updated successfully!", userExists });
     } catch (error) {
         next(error);
     }
@@ -118,6 +157,22 @@ export const updateUserProfile = async (req: Request<UpdateUserProfileRequestPar
  */
 export const getAllUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+        const user = req.user as IUser;
+        if (!user) {
+            res.status(401).json({ message: "Authentication required!" });
+            return;
+        }
+        const username = user.username;
+        const userExists = await User.findOne<IUser>({ username });
+        if (!userExists) {
+            res.status(404).json({ message: 'User not found!' });
+            return;
+        }
+        if (userExists.role !== 'admin') {
+            console.log(userExists);
+            res.status(403).json({ message: "Unauthorized action!" });
+            return;
+        }
         const users = await User.find().select('-password'); // Exclude password
         res.status(200).json(users);
     } catch (error) {
