@@ -24,6 +24,7 @@ interface RegisterRequestBody {
     username: string;
     email: string;
     password: string;
+    role?: string;
 }
 
 interface LoginRequestBody {
@@ -49,7 +50,7 @@ export interface IJwtSignPayload  {
  * @access public 
  */
 export const register_controller = async (req:Request<{}, {}, RegisterRequestBody>, res:Response, next:NextFunction):Promise<void> => {
-    const { username, email, password }:RegisterRequestBody = req.body;
+    const { username, email, password, role }:RegisterRequestBody = req.body;
 
     try {
         const existingUser:IUser | null = await User.findOne<IUser>({ email: email });
@@ -78,7 +79,7 @@ export const register_controller = async (req:Request<{}, {}, RegisterRequestBod
         }
 
         const hashedPassword:string = await bcrypt.hash(password, 12);
-        const newUser:IUser = new User({ username, email, password: hashedPassword });
+        const newUser:IUser = new User({ username, email, password: hashedPassword, role: role || 'user' });
         await newUser.save();
 
         const secretKey: string | undefined = process.env.JWT_Token;
