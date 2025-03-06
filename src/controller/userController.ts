@@ -71,7 +71,7 @@ export const deleteUser = async (req: Request<DeleteUserRequestParams>, res: Res
         if (!user) {
             res.status(401).json({ message: "Authentication required!" });
             return;
-          }
+        }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
@@ -109,7 +109,7 @@ export const updateUserProfile = async (req: Request<UpdateUserProfileRequestPar
         if (!user) {
             res.status(401).json({ message: "Authentication required!" });
             return;
-          }
+        }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
@@ -153,11 +153,11 @@ export const updateUserProfile = async (req: Request<UpdateUserProfileRequestPar
  * @author Mennatallah Ashraf
  * @des Controller function for retrieving all users excluding passwords.
  * @route GET /users
- * @access admin
+ * @access Admin
  */
 export const getAllUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const user = req.user as IUser;
     try {
-        const user = req.user as IUser;
         if (!user) {
             res.status(401).json({ message: "Authentication required!" });
             return;

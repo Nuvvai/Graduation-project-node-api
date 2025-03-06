@@ -9,9 +9,7 @@ interface CreateProjectRequestParams {
 interface CreateProjectRequestBody {
     projectName: string;
     repositoryUrl: string;
-    frontendFramework: string;
-    backendFramework: string;
-    database: string;
+    framework: string;
     description?: string;
 }
 
@@ -40,23 +38,36 @@ export const createProject = async (
     next: NextFunction
 ): Promise<void> => {
     const { username } : CreateProjectRequestParams = req.params;
-    const { projectName, repositoryUrl, frontendFramework, backendFramework, database, description } : CreateProjectRequestBody= req.body;
+    const { projectName, repositoryUrl, framework, description } : CreateProjectRequestBody= req.body;
+    const user = req.user as IUser;
 
     try {
-        if (!projectName || !username || !repositoryUrl || !frontendFramework || !backendFramework || !database) {
+        if (!user) {
+            res.status(401).json({ message: "Authentication required!" });
+            return;
+        }
+        if (!projectName || !username || !repositoryUrl || !framework) {
             res.status(400).json({ message: 'All required fields must be provided!' });
             return;
         }
-
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
             return;
         }
+        const currentUser = await User.findOne<IUser>({ username: user.username });
+        if (!currentUser) {
+            res.status(404).json({ message: "Current user not found!" });
+            return;
+        }
+        if ((user.username !== username) && (currentUser.role !== 'admin')) {
+            res.status(403).json({ message: "Unauthorized action!" });
+            return;
+        }
 
         const projectExists = await Project.findOne<IProject>({ username, projectName });
         if (projectExists) {
-            res.status(403).json({ message: 'Project with the same name already exists!' });
+            res.status(400).json({ message: 'Project with the same name already exists!' });
             return;
         }
 
@@ -64,10 +75,8 @@ export const createProject = async (
             projectName,
             username,
             repositoryUrl,
-            frontendFramework,
-            backendFramework,
-            database,
-            description,
+            framework,
+            description
         });
 
         await newProject.save();
@@ -89,10 +98,24 @@ export const getAllProjects = async (
     next: NextFunction
 ): Promise<void> => {
     const { username } : GetAllProjectsRequestParams = req.params;
+    const user = req.user as IUser;
     try {
+        if (!user) {
+            res.status(401).json({ message: "Authentication required!" });
+            return;
+        }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
+            return;
+        }
+        const currentUser = await User.findOne<IUser>({ username: user.username });
+        if (!currentUser) {
+            res.status(404).json({ message: "Current user not found!" });
+            return;
+        }
+        if ((user.username !== username) && (currentUser.role !== 'admin')) {
+            res.status(403).json({ message: "Unauthorized action!" });
             return;
         }
 
@@ -115,16 +138,29 @@ export const deleteProject = async (
     next: NextFunction
 ): Promise<void> => {
     const { username, projectName } : DeleteProjectRequestParams = req.params;
+    const user = req.user as IUser;
 
     try {
-        if (!username || !projectName) {
-            res.status(400).json({ message: 'Username and project name are required!' });
+        if (!user) {
+            res.status(401).json({ message: "Authentication required!" });
             return;
         }
-
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
+            return;
+        }
+        const currentUser = await User.findOne<IUser>({ username: user.username });
+        if (!currentUser) {
+            res.status(404).json({ message: "Current user not found!" });
+            return;
+        }
+        if ((user.username !== username) && (currentUser.role !== 'admin')) {
+            res.status(403).json({ message: "Unauthorized action!" });
+            return;
+        }
+        if (!username || !projectName) {
+            res.status(400).json({ message: 'Username and project name are required!' });
             return;
         }
 
@@ -153,16 +189,29 @@ export const deleteAllProjects = async (
     next: NextFunction
 ): Promise<void> => {
     const { username } : DeleteAllProjectsRequestParams = req.params;
+    const user = req.user as IUser;
 
     try {
-        if (!username) {
-            res.status(400).json({ message: 'Username is required!' });
+        if (!user) {
+            res.status(401).json({ message: "Authentication required!" });
             return;
         }
-
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
+            return;
+        }
+        const currentUser = await User.findOne<IUser>({ username: user.username });
+        if (!currentUser) {
+            res.status(404).json({ message: "Current user not found!" });
+            return;
+        }
+        if ((user.username !== username) && (currentUser.role !== 'admin')) {
+            res.status(403).json({ message: "Unauthorized action!" });
+            return;
+        }
+        if (!username) {
+            res.status(400).json({ message: 'Username is required!' });
             return;
         }
 
