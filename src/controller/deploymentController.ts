@@ -50,18 +50,24 @@ export const createDeployment = async (
 ): Promise<void> => {
     const { username, projectName} : CreateDeploymentRequestParams = req.params;
     const { deploymentName, status = 'No status', startTime = new Date(), endTime = new Date() } : CreateDeploymentRequestBody= req.body;
+    const user = req.user as IUser;
     try {
-        if (!projectName) {
-            res.status(400).json({ message: "Project name is required!" })
+        if (!user) {
+            res.status(401).json({ message: "Authentication required!" });
             return;
         }
-        if (!username) {
-            res.status(400).json({ message: "Username is required!" })
-            return;
-        }
-        const userExists = await User.findOne<IUser>({ name: username });
+        const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
-            res.status(404).json({message: 'User not found!'})
+            res.status(404).json({ message: 'User not found!' });
+            return;
+        }
+        const currentUser = await User.findOne<IUser>({ username: user.username });
+        if (!currentUser) {
+            res.status(404).json({ message: "Current user not found!" });
+            return;
+        }
+        if ((user.username !== username) && (currentUser.role !== 'admin')) {
+            res.status(403).json({ message: "Unauthorized action!" });
             return;
         }
         const projectExists = await Project.findOne<IProject>({ username, projectName });
@@ -107,10 +113,24 @@ export const getAllDeployments = async (
     next: NextFunction
 ): Promise<void> => {
     const { username } : GetDeploymentsRequestParams = req.params;
+    const user = req.user as IUser;
     try {
-        const userExists = await User.findOne<IUser>({ name: username });
+        if (!user) {
+            res.status(401).json({ message: "Authentication required!" });
+            return;
+        }
+        const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
-            res.status(404).json({message: 'User not found!'})
+            res.status(404).json({ message: 'User not found!' });
+            return;
+        }
+        const currentUser = await User.findOne<IUser>({ username: user.username });
+        if (!currentUser) {
+            res.status(404).json({ message: "Current user not found!" });
+            return;
+        }
+        if ((user.username !== username) && (currentUser.role !== 'admin')) {
+            res.status(403).json({ message: "Unauthorized action!" });
             return;
         }
         const deployments = await Deployment.find<IDeployment>({ username }).sort({ startTime: -1 }); //starting from the recent deployment
@@ -138,10 +158,24 @@ export const getDeploymentsByProject = async (
     next: NextFunction
 ): Promise<void> => {
     const { username, projectName } : GetDeploymentsByProjectRequestParams = req.params;
+    const user = req.user as IUser;
     try {
-        const userExists = await User.findOne<IUser>({ name: username });
+        if (!user) {
+            res.status(401).json({ message: "Authentication required!" });
+            return;
+        }
+        const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
-            res.status(404).json({message: 'User not found!'})
+            res.status(404).json({ message: 'User not found!' });
+            return;
+        }
+        const currentUser = await User.findOne<IUser>({ username: user.username });
+        if (!currentUser) {
+            res.status(404).json({ message: "Current user not found!" });
+            return;
+        }
+        if ((user.username !== username) && (currentUser.role !== 'admin')) {
+            res.status(403).json({ message: "Unauthorized action!" });
             return;
         }
         const projectExists = await Project.findOne<IProject>({ username, projectName });
@@ -172,10 +206,24 @@ export const deleteDeployments = async (
     next: NextFunction
 ): Promise<void> => {
     const { username, projectName } : DeleteDeploymentsRequestParams = req.params;
+    const user = req.user as IUser;
     try {
-        const userExists = await User.findOne<IUser>({ name: username });
+        if (!user) {
+            res.status(401).json({ message: "Authentication required!" });
+            return;
+        }
+        const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
-            res.status(404).json({message: 'User not found!'})
+            res.status(404).json({ message: 'User not found!' });
+            return;
+        }
+        const currentUser = await User.findOne<IUser>({ username: user.username });
+        if (!currentUser) {
+            res.status(404).json({ message: "Current user not found!" });
+            return;
+        }
+        if ((user.username !== username) && (currentUser.role !== 'admin')) {
+            res.status(403).json({ message: "Unauthorized action!" });
             return;
         }
         const projectExists = await Project.findOne<IProject>({ username, projectName });
@@ -206,10 +254,24 @@ export const deleteDeployment = async (
     next: NextFunction
 ): Promise<void> => {
     const { username, projectName, deploymentName } : DeleteDeploymentRequestParams = req.params;
+    const user = req.user as IUser;
     try{
-        const userExists = await User.findOne<IUser>({ name: username });
+        if (!user) {
+            res.status(401).json({ message: "Authentication required!" });
+            return;
+        }
+        const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
-            res.status(404).json({message: 'User not found!'})
+            res.status(404).json({ message: 'User not found!' });
+            return;
+        }
+        const currentUser = await User.findOne<IUser>({ username: user.username });
+        if (!currentUser) {
+            res.status(404).json({ message: "Current user not found!" });
+            return;
+        }
+        if ((user.username !== username) && (currentUser.role !== 'admin')) {
+            res.status(403).json({ message: "Unauthorized action!" });
             return;
         }
         const projectExists = await Project.findOne<IProject>({ username, projectName });
