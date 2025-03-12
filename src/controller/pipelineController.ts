@@ -1,12 +1,12 @@
+import { generatePipelineScript } from "../utils/generatePipelineScript";
+import { Request, Response, NextFunction } from 'express';
 import Pipeline, {IPipeline} from '../models/Pipeline';
 import Project, {IProject} from '../models/Project';
 import User, { IUser } from '../models/User';
-import { generatePipelineScript } from "../utils/generatePipelineScript";
 import jenkins from '../utils/jenkinsClient';
 import { create } from 'xmlbuilder2';
-import xml2js from 'xml2js';
-import { Request, Response, NextFunction } from 'express';
 import { error } from 'console';
+import xml2js from 'xml2js';
 
 interface CreatePipelineRequestParams {
     username: string;
@@ -70,11 +70,25 @@ export const createPipeline = async (
     const { username, projectName } : CreatePipelineRequestParams= req.params;
     const { gitBranch } : CreatePipelineRequestBody = req.body;
     const pipelineName = `${username}-${projectName}-pipeline`;
+    const user = req.user as IUser;
     // const { gitUsername, gitPassword } : CreatePipelineRequestBody = req.body;
-    try{
+    try {
+        if (!user) {
+            res.status(401).json({ message: "Authentication required!" });
+            return;
+        }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
-            res.status(404).json({message: 'User not found!'})  
+            res.status(404).json({ message: 'User not found!' });
+            return;
+        }
+        const currentUser = await User.findOne<IUser>({ username: user.username });
+        if (!currentUser) {
+            res.status(404).json({ message: "Current user not found!" });
+            return;
+        }
+        if ((user.username !== username) && (currentUser.role !== 'admin')) {
+            res.status(403).json({ message: "Unauthorized action!" });
             return;
         }
         const projectExists = await Project.findOne<IProject>({ username, projectName });
@@ -92,8 +106,7 @@ export const createPipeline = async (
             await jenkins.view.create(username, "list");
         }
 
-        // remove database if not needed
-        const { frontendFramework, backendFramework, database, repositoryUrl } = projectExists;
+        const { framework, repositoryUrl } = projectExists;
 
         const newPipeline = new Pipeline({
             pipelineName,
@@ -112,7 +125,7 @@ export const createPipeline = async (
         // };
         // await jenkins.credentials.create(credentialsOptions);
         //------------------------------------------------------------------------
-        const pipelineScript = generatePipelineScript(frontendFramework, backendFramework, username, projectName, gitBranch, repositoryUrl);;
+        const pipelineScript = generatePipelineScript(framework, username, gitBranch, repositoryUrl);;
       
         const pipelineJobXML = create({ version: '1.0', encoding: 'UTF-8' })
             .ele('flow-definition', { plugin: 'workflow-job@2.40' })
@@ -132,46 +145,60 @@ export const createPipeline = async (
         await newPipeline.save();
         res.status(201).json({ message: 'Pipeline created successfully', pipeline: newPipeline });   
     }catch(error){
-      next(error);
+        next(error);
     }
 }
 
 /**
  * @author Mennatallah Ashraf
  * @des Controller function for triggering build for a pipeline.
- * @route POST /pipelines/:username/:projectName/pipelineName
+ * @route POST /pipelines/:username/:projectName/:pipelineName
  * @access private
  */
 export const triggerBuild = async (
-  req: Request<TriggerBuildRequestParams>,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const { username, projectName, pipelineName } : TriggerBuildRequestParams = req.params;
-  try{
-    const userExists = await User.findOne<IUser>({ username });
-    if (!userExists) {
-        res.status(404).json({message: 'User not found!'})  
-        return;
+    req: Request<TriggerBuildRequestParams>,
+    res: Response,
+    next: NextFunction
+):  Promise<void> => {
+    const { username, projectName, pipelineName } : TriggerBuildRequestParams = req.params;
+    const user = req.user as IUser;
+    try {
+        if (!user) {
+            res.status(401).json({ message: "Authentication required!" });
+            return;
+        }
+        const userExists = await User.findOne<IUser>({ username });
+        if (!userExists) {
+            res.status(404).json({ message: 'User not found!' });
+            return;
+        }
+        const currentUser = await User.findOne<IUser>({ username: user.username });
+        if (!currentUser) {
+            res.status(404).json({ message: "Current user not found!" });
+            return;
+        }
+        if ((user.username !== username) && (currentUser.role !== 'admin')) {
+            res.status(403).json({ message: "Unauthorized action!" });
+            return;
+        }
+        const projectExists = await Project.findOne<IProject>({ username, projectName });
+        if (!projectExists) {
+            res.status(404).json({message: 'Project not found!'})
+            return;
+        }
+        const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName, pipelineName});
+        if (!existingPipeline) {
+            res.status(404).json({ message: 'Pipeline not found!' });
+            return;
+        }
+        await jenkins.job.build(pipelineName);
+        existingPipeline.lastBuildNumber += 1;
+        existingPipeline.lastBuildTime = new Date();
+        await existingPipeline.save();
+        res.status(201).json({ message: `Build triggered for pipeline: ${pipelineName}`, existingPipeline });
+    }catch(error){
+        next(error);
     }
-    const projectExists = await Project.findOne<IProject>({ username, projectName });
-    if (!projectExists) {
-        res.status(404).json({message: 'Project not found!'})
-        return;
-    }
-    const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName, pipelineName});
-    if (!existingPipeline) {
-        res.status(404).json({ message: 'Pipeline not found!' });
-        return;
-    }
-    await jenkins.job.build(pipelineName);
-    existingPipeline.lastBuildNumber += 1;
-    existingPipeline.lastBuildTime = new Date();
-    await existingPipeline.save();
-    res.status(201).json({ message: `Build triggered for pipeline: ${pipelineName}`, existingPipeline });
-  }catch(error){
-    next(error);
-  }
 }
 
 /**
@@ -181,41 +208,55 @@ export const triggerBuild = async (
  * @access private
  */
 export const getBuildStatus = async (
-  req: Request<GetBuildStatusRequestParams>,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const {username, projectName, pipelineName} : GetBuildStatusRequestParams = req.params;
-  const buildNumber = parseInt(req.params.buildNumber);
-  try{
-    const userExists = await User.findOne<IUser>({ username });
-    if (!userExists) {
-        res.status(404).json({message: 'User not found!'})  
-        return;
+    req: Request<GetBuildStatusRequestParams>,
+    res: Response,
+    next: NextFunction
+):  Promise<void> => {
+    const {username, projectName, pipelineName} : GetBuildStatusRequestParams = req.params;
+    const buildNumber = parseInt(req.params.buildNumber);
+    const user = req.user as IUser;
+    try {
+        if (!user) {
+            res.status(401).json({ message: "Authentication required!" });
+            return;
+        }
+        const userExists = await User.findOne<IUser>({ username });
+        if (!userExists) {
+            res.status(404).json({ message: 'User not found!' });
+            return;
+        }
+        const currentUser = await User.findOne<IUser>({ username: user.username });
+        if (!currentUser) {
+            res.status(404).json({ message: "Current user not found!" });
+            return;
+        }
+        if ((user.username !== username) && (currentUser.role !== 'admin')) {
+            res.status(403).json({ message: "Unauthorized action!" });
+            return;
+        }
+        const projectExists = await Project.findOne<IProject>({ username, projectName });
+        if (!projectExists) {
+            res.status(404).json({message: 'Project not found!'})
+            return;
+        }
+        const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName, pipelineName});
+        if (!existingPipeline) {
+            res.status(404).json({ message: 'Pipeline not found!' });
+            return;
+        }
+        if (existingPipeline.lastBuildNumber === 0){
+          res.status(400).json({message: "There are no builds for this pipeline!"})
+          return;
+        }
+        if (existingPipeline.lastBuildNumber < buildNumber){
+          res.status(400).json({message: "There is no build with this number!"})
+          return;
+        }
+        const build  = await jenkins.build.get(pipelineName, buildNumber);
+        res.status(200).json({status: build.result, build})
+    }catch(error){
+        next(error);
     }
-    const projectExists = await Project.findOne<IProject>({ username, projectName });
-    if (!projectExists) {
-        res.status(404).json({message: 'Project not found!'})
-        return;
-    }
-    const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName, pipelineName});
-    if (!existingPipeline) {
-        res.status(404).json({ message: 'Pipeline not found!' });
-        return;
-    }
-    if (existingPipeline.lastBuildNumber === 0){
-      res.status(400).json({message: "There are no builds for this pipeline!"})
-      return;
-    }
-    if (existingPipeline.lastBuildNumber < buildNumber){
-      res.status(400).json({message: "There is no build with this number!"})
-      return;
-    }
-    const build  = await jenkins.build.get(pipelineName, buildNumber);
-    res.status(200).json({status: build.result, build})
-  }catch(error){
-    next(error);
-  }
 }
 
 /**
@@ -225,34 +266,47 @@ export const getBuildStatus = async (
  * @access private
  */
 export const deletePipeline = async (
-  req: Request<DeletePipelineRequestParams>,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const{username, projectName, pipelineName} : DeletePipelineRequestParams =  req.params;
-  try{
-    const userExists = await User.findOne<IUser>({ username });
-    if (!userExists) {
-        res.status(404).json({message: 'User not found!'})  
-        return;
+    req: Request<DeletePipelineRequestParams>,
+    res: Response,
+    next: NextFunction
+):  Promise<void> => {
+    const{username, projectName, pipelineName} : DeletePipelineRequestParams =  req.params;
+    const user = req.user as IUser;
+    try {
+        if (!user) {
+            res.status(401).json({ message: "Authentication required!" });
+            return;
+        }
+        const userExists = await User.findOne<IUser>({ username });
+        if (!userExists) {
+            res.status(404).json({ message: 'User not found!' });
+            return;
+        }
+        const currentUser = await User.findOne<IUser>({ username: user.username });
+        if (!currentUser) {
+            res.status(404).json({ message: "Current user not found!" });
+            return;
+        }
+        if ((user.username !== username) && (currentUser.role !== 'admin')) {
+            res.status(403).json({ message: "Unauthorized action!" });
+            return;
+        }
+        const projectExists = await Project.findOne<IProject>({ username, projectName });
+        if (!projectExists) {
+            res.status(404).json({message: 'Project not found!'})
+            return;
+        }
+        const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName, pipelineName});
+        if (!existingPipeline) {
+            res.status(404).json({ message: 'Pipeline not found!' });
+            return;
+        }
+        await jenkins.job.destroy(pipelineName);
+        await Pipeline.findOneAndDelete<IPipeline>({ username, projectName, pipelineName });
+        res.status(200).json({message: "Pipeline deleted successfully!"});
+    }catch{
+        next(error);
     }
-    const projectExists = await Project.findOne<IProject>({ username, projectName });
-    if (!projectExists) {
-        res.status(404).json({message: 'Project not found!'})
-        return;
-    }
-    const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName, pipelineName});
-    if (!existingPipeline) {
-        res.status(404).json({ message: 'Pipeline not found!' });
-        return;
-    }
-    await jenkins.job.destroy(pipelineName);
-    await Pipeline.findOneAndDelete<IPipeline>({ username, projectName, pipelineName });
-    res.status(200).json({message: "Pipeline deleted successfully!"});
-  }catch{
-    next(error);
-  }
-
 }
 
 /**
@@ -262,44 +316,58 @@ export const deletePipeline = async (
  * @access admin
  */
 export const updatePipelineScript = async (
-  req: Request<UpdatePipelineScriptRequestParams, {}, UpdatePipelineScriptRequestBody>,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const { username, projectName, pipelineName } :UpdatePipelineScriptRequestParams = req.params;
-  const { newScript } : UpdatePipelineScriptRequestBody = req.body;
-  try{
-    const userExists = await User.findOne<IUser>({ username });
-    if (!userExists) {
-        res.status(404).json({message: 'User not found!'})  
-        return;
-    }
-    const projectExists = await Project.findOne<IProject>({ username, projectName });
-    if (!projectExists) {
-        res.status(404).json({message: 'Project not found!'})
-        return;
-    }
-    const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName, pipelineName});
-    if (!existingPipeline) {
-        res.status(404).json({ message: 'Pipeline not found!' });
-        return;
-    }
+    req: Request<UpdatePipelineScriptRequestParams, {}, UpdatePipelineScriptRequestBody>,
+    res: Response,
+    next: NextFunction
+):  Promise<void> => {
+    const { username, projectName, pipelineName } :UpdatePipelineScriptRequestParams = req.params;
+    const { newScript } : UpdatePipelineScriptRequestBody = req.body;
+    const user = req.user as IUser;
+    try {
+        if (!user) {
+            res.status(401).json({ message: "Authentication required!" });
+            return;
+        }
+        const userExists = await User.findOne<IUser>({ username });
+        if (!userExists) {
+            res.status(404).json({ message: 'User not found!' });
+            return;
+        }
+        const currentUser = await User.findOne<IUser>({ username: user.username });
+        if (!currentUser) {
+            res.status(404).json({ message: "Current user not found!" });
+            return;
+        }
+        if ((user.username !== username) && (currentUser.role !== 'admin')) {
+            res.status(403).json({ message: "Unauthorized action!" });
+            return;
+        }
+        const projectExists = await Project.findOne<IProject>({ username, projectName });
+        if (!projectExists) {
+            res.status(404).json({message: 'Project not found!'})
+            return;
+        }
+        const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName, pipelineName});
+        if (!existingPipeline) {
+            res.status(404).json({ message: 'Pipeline not found!' });
+            return;
+        }
 
-    const jobConfigXML = await jenkins.job.config(pipelineName);
-    const configJson = await xml2js.parseStringPromise(jobConfigXML);
-    if (newScript) {
-      configJson['flow-definition']['definition'][0]['script'][0] = newScript;
+        const jobConfigXML = await jenkins.job.config(pipelineName);
+        const configJson = await xml2js.parseStringPromise(jobConfigXML);
+        if (newScript) {
+          configJson['flow-definition']['definition'][0]['script'][0] = newScript;
+        }
+        //convert updated json back to XML
+        const updatedJobConfigXML = new xml2js.Builder().buildObject(configJson);
+
+        await jenkins.job.config(pipelineName, updatedJobConfigXML);
+
+        res.status(200).json({message: 'Pipeline updated successfully!'});
+
+    }catch{
+        next(error)
     }
-    //convert updated json back to XML
-    const updatedJobConfigXML = new xml2js.Builder().buildObject(configJson);
-
-    await jenkins.job.config(pipelineName, updatedJobConfigXML);
-
-    res.status(200).json({message: 'Pipeline updated successfully!'});
-
-  }catch{
-    next(error)
-  }
 }
 
 
@@ -312,41 +380,54 @@ export const updatePipelineScript = async (
  * @access private
  */
 export const stopBuild = async (
-  req: Request<StopBuildRequestParams>,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const { username, projectName, pipelineName} : StopBuildRequestParams= req.params;
-  const buildNumber = parseInt(req.params.buildNumber);
-  try{
-    const userExists = await User.findOne<IUser>({ username });
-    if (!userExists) {
-        res.status(404).json({message: 'User not found!'})  
-        return;
-    }
-    const projectExists = await Project.findOne<IProject>({ username, projectName });
-    if (!projectExists) {
-        res.status(404).json({message: 'Project not found!'})
-        return;
-    }
-    const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName, pipelineName});
-    if (!existingPipeline) {
-        res.status(404).json({ message: 'Pipeline not found!' });
-        return;
-    }
-    if (existingPipeline.lastBuildNumber === 0){
-        res.status(400).json({message: "There are no builds for this pipeline!"})
-        return;
-    }
-    if (existingPipeline.lastBuildNumber < buildNumber){
-        res.status(400).json({message: "There is no build with this number!"})
-        return;
-    }
-    await jenkins.build.stop(pipelineName, buildNumber); // error here
-    res.status(200).json({message: "Build is stopped successfully!"})
+    req: Request<StopBuildRequestParams>,
+    res: Response,
+    next: NextFunction
+):  Promise<void> => {
+    const { username, projectName, pipelineName} : StopBuildRequestParams= req.params;
+    const buildNumber = parseInt(req.params.buildNumber);
+    const user = req.user as IUser;
+    try {
+        if (!user) {
+            res.status(401).json({ message: "Authentication required!" });
+            return;
+        }
+        const userExists = await User.findOne<IUser>({ username });
+        if (!userExists) {
+            res.status(404).json({ message: 'User not found!' });
+            return;
+        }
+        const currentUser = await User.findOne<IUser>({ username: user.username });
+        if (!currentUser) {
+            res.status(404).json({ message: "Current user not found!" });
+            return;
+        }
+        if ((user.username !== username) && (currentUser.role !== 'admin')) {
+            res.status(403).json({ message: "Unauthorized action!" });
+            return;
+        }
+        const projectExists = await Project.findOne<IProject>({ username, projectName });
+        if (!projectExists) {
+            res.status(404).json({message: 'Project not found!'})
+            return;
+        }
+        const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName, pipelineName});
+        if (!existingPipeline) {
+            res.status(404).json({ message: 'Pipeline not found!' });
+            return;
+        }
+        if (existingPipeline.lastBuildNumber === 0){
+            res.status(400).json({message: "There are no builds for this pipeline!"})
+            return;
+        }
+        if (existingPipeline.lastBuildNumber < buildNumber){
+            res.status(400).json({message: "There is no build with this number!"})
+            return;
+        }
+        await jenkins.build.stop(pipelineName, buildNumber); // error here
+        res.status(200).json({message: "Build is stopped successfully!"})
 
-  }catch(error){
-    next(error);
-  }
+    }catch(error){
+        next(error);
+    }
 }
-
