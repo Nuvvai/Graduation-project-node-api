@@ -52,10 +52,6 @@ export const createDeployment = async (
     const { deploymentName, status = 'No status', startTime = new Date(), endTime = new Date() } : CreateDeploymentRequestBody= req.body;
     const user = req.user as IUser;
     try {
-        if (!user) {
-            res.status(401).json({ message: "Authentication required!" });
-            return;
-        }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
@@ -115,10 +111,6 @@ export const getAllDeployments = async (
     const { username } : GetDeploymentsRequestParams = req.params;
     const user = req.user as IUser;
     try {
-        if (!user) {
-            res.status(401).json({ message: "Authentication required!" });
-            return;
-        }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
@@ -160,10 +152,6 @@ export const getDeploymentsByProject = async (
     const { username, projectName } : GetDeploymentsByProjectRequestParams = req.params;
     const user = req.user as IUser;
     try {
-        if (!user) {
-            res.status(401).json({ message: "Authentication required!" });
-            return;
-        }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
@@ -208,10 +196,6 @@ export const deleteDeployments = async (
     const { username, projectName } : DeleteDeploymentsRequestParams = req.params;
     const user = req.user as IUser;
     try {
-        if (!user) {
-            res.status(401).json({ message: "Authentication required!" });
-            return;
-        }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
@@ -256,10 +240,6 @@ export const deleteDeployment = async (
     const { username, projectName, deploymentName } : DeleteDeploymentRequestParams = req.params;
     const user = req.user as IUser;
     try{
-        if (!user) {
-            res.status(401).json({ message: "Authentication required!" });
-            return;
-        }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
