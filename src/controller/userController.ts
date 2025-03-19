@@ -33,10 +33,6 @@ export const getUserProfile = async (req: Request<GetUserProfileRequestParams>, 
     const user = req.user as IUser;
 
     try {
-        if (!user) {
-            res.status(401).json({ message: "Authentication required!" });
-            return;
-        }
         const userExists = await User.findOne<IUser>({username});
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
@@ -68,10 +64,6 @@ export const deleteUser = async (req: Request<DeleteUserRequestParams>, res: Res
     const user = req.user as IUser;
 
     try {
-        if (!user) {
-            res.status(401).json({ message: "Authentication required!" });
-            return;
-        }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
@@ -106,10 +98,6 @@ export const updateUserProfile = async (req: Request<UpdateUserProfileRequestPar
     const user = req.user as IUser;
 
     try {
-        if (!user) {
-            res.status(401).json({ message: "Authentication required!" });
-            return;
-        }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
@@ -158,10 +146,6 @@ export const updateUserProfile = async (req: Request<UpdateUserProfileRequestPar
 export const getAllUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const user = req.user as IUser;
     try {
-        if (!user) {
-            res.status(401).json({ message: "Authentication required!" });
-            return;
-        }
         const username = user.username;
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {

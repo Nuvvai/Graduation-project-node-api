@@ -73,10 +73,6 @@ export const createPipeline = async (
     const user = req.user as IUser;
     // const { gitUsername, gitPassword } : CreatePipelineRequestBody = req.body;
     try {
-        if (!user) {
-            res.status(401).json({ message: "Authentication required!" });
-            return;
-        }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
@@ -163,10 +159,6 @@ export const triggerBuild = async (
     const { username, projectName, pipelineName } : TriggerBuildRequestParams = req.params;
     const user = req.user as IUser;
     try {
-        if (!user) {
-            res.status(401).json({ message: "Authentication required!" });
-            return;
-        }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
@@ -216,10 +208,6 @@ export const getBuildStatus = async (
     const buildNumber = parseInt(req.params.buildNumber);
     const user = req.user as IUser;
     try {
-        if (!user) {
-            res.status(401).json({ message: "Authentication required!" });
-            return;
-        }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
@@ -273,10 +261,6 @@ export const deletePipeline = async (
     const{username, projectName, pipelineName} : DeletePipelineRequestParams =  req.params;
     const user = req.user as IUser;
     try {
-        if (!user) {
-            res.status(401).json({ message: "Authentication required!" });
-            return;
-        }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
@@ -324,10 +308,6 @@ export const updatePipelineScript = async (
     const { newScript } : UpdatePipelineScriptRequestBody = req.body;
     const user = req.user as IUser;
     try {
-        if (!user) {
-            res.status(401).json({ message: "Authentication required!" });
-            return;
-        }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
@@ -388,10 +368,6 @@ export const stopBuild = async (
     const buildNumber = parseInt(req.params.buildNumber);
     const user = req.user as IUser;
     try {
-        if (!user) {
-            res.status(401).json({ message: "Authentication required!" });
-            return;
-        }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });

@@ -1,9 +1,6 @@
 node_modules
 .gitignore
 dist
-<<<<<<< HEAD
 .vscode
-=======
 coverage
 test-results
->>>>>>> a7c8376f185dca37bf2e31ff55e13ef587c8bdef

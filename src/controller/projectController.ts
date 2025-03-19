@@ -42,10 +42,6 @@ export const createProject = async (
     const user = req.user as IUser;
 
     try {
-        if (!user) {
-            res.status(401).json({ message: "Authentication required!" });
-            return;
-        }
         if (!projectName || !username || !repositoryUrl || !framework) {
             res.status(400).json({ message: 'All required fields must be provided!' });
             return;
@@ -100,10 +96,6 @@ export const getAllProjects = async (
     const { username } : GetAllProjectsRequestParams = req.params;
     const user = req.user as IUser;
     try {
-        if (!user) {
-            res.status(401).json({ message: "Authentication required!" });
-            return;
-        }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
@@ -141,10 +133,6 @@ export const deleteProject = async (
     const user = req.user as IUser;
 
     try {
-        if (!user) {
-            res.status(401).json({ message: "Authentication required!" });
-            return;
-        }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
@@ -192,10 +180,6 @@ export const deleteAllProjects = async (
     const user = req.user as IUser;
 
     try {
-        if (!user) {
-            res.status(401).json({ message: "Authentication required!" });
-            return;
-        }
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });

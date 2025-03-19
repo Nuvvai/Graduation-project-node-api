@@ -20,7 +20,7 @@ This project is a DevOps deployment platform, allowing users to deploy their pro
 ### Setup
 1. Clone the repository:
    ```bash
-   git clone https://github.com/HazemSabry/Graduation-project-node-api.git
+   git clone https://github.com/Nuvvai/Graduation-project-node-api.git
    cd Graduation-project-node-api
    ```
 2. Install dependencies:
