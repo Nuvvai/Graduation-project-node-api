@@ -5,13 +5,15 @@
  * @param username: The username of the project owner.
  * @param gitBranch: The git branch to be used in the pipeline.
  * @param repositoryUrl: The URL of the project's repository.
+ * @param DockerfileContent: The content of the Dockerfile.
  * @returns A string representing the Jenkins pipeline script.
  */
 export const generatePipelineScript = (
     framework: string,
     username: string,
     gitBranch: string,
-    repositoryUrl: string
+    repositoryUrl: string,
+    DockerfileContent: string
 ): string => {
     return `
     pipeline {
@@ -42,6 +44,14 @@ export const generatePipelineScript = (
                         // Set GIT_COMMIT variable
                         env.GIT_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
                         sh "echo Checked out commit: \${env.GIT_COMMIT}"
+                    }
+                }
+            }
+            stage('Prepare Custom Dockerfile') {
+                steps {
+                    script {
+                        writeFile file: 'Dockerfile', text: '''${DockerfileContent}'''
+                        sh 'cat Dockerfile'  // for debugging
                     }
                 }
             }
