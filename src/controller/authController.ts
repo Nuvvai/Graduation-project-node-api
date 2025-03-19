@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import jwt, { JwtPayload } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import ms from 'ms';
 
@@ -8,37 +8,126 @@ import User, { IUser } from '../models/User';
 const refreshTokenExpiresIn: ms.StringValue = '7d'
 const accessTokenExpiresIn: ms.StringValue = '15m'
 
-interface IRefreshToken_cookiesProperty{
+/**
+ * Interface representing the properties of a refresh token cookie.
+ * 
+ * @interface IRefreshToken_cookiesProperty
+ * @property {boolean} httpOnly - Indicates whether the cookie is accessible only through the HTTP protocol.
+ * @property {boolean} secure - Indicates whether the cookie is only to be sent over HTTPS.
+ * @property {boolean | 'lax' | 'strict' | undefined | "none"} sameSite - Indicates the same-site policy for the cookie.
+ * @property {string} Domain - The domain for which the cookie is valid.
+ * @property {string} path - The path for which the cookie is valid.
+ * @property {number} maxAge - The maximum age of the cookie in seconds.
+ * 
+ * @HazemSabry
+ */
+interface IRefreshToken_cookiesProperty {
+    /**
+     * Indicates whether the cookie is accessible only through the HTTP protocol.
+     */
     httpOnly: boolean;
+
+    /**
+     * Indicates whether the cookie is only to be sent over HTTPS.
+     */
     secure: boolean;
+
+    /**
+     * Indicates the same-site policy for the cookie.
+     * Can be a boolean or one of 'lax', 'strict', or 'none'.
+     */
     sameSite: boolean | 'lax' | 'strict' | undefined | "none";
+
+    /**
+     * The domain for which the cookie is valid.
+     */
     Domain: string;
+
+    /**
+     * The path for which the cookie is valid.
+     */
     path: string;
+
+    /**
+     * The maximum age of the cookie in seconds.
+     */
     maxAge: number;
 }
 
 const FRONTEND_DOMAIN_NAME: string = process.env.FRONTEND_DOMAIN_NAME || 'http://localhost:5173';
 const refreshToken_cookiesProperty: IRefreshToken_cookiesProperty = { httpOnly: true, secure: true, sameSite: 'none', Domain: FRONTEND_DOMAIN_NAME, path: '/', maxAge: 7 * 24 * 60 * 60 * 1000 };
 
+/**
+ * Interface representing the request body for user registration.
+ * 
+ * @interface RegisterRequestBody
+ * @property {string} username - The username of the register user.
+ * @property {string} email - The email of the register user.
+ * @property {string} password - The password of the register user.
+ * 
+ * @HazemSabry
+ */
 interface RegisterRequestBody {
+    /**
+     * The username of the register user.
+     */
     username: string;
+    /**
+     * The email of the register user.
+     */
     email: string;
+    /**
+     * The password of the register user.
+     */
     password: string;
 }
 
+/**
+ * Interface representing the request body for a login operation.
+ * 
+ * @interface LoginRequestBody
+ * @property {string} usernameOrEmail - The username or email of the user to login with.
+ * @property {string} password - The password of the user to login with.
+ * 
+ * @HazemSabry
+ */
 interface LoginRequestBody {
+    /**
+     * The username or email of the user to login with.
+     */
     usernameOrEmail: string;
+    /**
+     * The password of the user to login with.
+     */
     password: string;
 }
 
+/**
+ * Interface representing the payload for JWT signing.
+ * 
+ * @interface IJwtSignPayload
+ * @property {string} id - The unique identifier of the user.
+ * @property {string} username - The username of the user.
+ * @property {string} email - The email address of the user.
+ * 
+ * @HazemSabry
+ */
 export interface IJwtSignPayload  {
+    /**
+     * The unique identifier of the user.
+     */
     id: string,
+    /**
+     * The username of the user.
+     */
     username: string,
+    /**
+     * The email address of the user.
+     */
     email: string
 }
 
 /**
- * @author Hazem Sabry
  * @description Controller function for user registration.
  * @param req.body.username - The username of the register user.
  * @param req.body.email - The email of the register user.
@@ -47,8 +136,9 @@ export interface IJwtSignPayload  {
  * @throws { Error } if failed to encrypt the password, or create new user, or the environment variable JWT_Token is undefined, or failed sign a JWT token.
  * @route POST /auth/register
  * @access public 
+ * @HazemSabry
  */
-export const register_controller = async (req:Request<{}, {}, RegisterRequestBody>, res:Response, next:NextFunction):Promise<void> => {
+export const register_controller = async (req:Request<object, object, RegisterRequestBody>, res:Response, next:NextFunction):Promise<void> => {
     const { username, email, password }:RegisterRequestBody = req.body;
 
     try {
@@ -62,7 +152,7 @@ export const register_controller = async (req:Request<{}, {}, RegisterRequestBod
             res.status(406).json({ message: "Not accepted, missing parameter" });
             return;
         } else if (username.indexOf('@') !== -1) {
-            res.status(406).json({ message: 'Invalid username can not include \"@\"' }); //not tested yet ...!!
+            res.status(406).json({ message: 'Invalid username can not include "@"' }); //not tested yet ...!!
             return;
         } else if (email.length < 6 || email.indexOf('@') === -1) {
             res.status(406).json({ message: 'Invalid email format' }); //not tested yet ...!!
@@ -96,7 +186,6 @@ export const register_controller = async (req:Request<{}, {}, RegisterRequestBod
 }
 
 /**
- * @author Hazem Sabry
  * @description Controller function for user login.
  * @param req.body.usernameOrEmail The username or email of the user to login with.
  * @param req.body.password The password of the user to login with.
@@ -104,8 +193,9 @@ export const register_controller = async (req:Request<{}, {}, RegisterRequestBod
  * @throws { Error } - If there is an error fetching the user profile, or the password is failed to encrypt, or the environment variable JWT_Token is undefined, or failed sign a JWT token.
  * @route POST /auth/login
  * @access public 
+ * @HazemSabry
  */
-export const login_controller = async (req: Request<{}, {}, LoginRequestBody>, res:Response, next:NextFunction):Promise<void> => {
+export const login_controller = async (req: Request<object, object, LoginRequestBody>, res:Response, next:NextFunction):Promise<void> => {
     const { usernameOrEmail, password }: LoginRequestBody = req.body;
 
     try {
@@ -155,12 +245,12 @@ export const login_controller = async (req: Request<{}, {}, LoginRequestBody>, r
 }
 
 /**
- * @author Hazem Sabry
  * @description Controller function for refreshing the accessToken
  * @param req.cookies.refreshToken The refresh token to be used to refresh the accessToken.
  * @returns a promise that is resolved when the accessToken is refreshed.
  * @route GET /auth/refresh-token
  * @access public
+ * @HazemSabry
  */
 
 export const refreshToken_controller = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -177,7 +267,7 @@ export const refreshToken_controller = async (req: Request, res: Response, next:
             return; 
         }
 
-        jwt.verify(refreshToken, secretKey, (err: any, decoded: any) => {
+        jwt.verify(refreshToken, secretKey, (err: unknown, decoded: unknown) => {
             if (err) {
                 res.status(500);
                 throw new Error('Server error, failed to verify refresh token');
@@ -198,11 +288,12 @@ export const refreshToken_controller = async (req: Request, res: Response, next:
 }
 
 /**
- * @author Hazem Sabry
  * @description Controller function for user logout.
  * @returns A promise that resolves when the user is logged out successfully.
  * @route DELETE /auth/logout
  * @access private
+ * 
+ * @HazemSabry
  */
 export const logout_controller = async(req: Request, res:Response, next:NextFunction):Promise<void> => {
     try {

@@ -3,13 +3,13 @@ import jwt from "jsonwebtoken";
 import { IJwtSignPayload } from '../controller/authController';
 
 /**
- * @author Hazem Sabry
  * @description Verify the access token for authorize user.
  * @param req.headers.authorization
  * @param res 
  * @param next 
  * @throws { Error } If the process.env.JWT_Token is not undefined.
  * @returns A promise that resolves when the user is authorized.
+ * @HazemSabry
  */
 export const verifyToken = async(req:Request, res:Response, next:NextFunction): Promise<void> => {
     const accessToken = req.headers.authorization?.split(" ")[1]; // Extract token from "Bearer <token>"

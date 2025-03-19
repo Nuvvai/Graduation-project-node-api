@@ -8,4 +8,4 @@ const PORT: PORT = process.env.PORT || 5000;
 mongoose.connect(CONNECTION_URL)
     .then(() => console.log("Connected to MongoDB successfully!"))
     .then(() => app.listen(PORT, () => console.log(`Server listening on port ${PORT}`)))
-    .catch((error: { message: any; }) => console.error(error.message));
+    .catch((error: { message: string; }) => console.error(error.message));

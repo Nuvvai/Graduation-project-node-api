@@ -12,9 +12,22 @@
     "typeCheck": "tsc --noEmit",
     "precommit": "npm run lint && npm test"
   },
-  "author": "Hazem Sabry",
+  "author": "Hazem Sabry <hazemsabry2002@gmail.com>",
+  "contributors": [
+    {
+      "name": "Hazem Sabry",
+      "email": "hazemsabry2002@gmail.com",
+      "url": "https://github.com/HazemSabry"
+    },
+    {
+      "name": "Mennatallah Ashraf",
+      "email": "mennatallah.a.haggag@gmail.com",
+      "url": "https://github.com/Mennatallah9"
+    }
+  ],
   "license": "MIT",
   "dependencies": {
+    "@octokit/rest": "^21.1.1",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
