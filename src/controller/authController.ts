@@ -360,7 +360,7 @@ passport.use(
  * - The `session` option is set to `false` to disable session-based authentication.
  * - Ensure that the GitHub strategy is properly configured in your Passport setup.
  * 
- * @route POST /auth/github
+ * @route GET /auth/github
  * @access public
  * 
  * @HazemSabry

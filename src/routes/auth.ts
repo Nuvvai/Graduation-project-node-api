@@ -16,7 +16,7 @@ router.get('/refresh-token', refreshToken_controller);
 router.delete('/logout', logout_controller)
 
 // @access public
-router.post('github', githubAuth_controller);
+router.get('github', githubAuth_controller);
 
 // @access public
 router.post('github/callback', githubCallback_controller);
