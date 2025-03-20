@@ -1,16 +1,3 @@
-import {
-    generateNginxStaticWebServerDockerfile,
-    generateApacheStaticWebServerDockerfile,
-    generateApachePHPWebServerDockerfile,
-    generateAngularDockerfile,
-    generateReactDockerfile,
-    generateVueDockerfile,
-    generateNodeJSDockerfile,
-    generateDjangoDockerfile,
-    generateFlaskDockerfile,
-    generateGolangDockerfile,
-    generateLaravelDockerfile
-} from "../utils/generateDockerfile"
 import { generatePipelineScript } from "../utils/generatePipelineScript";
 import { Request, Response, NextFunction } from 'express';
 import Pipeline, {IPipeline} from '../models/Pipeline';
@@ -134,43 +121,8 @@ export const createPipeline = async (
         // };
         // await jenkins.credentials.create(credentialsOptions);
         //------------------------------------------------------------------------
-        let DockerfileContent: string;
-        // TODO: change the options dynamically based on the framework
-        const dockerfileOptions = {projectName, VERSION: '1.0.0', port: 3000, envVars: [], runCommand: 'npm start', APP_NAME: 'my-app', buildCommand: 'npm run build'};
-        switch(projectExists.framework.toLowerCase()){
-            case('nodejs'):
-                DockerfileContent = await generateNodeJSDockerfile(userExists.username, dockerfileOptions);
-                break;
-            case('php'):
-                DockerfileContent = await generateApachePHPWebServerDockerfile(userExists.username, dockerfileOptions);
-                break;
-            case('angular'):
-                DockerfileContent = await generateAngularDockerfile(userExists.username, dockerfileOptions);
-                break;
-            case('vuejs'):
-                DockerfileContent = await generateVueDockerfile(userExists.username, dockerfileOptions);
-                break;
-            case('django'):
-                DockerfileContent = await generateDjangoDockerfile(userExists.username, dockerfileOptions);
-                break;
-            case('flask'):
-                DockerfileContent = await generateFlaskDockerfile(userExists.username, dockerfileOptions);
-                break;
-            case('golang'):
-                DockerfileContent = await generateGolangDockerfile(userExists.username, dockerfileOptions);
-                break;
-            case('laravel'):
-                DockerfileContent = await generateLaravelDockerfile(userExists.username, dockerfileOptions);
-                break;
-            case('react'):
-                DockerfileContent = await generateReactDockerfile(userExists.username, dockerfileOptions);
-                break;
-            default:
-                res.status(400).json({message: "Invalid framework!"});
-                return;
-        }
 
-        const pipelineScript = generatePipelineScript(framework, username, gitBranch, repositoryUrl, DockerfileContent);
+        const pipelineScript = generatePipelineScript(framework, username, gitBranch, repositoryUrl);
       
         const pipelineJobXML = create({ version: '1.0', encoding: 'UTF-8' })
             .ele('flow-definition', { plugin: 'workflow-job@2.40' })
