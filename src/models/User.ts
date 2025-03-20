@@ -1,5 +1,10 @@
 import { Schema, model, Document } from 'mongoose';
 
+export interface IGithubAuth {
+    githubUsername?: string;
+    githubAccessToken?: string;
+    githubEmail?: string;
+}
 /**
  * Interface representing a User document.
  * 
@@ -26,7 +31,7 @@ export interface IUser extends Document {
     /**
      * The password of the user.
      */
-    password: string;
+    password?: string;
     /**
      * The role of the user, either 'user' or 'admin'.
      */
@@ -35,7 +40,19 @@ export interface IUser extends Document {
      * The date when the user was created.
      */
     createdAt: Date;
+    /**
+     * The GitHub authentication details of the user.
+     */
+    githubAuth?: IGithubAuth;
 }
+/**
+ * Schema for GitHub Authentication
+ */
+const githubAuthSchema = new Schema({
+    githubUsername: { type: String, unique: true },
+    githubAccessToken: { type: String, unique: true },
+    githubEmail: { type: String, unique: true },
+});
 
 /**
  * Schema for Users
@@ -44,9 +61,10 @@ export interface IUser extends Document {
 const userSchema = new Schema < IUser > ({
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String},
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     createdAt: { type: Date, default: Date.now },
+    githubAuth: {type: githubAuthSchema}
 });
 
 export default model<IUser> ('User', userSchema);

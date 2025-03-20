@@ -33,7 +33,7 @@ export const getUserProfile = async (req: Request<GetUserProfileRequestParams>, 
     const user = req.user as IUser;
 
     try {
-        const userExists = await User.findOne<IUser>({username});
+        const userExists = await User.findOne<IUser>({username}).select('-password'); // Exclude password;
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
             return;
@@ -116,6 +116,10 @@ export const updateUserProfile = async (req: Request<UpdateUserProfileRequestPar
         if (newEmail) userExists.email = newEmail;
 
         if (newPassword && newPasswordAgain && oldPassword && newPassword === newPasswordAgain) {
+            if (!userExists.password) {
+                res.status(400).json({ message: 'Password is missing!' });
+                return;
+            }
             const isMatch = await bcrypt.compare(oldPassword, userExists.password);
             if (!isMatch) {
                 res.status(400).json({ message: 'Incorrect old password!' });
