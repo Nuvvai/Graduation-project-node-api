@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { IJwtSignPayload } from '../controller/authController';
 
 /**
- * @description Verify the access token for authorize user.
+ * Verify the access token for authorize user.
  * @param req.headers.authorization
  * @param res 
  * @param next 

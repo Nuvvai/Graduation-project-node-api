@@ -1,7 +1,9 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 import ms from 'ms';
+import passport from "passport";
+import { Strategy as GitHubStrategy, Profile } from "passport-github2";
 
 import User, { IUser } from '../models/User';
 
@@ -128,7 +130,7 @@ export interface IJwtSignPayload  {
 }
 
 /**
- * @description Controller function for user registration.
+ * Controller function for user registration.
  * @param req.body.username - The username of the register user.
  * @param req.body.email - The email of the register user.
  * @param req.body.password - The password of the register user.
@@ -142,9 +144,14 @@ export const register_controller = async (req:Request<object, object, RegisterRe
     const { username, email, password }:RegisterRequestBody = req.body;
 
     try {
+        const existingUsername: IUser | null = await User.findOne<IUser>({ username: username });
+        if (existingUsername) {
+            res.status(409).json({ message: 'Username already exists' });
+            return;
+        }
         const existingUser:IUser | null = await User.findOne<IUser>({ email: email });
         if (existingUser) {
-            res.status(409).json({ message: 'User already exists' });
+            res.status(409).json({ message: 'Email already used before' });
             return;
         }
 
@@ -152,18 +159,18 @@ export const register_controller = async (req:Request<object, object, RegisterRe
             res.status(406).json({ message: "Not accepted, missing parameter" });
             return;
         } else if (username.indexOf('@') !== -1) {
-            res.status(406).json({ message: 'Invalid username can not include "@"' }); //not tested yet ...!!
+            res.status(406).json({ message: 'Invalid username can not include "@"' });
             return;
         } else if (email.length < 6 || email.indexOf('@') === -1) {
-            res.status(406).json({ message: 'Invalid email format' }); //not tested yet ...!!
+            res.status(406).json({ message: 'Invalid email format' });
             return
         }
         else if (password.length < 6) {
-            res.status(406).json({ message: 'Password must be at least 6 characters long' });  //not tested yet ...!!
+            res.status(406).json({ message: 'Password must be at least 6 characters long' });
             return
         }
         else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}/.test(password)) {
-            res.status(406).json({ message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character' });  //not tested yet ...!!
+            res.status(406).json({ message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character' });
             return;
         }
 
@@ -186,7 +193,7 @@ export const register_controller = async (req:Request<object, object, RegisterRe
 }
 
 /**
- * @description Controller function for user login.
+ * Controller function for user login.
  * @param req.body.usernameOrEmail The username or email of the user to login with.
  * @param req.body.password The password of the user to login with.
  * @returns A promise that resolves when the user is logged in successfully.
@@ -245,7 +252,7 @@ export const login_controller = async (req: Request<object, object, LoginRequest
 }
 
 /**
- * @description Controller function for refreshing the accessToken
+ * Controller function for refreshing the accessToken
  * @param req.cookies.refreshToken The refresh token to be used to refresh the accessToken.
  * @returns a promise that is resolved when the accessToken is refreshed.
  * @route GET /auth/refresh-token
@@ -288,7 +295,7 @@ export const refreshToken_controller = async (req: Request, res: Response, next:
 }
 
 /**
- * @description Controller function for user logout.
+ * Controller function for user logout.
  * @returns A promise that resolves when the user is logged out successfully.
  * @route DELETE /auth/logout
  * @access private
@@ -297,9 +304,110 @@ export const refreshToken_controller = async (req: Request, res: Response, next:
  */
 export const logout_controller = async(req: Request, res:Response, next:NextFunction):Promise<void> => {
     try {
-        res.clearCookie('refreshToken', { httpOnly: true, secure: true, sameSite: 'none' });
+        const refreshToken: string | undefined = req.cookies.refreshToken;
+        if (!refreshToken) {
+            res.status(401).json({ message: 'Unauthorized, no refreshToken provided' });
+            return; 
+        }
+
+        res.clearCookie('refreshToken', refreshToken_cookiesProperty);
         res.status(200).json({ message: 'Logged out successfully' });
     } catch (error) {
         next(error);
     }
 }
+
+passport.use(
+    new GitHubStrategy(
+        {
+            clientID: process.env.GITHUB_CLIENT_ID!,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+            callbackURL: "http://your-backend.com/auth/github/callback",
+            scope: ["repo", "read:user"],
+        },
+        async (accessToken: string, refreshToken: string, profile: Profile, done: (error: unknown, user?: {user: IUser}) => void) => {
+            /**
+             * Finds a user in the database by their GitHub ID.
+             * 
+             * @param profile.id - The GitHub ID of the user to search for.
+             * @returns A promise that resolves to the user object if found, or `null` if no user is found.
+             */
+            let user = await User.findOne({ github: { Id: profile.id } });
+
+            if (!user) {
+                user = await User.create({
+                    githubId: profile.id,
+                    username: profile.username,
+                    email: profile.emails?.[0]?.value || "",
+                    accessToken, // Store GitHub token for API access
+                });
+            }
+
+            done(null, { user });
+        }
+    )
+);
+
+/**
+ * Middleware for authenticating users using GitHub OAuth strategy.
+ * This utilizes the `passport.authenticate` method with the "github" strategy.
+ * 
+ * @constant
+ * @type {RequestHandler}
+ * @see {@link https://www.passportjs.org/packages/passport-github2/|Passport-GitHub Documentation}
+ * 
+ * @remarks
+ * - The `session` option is set to `false` to disable session-based authentication.
+ * - Ensure that the GitHub strategy is properly configured in your Passport setup.
+ * 
+ * @route POST /auth/github
+ * @access public
+ * 
+ * @HazemSabry
+ */
+export const githubAuth_controller: RequestHandler = passport.authenticate("github", { session: false });
+
+/**
+ * Handles the GitHub OAuth callback and generates a refresh token for the authenticated user.
+ *
+ * @param req - The HTTP request object, expected to contain the authenticated user in `req.user`.
+ * @param res - The HTTP response object used to send the response back to the client.
+ *
+ * @remarks
+ * - If the user is not authenticated (`req.user` is undefined), a 401 status code is returned with an error message.
+ * - If the JWT secret key is not found in the environment variables, a 500 status code is returned, and an error is thrown.
+ * - A refresh token is generated using the user's ID, username, and email, and is signed with the secret key.
+ * - The refresh token is sent as a cookie in the response, and the username is returned in the response body.
+ *
+ * @throws Will throw an error if the JWT secret key is not found in the environment variables.
+ * 
+ * @returns A JSON response containing the username of the authenticated user.
+ * 
+ * @route POST /auth/github/callback
+ * @access public
+ * 
+ * @HazemSabry
+ */
+export const githubCallback_controller = async (req: Request, res: Response, next:NextFunction): Promise<void> => {
+    try {
+        const user: IUser | undefined = req.user as IUser | undefined;
+        if (!user) {
+            res.status(401).json({ message: "GitHub authentication failed" });
+            return;
+        }
+
+        const secretKey: string | undefined = process.env.JWT_Token;
+        if (!secretKey) {
+            res.status(500);
+            throw new Error('Server error, secret key not found, cannot send token');
+        }
+
+        const refreshToken: string = jwt.sign({ id: user._id, username: user.username, email: user.email }, secretKey, { expiresIn: refreshTokenExpiresIn });
+
+        res.cookie("refreshToken", refreshToken, refreshToken_cookiesProperty);
+            res.status(200).json({ username: user.username });
+        }
+    catch (error) {
+        next(error);
+    }
+};
