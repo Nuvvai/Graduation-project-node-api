@@ -4,7 +4,7 @@ import { Octokit } from "@octokit/rest";
  * A service class to interact with GitHub's API using Octokit.
  * @HazemSabry
  */
-interface IGitHubService {
+interface IOrgGitHubService {
 
     /**
      * Creates a new private repository inside an organization.
@@ -68,7 +68,7 @@ interface IGitHubService {
  * @HazemSabry
  */
 
-class GitHubService implements IGitHubService{
+class OrgGitHubService implements IOrgGitHubService{
     private octokit: Octokit;
 
     /**
@@ -168,4 +168,4 @@ class GitHubService implements IGitHubService{
     }
 }
 
-export default GitHubService;
+export default OrgGitHubService;
