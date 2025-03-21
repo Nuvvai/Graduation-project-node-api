@@ -24,50 +24,50 @@ describe('User Controller', () => {
         }));
     });
     
-    describe('getAllUsers', () => {
-        it('should return all users excluding passwords', async () => {
-            const mockUsers = [
-                { _id: '1', username: 'user1', email: 'user1@example.com', password: 'pass1', role: 'user' },
-                { _id: '2', username: 'user2', email: 'user2@example.com', password: 'pass2', role: 'user' }
-            ];
+    // describe('getAllUsers', () => {
+    //     it('should return all users excluding passwords', async () => {
+    //         const mockUsers = [
+    //             { _id: '1', username: 'user1', email: 'user1@example.com', password: 'pass1', role: 'user' },
+    //             { _id: '2', username: 'user2', email: 'user2@example.com', password: 'pass2', role: 'user' }
+    //         ];
             
-            // current user: admin
-            (User.findOne as jest.Mock).mockResolvedValueOnce({ 
-                username: 'admin', 
-                role: 'admin' 
-            });
+    //         // current user: admin
+    //         (User.findOne as jest.Mock).mockResolvedValueOnce({ 
+    //             username: 'admin', 
+    //             role: 'admin' 
+    //         });
 
-            (User.find as jest.Mock).mockReturnValue({
-                select: jest.fn().mockResolvedValue(mockUsers),
-            });
+    //         (User.find as jest.Mock).mockReturnValue({
+    //             select: jest.fn().mockResolvedValue(mockUsers),
+    //         });
             
-            const response = await request(app).get('/users')
+    //         const response = await request(app).get('/users')
             
-            expect(response.status).toBe(200);
-            expect(response.body).toEqual(mockUsers);
-            expect(User.find).toHaveBeenCalledTimes(1);
-        });
+    //         expect(response.status).toBe(200);
+    //         expect(response.body).toEqual(mockUsers);
+    //         expect(User.find).toHaveBeenCalledTimes(1);
+    //     });
         
-        it('should return 403 if user is not admin', async () => {
-            (User.findOne as jest.Mock).mockResolvedValueOnce({ 
-                username: 'regularuser', 
-                role: 'user' 
-            });
+    //     it('should return 403 if user is not admin', async () => {
+    //         (User.findOne as jest.Mock).mockResolvedValueOnce({ 
+    //             username: 'regularuser', 
+    //             role: 'user' 
+    //         });
         
-            const response = await request(app).get('/users')
+    //         const response = await request(app).get('/users')
             
-            expect(response.status).toBe(403);
-            expect(response.body.message).toBe("Unauthorized action!");
-        });
+    //         expect(response.status).toBe(403);
+    //         expect(response.body.message).toBe("Unauthorized action!");
+    //     });
         
-        it('should handle errors properly', async () => {
-            (User.findOne as jest.Mock).mockRejectedValueOnce(new Error('Database error'));
+    //     it('should handle errors properly', async () => {
+    //         (User.findOne as jest.Mock).mockRejectedValueOnce(new Error('Database error'));
             
-            const response = await request(app).get('/users')
+    //         const response = await request(app).get('/users')
             
-            expect(response.status).toBe(500);
-        });
-    });
+    //         expect(response.status).toBe(500);
+    //     });
+    // });
     
     describe('getUserProfile', () => {
         it('should return a user profile if authorized', async () => {

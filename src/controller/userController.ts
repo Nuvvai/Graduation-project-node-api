@@ -141,29 +141,3 @@ export const updateUserProfile = async (req: Request<UpdateUserProfileRequestPar
     }
 };
 
-/**
- * @author Mennatallah Ashraf
- * @des Controller function for retrieving all users excluding passwords.
- * @route GET /users
- * @access Admin
- */
-export const getAllUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const user = req.user as IUser;
-    try {
-        const username = user.username;
-        const userExists = await User.findOne<IUser>({ username });
-        if (!userExists) {
-            res.status(404).json({ message: 'User not found!' });
-            return;
-        }
-        if (userExists.role !== 'admin') {
-            console.log(userExists);
-            res.status(403).json({ message: "Unauthorized action!" });
-            return;
-        }
-        const users = await User.find().select('-password'); // Exclude password
-        res.status(200).json(users);
-    } catch (error) {
-        next(error);
-    }
-};
