@@ -1,5 +1,5 @@
 import express,{Express} from 'express';
-
+import adminRoutes from './routes/adminRoutes';
 import authRouter from './routes/auth';
 import projectsRoutes from './routes/projectRoutes';
 import deploymentRoutes from './routes/deploymentRoutes';
@@ -13,6 +13,7 @@ import cors from 'cors';
 //Section for development phase only
 import dotenv from 'dotenv';
 import { verifyToken } from './middleware/verifyToken';
+import { verifyAdmin } from './middleware/verifyAdmin';
 
 dotenv.config();
 //
@@ -33,6 +34,8 @@ app.use('/projects', projectsRoutes);
 app.use('/deployments', deploymentRoutes);
 app.use('/pipelines', pipelineRoutes);
 app.use('/users', userRoutes);
+app.use(verifyAdmin);
+app.use('/admin', adminRoutes);
 
 app.use(errorHandler);
 
