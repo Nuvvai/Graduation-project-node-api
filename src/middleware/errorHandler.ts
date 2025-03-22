@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 
 /**
  * Represents a custom error with an optional status code.
@@ -25,7 +25,10 @@ interface CustomError extends Error {
  * 
  * @HazemSabry
  */
-const errorHandler = async(err:CustomError, req:Request, res:Response):Promise<void>=> {
+const errorHandler = async (err: CustomError, req: Request, res: Response, next:NextFunction): Promise<void> => {
+  if (!err) {
+    next();
+  }
   // Log the error to the console for debugging purposes
   console.error(err.stack);
 

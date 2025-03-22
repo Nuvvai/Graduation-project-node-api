@@ -1,6 +1,13 @@
 import app from "./app";
 import mongoose from 'mongoose';
 
+
+//Section for development phase only
+import dotenv from 'dotenv';
+
+dotenv.config();
+//
+
 type PORT = string | number;
 const CONNECTION_URL:string = process.env.MONGO_URL || 'mongodb://localhost:27017/';
 const PORT: PORT = process.env.PORT || 5000;

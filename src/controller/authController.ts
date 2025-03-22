@@ -4,8 +4,9 @@ import { Request, Response, NextFunction, RequestHandler } from 'express';
 import ms from 'ms';
 import passport from "passport";
 import { Strategy as GitHubStrategy, Profile } from "passport-github2";
-
+import axios from "axios";
 import User, { IUser } from '../models/User';
+import Validate from '../utils/Validate';
 
 const refreshTokenExpiresIn: ms.StringValue = '7d'
 const accessTokenExpiresIn: ms.StringValue = '15m'
@@ -141,15 +142,17 @@ export interface IJwtSignPayload  {
  * @HazemSabry
  */
 export const register_controller = async (req:Request<object, object, RegisterRequestBody>, res:Response, next:NextFunction):Promise<void> => {
-    const { username, email, password }:RegisterRequestBody = req.body;
+    const { username, email, password }: RegisterRequestBody = req.body;
+    
+    const validate = new Validate();
 
     try {
-        const existingUsername: IUser | null = await User.findOne<IUser>({ username: username });
+        const existingUsername: boolean= await validate.usernameExists(username);
         if (existingUsername) {
             res.status(409).json({ message: 'Username already exists' });
             return;
         }
-        const existingUser:IUser | null = await User.findOne<IUser>({ email: email });
+        const existingUser: boolean = await validate.emailExists(email);
         if (existingUser) {
             res.status(409).json({ message: 'Email already used before' });
             return;
@@ -158,19 +161,15 @@ export const register_controller = async (req:Request<object, object, RegisterRe
         if (!username || !email || !password) {
             res.status(406).json({ message: "Not accepted, missing parameter" });
             return;
-        } else if (username.indexOf('@') !== -1) {
+        } else if (!validate.usernameSyntax(username)) {
             res.status(406).json({ message: 'Invalid username can not include "@"' });
             return;
-        } else if (email.length < 6 || email.indexOf('@') === -1) {
+        } else if (!validate.emailSyntax(email)) {
             res.status(406).json({ message: 'Invalid email format' });
             return
         }
-        else if (password.length < 6) {
-            res.status(406).json({ message: 'Password must be at least 6 characters long' });
-            return
-        }
-        else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}/.test(password)) {
-            res.status(406).json({ message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character' });
+        else if (!validate.passwordSyntax(password)) {
+            res.status(406).json({ message: 'Password must be at lest 6 characters and contain at least one uppercase letter, one lowercase letter, one number, and one special character' });
             return;
         }
 
@@ -202,7 +201,7 @@ export const register_controller = async (req:Request<object, object, RegisterRe
  * @access public 
  * @HazemSabry
  */
-export const login_controller = async (req: Request<object, object, LoginRequestBody>, res:Response, next:NextFunction):Promise<void> => {
+export const login_controller = async (req: Request<object, object, LoginRequestBody>, res: Response, next: NextFunction): Promise<void> => {
     const { usernameOrEmail, password }: LoginRequestBody = req.body;
 
     try {
@@ -224,12 +223,12 @@ export const login_controller = async (req: Request<object, object, LoginRequest
             existingUser = await User.findOne<IUser>({ email: UserEmail });
         }
 
-        if (!existingUser) {
+        if (!existingUser || !existingUser.password) {
             res.status(404).json({ message: 'User not found' });
             return;
         }
 
-        const isMatch:boolean = await bcrypt.compare(password, existingUser.password);
+        const isMatch: boolean = await bcrypt.compare(password, existingUser.password);
         if (!isMatch) {
             res.status(401).json({ message: 'Invalid credentials' });
             return;
@@ -322,31 +321,20 @@ passport.use(
         {
             clientID: process.env.GITHUB_CLIENT_ID!,
             clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-            callbackURL: "http://your-backend.com/auth/github/callback",
+            callbackURL: `${process.env.BACKEND_DOMAIN_NAME}/auth/github/callback`,
             scope: ["repo", "read:user"],
         },
-        async (accessToken: string, refreshToken: string, profile: Profile, done: (error: unknown, user?: {user: IUser}) => void) => {
-            /**
-             * Finds a user in the database by their GitHub ID.
-             * 
-             * @param profile.id - The GitHub ID of the user to search for.
-             * @returns A promise that resolves to the user object if found, or `null` if no user is found.
-             */
-            let user = await User.findOne({ github: { Id: profile.id } });
-
-            if (!user) {
-                user = await User.create({
-                    githubId: profile.id,
-                    username: profile.username,
-                    email: profile.emails?.[0]?.value || "",
-                    accessToken, // Store GitHub token for API access
-                });
+        async (accessToken: string, refreshToken: string, profile: Profile, done: (error: unknown) => void) => {
+            try {
+                done(null);
+            } catch (error) {
+                console.error("Error in GitHub strategy callback:", error);
+                done(error);
             }
-
-            done(null, { user });
         }
     )
 );
+
 
 /**
  * Middleware for authenticating users using GitHub OAuth strategy.
@@ -367,47 +355,140 @@ passport.use(
  */
 export const githubAuth_controller: RequestHandler = passport.authenticate("github", { session: false });
 
+
+
 /**
- * Handles the GitHub OAuth callback and generates a refresh token for the authenticated user.
+ * Handles the GitHub OAuth callback, exchanges the authorization code for an access token,
+ * retrieves user data from GitHub, and manages user authentication in the application.
  *
- * @param req - The HTTP request object, expected to contain the authenticated user in `req.user`.
- * @param res - The HTTP response object used to send the response back to the client.
+ * @param req - The HTTP request object, containing the query parameter `code` from GitHub.
+ * @param res - The HTTP response object, used to send responses back to the client.
+ * @param next - The next middleware function in the Express.js pipeline.
+ * @returns A Promise that resolves to void.
  *
- * @remarks
- * - If the user is not authenticated (`req.user` is undefined), a 401 status code is returned with an error message.
- * - If the JWT secret key is not found in the environment variables, a 500 status code is returned, and an error is thrown.
- * - A refresh token is generated using the user's ID, username, and email, and is signed with the secret key.
- * - The refresh token is sent as a cookie in the response, and the username is returned in the response body.
- *
- * @throws Will throw an error if the JWT secret key is not found in the environment variables.
+ * @throws Will throw an error if the GitHub authorization code is missing, the access token
+ *         cannot be retrieved, or if the server secret key is not found.
  * 
- * @returns A JSON response containing the username of the authenticated user.
- * 
- * @route POST /auth/github/callback
+ * @route GET /auth/github/callback
  * @access public
+ *
+ * @HazemSabry
+ */
+export const githubCallback_controller = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const code = req.query.code as string;
+        if (!code) {
+            res.status(400).json({ message: "Authorization code is missing" });
+            return;
+        }
+
+        // Exchange the code for an access token
+        const tokenResponse = await axios.post(
+            "https://github.com/login/oauth/access_token",
+            {
+                client_id: process.env.GITHUB_CLIENT_ID,
+                client_secret: process.env.GITHUB_CLIENT_SECRET,
+                code,
+            },
+            {
+                headers: { Accept: "application/json" },
+            }
+        );
+
+        const githubAccessToken = tokenResponse.data.access_token;
+        if (!githubAccessToken) {
+            res.status(400).json({ message: "Failed to retrieve access token" });
+            return;
+        }
+
+        // Fetch user data from GitHub using the access token
+        const userResponse = await axios.get("https://api.github.com/user", {
+            headers: { Authorization: `Bearer ${githubAccessToken}` },
+        });
+
+        const githubUser = userResponse.data;
+        console.log(githubUser);
+
+        // Find or create the user in the database
+        let user = await User.findOne({ githubId: githubUser.id });
+        if (!user) {
+            user = await User.create({
+                username: githubUser.name,
+                githubId: githubUser.id,
+                githubUsername: githubUser.login,
+                githubEmail: githubUser.email,
+                githubAccessToken,
+                email: githubUser.email,
+            });
+
+        }
+
+        // Generate a JWT token for authentication
+        const secretKey: string | undefined = process.env.JWT_Token;
+        if (!secretKey) {
+            res.status(500);
+            throw new Error("Server error, secret key not found, cannot send token");
+        }
+
+        const refreshToken: string = jwt.sign(
+            { id: user._id, username: user.username, email: user.email },
+            secretKey,
+            { expiresIn: refreshTokenExpiresIn }
+        );
+
+        // Set token in cookies
+        res.cookie("refreshToken", refreshToken, refreshToken_cookiesProperty);
+        res.redirect(`${FRONTEND_DOMAIN_NAME}/auth/complete`);
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Handles the authentication status check for a user.
+ *
+ * @param req - The HTTP request object, expected to contain a `refreshToken` cookie.
+ * @param res - The HTTP response object used to send back the authentication status.
+ *
+ * @returns A JSON response indicating whether the user is authenticated and, if so, their username.
+ *
+ * @throws Will throw an error if the server's secret key is not found or if token verification fails.
+ *
+ * - If the `refreshToken` cookie is missing, responds with a 401 status and `isAuthenticated: false`.
+ * - If the server's secret key (`JWT_Token`) is not defined, responds with a 500 status and logs the error.
+ * - If the token is valid, responds with `isAuthenticated: true` and the user's username.
+ * - If an error occurs during token verification, responds with a 401 status and logs the error.
+ * 
+ * @route GET /auth/status
+ * @access Public (Requires authentication token)
  * 
  * @HazemSabry
  */
-export const githubCallback_controller = async (req: Request, res: Response, next:NextFunction): Promise<void> => {
+export const status_controller = async (req:Request, res:Response): Promise<void> => {
     try {
-        const user: IUser | undefined = req.user as IUser | undefined;
-        if (!user) {
-            res.status(401).json({ message: "GitHub authentication failed" });
+        const token = req.cookies.refreshToken; // Get token from cookies
+        if (!token) {
+            res.status(401).json({ isAuthenticated: false, user: null });
             return;
         }
 
         const secretKey: string | undefined = process.env.JWT_Token;
         if (!secretKey) {
             res.status(500);
-            throw new Error('Server error, secret key not found, cannot send token');
+            throw new Error("Server error, secret key not found, cannot send token");
         }
 
-        const refreshToken: string = jwt.sign({ id: user._id, username: user.username, email: user.email }, secretKey, { expiresIn: refreshTokenExpiresIn });
+        const decoded = jwt.verify(token, secretKey) as { id: string; username: string; email: string };
 
-        res.cookie("refreshToken", refreshToken, refreshToken_cookiesProperty);
-            res.status(200).json({ username: user.username });
-        }
-    catch (error) {
-        next(error);
+        res.json({
+            isAuthenticated: true,
+            user: {
+                username: decoded.username,
+            }
+        });
+    } catch (error) {
+        res.status(401).json({ isAuthenticated: false, user: null });
+        console.error("❌ Error in status endpoint:", error);
     }
 };

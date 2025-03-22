@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { Request, Response, NextFunction } from 'express';
 import User, { IUser } from '../models/User';
+import Validate from './../utils/Validate';
 
 interface GetUserProfileRequestParams {
     username: string;
@@ -97,6 +98,8 @@ export const updateUserProfile = async (req: Request<UpdateUserProfileRequestPar
     const { newName, newEmail, newPassword, newPasswordAgain, oldPassword } : UpdateUserProfileRequestBody = req.body;
     const user = req.user as IUser;
 
+    const validate = new Validate();
+
     try {
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
@@ -112,8 +115,31 @@ export const updateUserProfile = async (req: Request<UpdateUserProfileRequestPar
             res.status(403).json({ message: "Unauthorized action!" });
             return;
         }
-        if (newName) userExists.username = newName;
-        if (newEmail) userExists.email = newEmail;
+
+        if (newName) {
+            const validUsername = validate.usernameSyntax(newName);
+            if (!validUsername) {
+                res.status(406).json({ message: 'Invalid username!' });
+                return;
+            }
+            if (newName !== userExists.username && await validate.usernameExists(newName)) {
+                res.status(409).json({ message: 'Username already exists!' });
+                return;
+            }
+            userExists.username = newName;
+        };
+        if (newEmail) {
+            const validEmail = validate.emailSyntax(newEmail);
+            if (!validEmail) {
+                res.status(406).json({ message: 'Invalid email!' });
+                return;
+            }
+            if (newName !== userExists.username && await validate.emailExists(newEmail)) {
+                res.status(409).json({ message: 'Email already exists!' });
+                return;
+            }    
+            userExists.email = newEmail
+        };
 
         if (newPassword && newPasswordAgain && oldPassword && newPassword === newPasswordAgain) {
             if (!userExists.password) {
