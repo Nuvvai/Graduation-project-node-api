@@ -78,6 +78,10 @@ export const deleteUser = async (req: Request<DeleteUserRequestParams>, res: Res
             res.status(403).json({ message: "Unauthorized action!" });
             return;
         }
+        if(userExists.role === 'admin') {
+            res.status(403).json({message: 'Cannot delete an admin user!'});
+            return;
+        }
         await User.findOneAndDelete<IUser>({ username });
         res.clearCookie('refreshToken', { httpOnly: true, secure: true, sameSite: 'none' });
         res.status(200).json({ message: "User deleted successfully!" });

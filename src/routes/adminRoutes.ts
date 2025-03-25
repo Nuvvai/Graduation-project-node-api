@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllUsers, updateUserRole, getSystemStats } from '../controller/adminController';
+import { getAllUsers, updateUserRole, getSystemStats, searchUsers } from '../controller/adminController';
 
 const router = express.Router();
 
@@ -20,5 +20,11 @@ router.put('/users/:username', updateUserRole);
  * @route GET /admin/stats
  */
 router.get('/stats', getSystemStats);
+
+/**
+ * Route for searching users.
+ * @route GET /admin/users/search
+ */
+router.get('/users/search', searchUsers)
 
 export default router;
