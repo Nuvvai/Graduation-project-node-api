@@ -1,13 +1,8 @@
 import express, { Router } from 'express';
-import { getUserProfile, deleteUser, updateUserProfile, getAllUsers } from '../controller/userController';
+import { getUserProfile, deleteUser, updateUserProfile} from '../controller/userController';
 
 const router: Router = express.Router();
 
-/**
- * Route for retrieving all users.
- * @route GET /users
- */
-router.get('/', getAllUsers);
 
 /**
  * Route for retrieving a user profile by name.

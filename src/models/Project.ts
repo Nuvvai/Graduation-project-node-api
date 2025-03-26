@@ -44,11 +44,10 @@ const projectSchema: Schema<IProject> = new Schema<IProject>({
         trim: true,
         validate: {
             validator: function (value: string): boolean {
-                //ensure the repository URL is a valid GitHub URL
-                return /^https:\/\/github.com\/[a-zA-Z0-9-]+\/[a-zA-Z0-9-]+$/.test(value);
+                return /^https:\/\/github\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+(?:\.git)?$/.test(value);
             },
-            message: "Repository URL must be a valid GitHub URL.",
-        },
+            message: "Repository URL must be a valid GitHub repository URL.",
+        }        
     },
     framework: {
         type: String,
