@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from "jsonwebtoken";
 import { IJwtSignPayload } from '../controller/authController';
+import { console } from 'inspector';
 
 /**
  * Verify the access token for authorize user.
@@ -13,6 +14,7 @@ import { IJwtSignPayload } from '../controller/authController';
  */
 export const verifyToken = async(req:Request, res:Response, next:NextFunction): Promise<void> => {
     const accessToken = req.headers.authorization?.split(" ")[1]; // Extract token from "Bearer <token>"
+    console.log(accessToken);
     
     if (!accessToken) {
         res.status(401).json({ message: "Access denied. No token provided." });
@@ -25,12 +27,18 @@ export const verifyToken = async(req:Request, res:Response, next:NextFunction): 
             throw new Error('Server error, secret key not found, cannot refresh accessToken');
         }
 
-        jwt.verify(accessToken, secretKey, (err: jwt.VerifyErrors | null, decoded: string | jwt.JwtPayload | undefined) => {
+        jwt.verify(accessToken, secretKey, (err: unknown, decoded: unknown) => {
             if (err) {
-                res.status(403).json({ message: 'Invalid token' });
+                // console.error("JWT Verification Error:", err);
+                res.status(403).json({ message: "Invalid or expired access token" });
+                return;
+            }
+            if (!decoded ) {
+                res.status(403).json({ message: 'Invalid refresh token' });
                 return;
             }
         
+            console.log("decoded:"+decoded);
             req.user = decoded as IJwtSignPayload; // Attach decoded user data to request object
             next();
         });

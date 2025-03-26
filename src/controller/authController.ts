@@ -1,64 +1,15 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction, RequestHandler } from 'express';
-import ms from 'ms';
 import passport from "passport";
 import { Strategy as GitHubStrategy, Profile } from "passport-github2";
 import axios from "axios";
 import User, { IUser } from '../models/User';
 import Validate from '../utils/Validate';
+import Token from '../utils/Token';
 
-const refreshTokenExpiresIn: ms.StringValue = '7d'
-const accessTokenExpiresIn: ms.StringValue = '15m'
-
-/**
- * Interface representing the properties of a refresh token cookie.
- * 
- * @interface IRefreshToken_cookiesProperty
- * @property {boolean} httpOnly - Indicates whether the cookie is accessible only through the HTTP protocol.
- * @property {boolean} secure - Indicates whether the cookie is only to be sent over HTTPS.
- * @property {boolean | 'lax' | 'strict' | undefined | "none"} sameSite - Indicates the same-site policy for the cookie.
- * @property {string} Domain - The domain for which the cookie is valid.
- * @property {string} path - The path for which the cookie is valid.
- * @property {number} maxAge - The maximum age of the cookie in seconds.
- * 
- * @HazemSabry
- */
-interface IRefreshToken_cookiesProperty {
-    /**
-     * Indicates whether the cookie is accessible only through the HTTP protocol.
-     */
-    httpOnly: boolean;
-
-    /**
-     * Indicates whether the cookie is only to be sent over HTTPS.
-     */
-    secure: boolean;
-
-    /**
-     * Indicates the same-site policy for the cookie.
-     * Can be a boolean or one of 'lax', 'strict', or 'none'.
-     */
-    sameSite: boolean | 'lax' | 'strict' | undefined | "none";
-
-    /**
-     * The domain for which the cookie is valid.
-     */
-    Domain: string;
-
-    /**
-     * The path for which the cookie is valid.
-     */
-    path: string;
-
-    /**
-     * The maximum age of the cookie in seconds.
-     */
-    maxAge: number;
-}
-
-const FRONTEND_DOMAIN_NAME: string = process.env.FRONTEND_DOMAIN_NAME || 'http://localhost:5173';
-const refreshToken_cookiesProperty: IRefreshToken_cookiesProperty = { httpOnly: true, secure: true, sameSite: 'none', Domain: FRONTEND_DOMAIN_NAME, path: '/', maxAge: 7 * 24 * 60 * 60 * 1000 };
+/**The domain name of the frontend application. */
+const FRONTEND_DOMAIN_NAME: string = process.env.FRONTEND_DOMAIN_NAME || 'http://localhost:5173'
 
 /**
  * Interface representing the request body for user registration.
@@ -177,15 +128,18 @@ export const register_controller = async (req:Request<object, object, RegisterRe
         const newUser:IUser = new User({ username, email, password: hashedPassword });
         await newUser.save();
 
-        const secretKey: string | undefined = process.env.JWT_Token;
-        if (!secretKey) {
-            throw new Error('Server error, secret key not found, cannot send token');
-        }
-
-        const refreshToken: string = jwt.sign({ id: newUser._id, username: newUser.username, email: newUser.email }, secretKey, { expiresIn: refreshTokenExpiresIn });
-        const accessToken:string = jwt.sign({ id: newUser._id, username: newUser.username, email: newUser.email }, secretKey, { expiresIn: accessTokenExpiresIn });
-        res.cookie('refreshToken', refreshToken, refreshToken_cookiesProperty);
-        res.status(200).json({ accessToken })
+        const token = new Token(res);
+        await token.sendRefreshToken(newUser);
+        res.status(200).json({
+            isAuthenticated: true,
+            isGithubAuthenticated: newUser?.github ? true : false,
+            isGitLabAuthenticated: false,
+            isBitbucketAuthenticated: false,
+            isAzureDevOpsAuthenticated: false,
+            user: {
+                username: newUser.username,
+            }
+        });
     } catch (error) {
         next(error);
     }
@@ -234,17 +188,18 @@ export const login_controller = async (req: Request<object, object, LoginRequest
             return;
         }
 
-        const secretKey: string | undefined = process.env.JWT_Token;
-        if (!secretKey) {
-            res.status(500);
-            throw new Error('Server error, secret key not found, cannot send token');
-        }
-
-        const refreshToken: string = jwt.sign({ id: existingUser._id, username: existingUser.username, email: existingUser.email }, secretKey, { expiresIn: refreshTokenExpiresIn });
-        //const accessToken:string = jwt.sign({ id: existingUser._id, username: existingUser.username, email: existingUser.email }, secretKey, { expiresIn: accessTokenExpiresIn });
-        res.cookie('refreshToken', refreshToken, refreshToken_cookiesProperty);
-        res.status(200).json({ username: existingUser.username });
-
+        const token = new Token(res);
+        await token.sendRefreshToken(existingUser);
+        res.status(200).json({
+            isAuthenticated: true,
+            isGithubAuthenticated: existingUser?.github ? true : false,
+            isGitLabAuthenticated: false,
+            isBitbucketAuthenticated: false,
+            isAzureDevOpsAuthenticated: false,
+            user: {
+                username: existingUser.username,
+            }
+        });
     } catch (error) {
         next(error);
     }
@@ -273,10 +228,10 @@ export const refreshToken_controller = async (req: Request, res: Response, next:
             return; 
         }
 
-        jwt.verify(refreshToken, secretKey, (err: unknown, decoded: unknown) => {
+        jwt.verify(refreshToken, secretKey, async (err: unknown, decoded: unknown) => {
             if (err) {
-                res.status(500);
-                throw new Error('Server error, failed to verify refresh token');
+                res.status(403).json({ message: "Invalid or expired refresh token" });
+                return;
             }
             if (!decoded ) {
                 res.status(403).json({ message: 'Invalid refresh token' });
@@ -284,7 +239,8 @@ export const refreshToken_controller = async (req: Request, res: Response, next:
             }
 
             const user = decoded as IJwtSignPayload;
-            const accessToken: string = jwt.sign({ id: user.id, username: user.username, email: user.email }, secretKey, { expiresIn: accessTokenExpiresIn });
+            const token = new Token(res); 
+            const accessToken: string = await token.generateAccessToken(user);
             res.status(200).json({ accessToken });
         });
 
@@ -301,7 +257,8 @@ export const refreshToken_controller = async (req: Request, res: Response, next:
  * 
  * @HazemSabry
  */
-export const logout_controller = async(req: Request, res:Response, next:NextFunction):Promise<void> => {
+export const logout_controller = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    console.log('logout_controller');
     try {
         const refreshToken: string | undefined = req.cookies.refreshToken;
         if (!refreshToken) {
@@ -309,7 +266,8 @@ export const logout_controller = async(req: Request, res:Response, next:NextFunc
             return; 
         }
 
-        res.clearCookie('refreshToken', refreshToken_cookiesProperty);
+        const token = new Token(res);
+        await token.clearRefreshToken();
         res.status(200).json({ message: 'Logged out successfully' });
     } catch (error) {
         next(error);
@@ -321,7 +279,7 @@ passport.use(
         {
             clientID: process.env.GITHUB_CLIENT_ID!,
             clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-            callbackURL: `${process.env.BACKEND_DOMAIN_NAME}/auth/github/callback`,
+            callbackURL: `${process.env.FRONTEND_DOMAIN_NAME}/auth/github/callback`,
             scope: ["repo", "read:user"],
         },
         async (accessToken: string, refreshToken: string, profile: Profile, done: (error: unknown) => void) => {
@@ -407,39 +365,30 @@ export const githubCallback_controller = async (req: Request, res: Response, nex
         });
 
         const githubUser = userResponse.data;
-        console.log(githubUser);
-
-        // Find or create the user in the database
-        let user = await User.findOne({ githubId: githubUser.id });
-        if (!user) {
-            user = await User.create({
-                username: githubUser.name,
-                githubId: githubUser.id,
-                githubUsername: githubUser.login,
-                githubEmail: githubUser.email,
-                githubAccessToken,
-                email: githubUser.email,
-            });
-
-        }
 
         // Generate a JWT token for authentication
-        const secretKey: string | undefined = process.env.JWT_Token;
-        if (!secretKey) {
-            res.status(500);
-            throw new Error("Server error, secret key not found, cannot send token");
+        const token = new Token(res);
+
+        // Find or create the user in the database
+        let user = await User.findOne({ 'github.id': githubUser.id });
+        if (!user) {
+            user = await User.create({
+                username: `${githubUser.login}1234`,
+                email: `1234${githubUser.email}`,
+                github: {
+                    id: githubUser.id,
+                    username: githubUser.login,
+                    email: githubUser.email,
+                    accessToken: githubAccessToken
+                }
+            });
+            await token.sendRefreshToken(user);
+            res.redirect(`${FRONTEND_DOMAIN_NAME}/auth/continue`);
+            return;
         }
 
-        const refreshToken: string = jwt.sign(
-            { id: user._id, username: user.username, email: user.email },
-            secretKey,
-            { expiresIn: refreshTokenExpiresIn }
-        );
-
-        // Set token in cookies
-        res.cookie("refreshToken", refreshToken, refreshToken_cookiesProperty);
+        await token.sendRefreshToken(user);
         res.redirect(`${FRONTEND_DOMAIN_NAME}/auth/complete`);
-
     } catch (error) {
         next(error);
     }
@@ -469,7 +418,7 @@ export const status_controller = async (req:Request, res:Response): Promise<void
     try {
         const token = req.cookies.refreshToken; // Get token from cookies
         if (!token) {
-            res.status(401).json({ isAuthenticated: false, user: null });
+            res.status(200).json({ isAuthenticated: false, user: null });
             return;
         }
 
@@ -481,8 +430,14 @@ export const status_controller = async (req:Request, res:Response): Promise<void
 
         const decoded = jwt.verify(token, secretKey) as { id: string; username: string; email: string };
 
-        res.json({
+        const user = await User.findOne<IUser>({username:decoded.username});
+
+        res.status(200).json({
             isAuthenticated: true,
+            isGithubAuthenticated: user?.github?.id ? true : false,
+            isGitLabAuthenticated: user?.gitlab?.id ? true : false,
+            isBitbucketAuthenticated: user?.bitbuchet?.id ? true : false,
+            isAzureDevOpsAuthenticated: user?.azureDevOps?.id ? true : false,
             user: {
                 username: decoded.username,
             }

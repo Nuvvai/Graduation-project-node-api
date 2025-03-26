@@ -1,6 +1,27 @@
 import { Schema, model, Document } from 'mongoose';
 
 /**
+ * Represents the schema for a GitHub user.
+ * @interface IGitHubUserSchema
+ * @property {string} id - The github ID of the user.
+ * @property {string} username - The github name of the user.
+ * @property {string} email - The github email of the user.
+ * @property {string} accessToken - The github access token of the user.
+ * 
+ * @HazemSabry
+ */
+interface IRepositoryProviderSchema {
+    /**The user ID.*/
+    id: string;
+    /**The username.*/
+    username: string;
+    /**The email address.*/
+    email: string;
+    /**The access token.*/
+    accessToken: string;
+}
+
+/**
  * Interface representing a User document.
  * 
  * @interface IUser
@@ -9,10 +30,7 @@ import { Schema, model, Document } from 'mongoose';
  * @property {string} username - The username of the user.
  * @property {string} email - The email address of the user.
  * @property {string} password - The password of the user.
- * @property {string} githubId - The GitHub user ID.
- * @property {string} githubUsername - The GitHub username.
- * @property {string} githubEmail - The GitHub email address.
- * @property {string} githubAccessToken - The GitHub access token.
+ * @property {string} github - The github Information of the user.
  * @property {'user' | 'admin'} role - The role of the user, either 'user' or 'admin'.
  * @property {Date} createdAt - The date when the user was created.
  * 
@@ -25,14 +43,14 @@ export interface IUser extends Document {
     email: string;
     /** The password of the user.*/
     password?: string;
-    /**The GitHub user ID.*/
-    githubId: string;
-    /**The GitHub username.*/
-    githubUsername: string;
-    /**The GitHub email address.*/
-    githubEmail: string;
-    /**The GitHub access token.*/
-    githubAccessToken: string;
+    /**The github Information of the user*/
+    github?: IRepositoryProviderSchema
+    /**The gitlab Information of the user*/
+    gitlab?: IRepositoryProviderSchema
+    /**The bitbuchet Information of the user*/
+    bitbuchet?: IRepositoryProviderSchema
+    /**The azureDevOps Information of the user*/
+    azureDevOps?: IRepositoryProviderSchema
     /**The role of the user, either 'user' or 'admin'.*/
     role: 'user' | 'admin';
     /**The date when the user was created.*/
@@ -47,10 +65,30 @@ const userSchema = new Schema < IUser > ({
     username: { type: String, required: true, unique: true },
     email: { type: String, unique: true },
     password: { type: String, required: false },
-    githubId: { type: String, unique: true },
-    githubUsername: { type: String, unique: true },
-    githubEmail: { type: String, unique: true },
-    githubAccessToken: { type: String, unique: true },
+    github: {
+        id: { type: String, unique: true, sparse: true },
+        username: { type: String, unique: true, sparse: true  },
+        email: { type: String, unique: true, sparse: true },
+        accessToken: { type: String, unique: true },
+    },
+    bitbuchet: {
+        id: { type: String, unique: true, sparse: true },
+        username: { type: String, unique: true, sparse: true  },
+        email: { type: String, unique: true, sparse: true },
+        accessToken: { type: String, unique: true },
+    },
+    gitlab: {
+        id: { type: String, unique: true, sparse: true },
+        username: { type: String, unique: true, sparse: true  },
+        email: { type: String, unique: true, sparse: true },
+        accessToken: { type: String, unique: true },
+    },
+    azureDevOps: {
+        id: { type: String, unique: true, sparse: true },
+        username: { type: String, unique: true, sparse: true  },
+        email: { type: String, unique: true, sparse: true },
+        accessToken: { type: String, unique: true },
+    },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     createdAt: { type: Date, default: Date.now },
 });

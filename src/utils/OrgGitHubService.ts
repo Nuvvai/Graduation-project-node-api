@@ -69,6 +69,12 @@ interface IOrgGitHubService {
  */
 
 class OrgGitHubService implements IOrgGitHubService{
+
+    /**
+     * An instance of the Octokit library used to interact with the GitHub API.
+     * This is used to perform various operations such as fetching repository data,
+     * managing issues, and other GitHub-related tasks.
+     */
     private octokit: Octokit;
 
     /**
