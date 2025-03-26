@@ -57,6 +57,13 @@ export interface IUser extends Document {
     createdAt: Date;
 }
 
+// const details = {
+//         id: { type: String, unique: true, sparse: true },
+//         username: { type: String, unique: true, sparse: true  },
+//         email: { type: String, unique: true, sparse: true },
+//         accessToken: { type: String, unique: true },
+//     }
+
 /**
  * Schema for Users
  * @HazemSabry

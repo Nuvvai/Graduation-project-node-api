@@ -92,7 +92,7 @@ export const deleteUser = async (req: Request<DeleteUserRequestParams>, res: Res
  * @route PUT /users/:username
  * @access private
  */
-export const updateUserProfile = async (req: Request<UpdateUserProfileRequestParams, {}, UpdateUserProfileRequestBody>, res: Response, next: NextFunction): Promise<void> => {
+export const updateUserProfile = async (req: Request<UpdateUserProfileRequestParams, object, UpdateUserProfileRequestBody>, res: Response, next: NextFunction): Promise<void> => {
     const { username } : UpdateUserProfileRequestParams = req.params;
     const { newName, newEmail, newPassword, newPasswordAgain, oldPassword } : UpdateUserProfileRequestBody = req.body;
     const user = req.user as IUser;

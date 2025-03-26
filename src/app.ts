@@ -4,7 +4,6 @@ import authRouter from './routes/auth';
 import projectsRoutes from './routes/projectRoutes';
 import deploymentRoutes from './routes/deploymentRoutes';
 import pipelineRoutes from './routes/pipelineRoutes';
-import usersRoutes from './routes/usersRoutes';
 import errorHandler from './middleware/errorHandler';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
@@ -29,8 +28,7 @@ app.use(verifyToken);
 app.use('/projects', projectsRoutes);
 app.use('/deployments', deploymentRoutes);
 app.use('/pipelines', pipelineRoutes);
-app.use('/user', userRoutes);
-app.use('/users', usersRoutes);
+app.use('/users', userRoutes);
 // app.use(verifyAdmin);
 app.use('/admin', adminRoutes);
 
