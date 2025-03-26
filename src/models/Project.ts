@@ -21,13 +21,15 @@ const projectSchema: Schema<IProject> = new Schema<IProject>({
         type: String,
         required: true,
         trim: true,
+        minlength: [3, "Project name must be at least 3 characters long."],
+        maxlength: [30, "Project name must not exceed 30 characters."],
         validate: {
             validator: function (value: string): boolean {
                 //ensure the project name does not contain any whitespace
                 return !/\s/.test(value);
             },
-            message: "Project name must not contain spaces.",
-        },
+            message: "Project name can only contain letters, numbers, and dashes.",
+        }
     },
     username: {
         type: String,
@@ -39,6 +41,13 @@ const projectSchema: Schema<IProject> = new Schema<IProject>({
         type: String,
         required: true,
         unique: true,
+        trim: true,
+        validate: {
+            validator: function (value: string): boolean {
+                return /^https:\/\/github\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+(?:\.git)?$/.test(value);
+            },
+            message: "Repository URL must be a valid GitHub repository URL.",
+        }        
     },
     framework: {
         type: String,

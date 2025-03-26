@@ -27,6 +27,6 @@ export const verifyAdmin = async(req: Request, res: Response, next: NextFunction
         next();
     } catch (error) {
         console.error("Admin verification error:", (error as Error).message);
-        res.status(500).json({ message: "Server error during admin verification" });
+        next(error);
     }
 };

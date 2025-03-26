@@ -15,33 +15,35 @@ export interface IDeployment extends Document {
  */
 const deploymentSchema: Schema<IDeployment> = new Schema<IDeployment>({
     deploymentName: {
-        type: 'string',
+        type: String,
         required: true,
         trim: true,
+        minlength: [3, "Deployment name must be at least 3 characters long."],
+        maxlength: [50, "Deployment name must not exceed 50 characters."],
         validate: {
-            validator: function (value) {
-              // Ensure the deployment name does not contain any whitespace
-              return !/\s/.test(value);
+            validator: function (value: string): boolean {
+                return /^[a-zA-Z0-9-]+$/.test(value); // Alphanumeric + dashes only
             },
-            message: "Deployment name must not contain spaces.",
-        },
+            message: "Deployment name can only contain letters, numbers, and dashes.",
+        }
     },
     projectName: {
-        type: 'string',
+        type: String,
         ref: 'Project',
         required: true,
         trim: true
     },
     username: {
-        type: 'string',
+        type: String,
         ref: 'User',
         required: true,
         trim: true
     },
     status: {
-        type: 'string',
+        type: String,
         required: true,
-        enum: ['No status', 'Failed', 'Succeeded']
+        enum: ['No status', 'Failed', 'Succeeded'],
+        default: 'No status'
     },
     startTime: {
         type: Date,
