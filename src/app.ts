@@ -10,7 +10,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import { verifyToken } from './middleware/verifyToken';
 import userRoutes from './routes/userRoutes';
-// import { verifyAdmin } from './middleware/verifyAdmin';
+import { verifyAdmin } from './middleware/verifyAdmin';
 
 
 const FRONTEND_DOMAIN_NAME: string = process.env.FRONTEND_DOMAIN_NAME || "http://localhost:5173";
@@ -29,8 +29,7 @@ app.use('/projects', projectsRoutes);
 app.use('/deployments', deploymentRoutes);
 app.use('/pipelines', pipelineRoutes);
 app.use('/users', userRoutes);
-// app.use(verifyAdmin);
-app.use('/admin', adminRoutes);
+app.use('/admin', verifyAdmin, adminRoutes);
 
 app.use(errorHandler);
 

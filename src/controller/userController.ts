@@ -25,26 +25,16 @@ interface UpdateUserProfileRequestBody {
 /**
  * @author Mennatallah Ashraf
  * @des Controller function for retrieving a user profile by name.
- * @route GET /users/:username
+ * @route GET /users/me
  * @access private
  */
 export const getUserProfile = async (req: Request<GetUserProfileRequestParams>, res: Response, next: NextFunction): Promise<void> => {
-    const { username } = req.params;
     const user = req.user as IUser;
-
+    const username = user.username;
     try {
         const userExists = await User.findOne<IUser>({username}).select('-password'); // Exclude password;
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
-            return;
-        }
-        const currentUser = await User.findOne<IUser>({ username: user.username });
-        if (!currentUser) {
-            res.status(404).json({ message: "Current user not found!" });
-            return;
-        }
-        if ((user.username !== username) && (currentUser.role !== 'admin')) {
-            res.status(403).json({ message: "Unauthorized action!" });
             return;
         }
         res.status(200).json(userExists);
@@ -56,26 +46,16 @@ export const getUserProfile = async (req: Request<GetUserProfileRequestParams>, 
 /**
  * @author Mennatallah Ashraf
  * @des Controller function for deleting a user by name.
- * @route DELETE /users/:username
+ * @route DELETE /users/me
  * @access private
  */
 export const deleteUser = async (req: Request<DeleteUserRequestParams>, res: Response, next: NextFunction): Promise<void> => {
-    const { username } : DeleteUserRequestParams = req.params;
     const user = req.user as IUser;
-
+    const username = user.username;
     try {
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
-            return;
-        }
-        const currentUser = await User.findOne<IUser>({ username: user.username });
-        if (!currentUser) {
-            res.status(404).json({ message: "Current user not found!" });
-            return;
-        }
-        if ((user.username !== username) && (currentUser.role !== 'admin')) {
-            res.status(403).json({ message: "Unauthorized action!" });
             return;
         }
         await User.findOneAndDelete<IUser>({ username });
@@ -89,27 +69,17 @@ export const deleteUser = async (req: Request<DeleteUserRequestParams>, res: Res
 /**
  * @author Mennatallah Ashraf
  * @des Controller function for updating a user profile.
- * @route PUT /users/:username
+ * @route PUT /users/me
  * @access private
  */
 export const updateUserProfile = async (req: Request<UpdateUserProfileRequestParams, object, UpdateUserProfileRequestBody>, res: Response, next: NextFunction): Promise<void> => {
-    const { username } : UpdateUserProfileRequestParams = req.params;
     const { newName, newEmail, newPassword, newPasswordAgain, oldPassword } : UpdateUserProfileRequestBody = req.body;
     const user = req.user as IUser;
-
+    const username = user.username;
     try {
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
-            return;
-        }
-        const currentUser = await User.findOne<IUser>({ username: user.username });
-        if (!currentUser) {
-            res.status(404).json({ message: "Current user not found!" });
-            return;
-        }
-        if ((user.username !== username) && (currentUser.role !== 'admin')) {
-            res.status(403).json({ message: "Unauthorized action!" });
             return;
         }
         if (newName) userExists.username = newName;
