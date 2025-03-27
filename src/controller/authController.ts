@@ -95,34 +95,20 @@ export interface IJwtSignPayload  {
 export const register_controller = async (req:Request<object, object, RegisterRequestBody>, res:Response, next:NextFunction):Promise<void> => {
     const { username, email, password }: RegisterRequestBody = req.body;
     
-    const validate = new Validate();
+    const validate = new Validate(res);
 
-    try {
-        const existingUsername: boolean= await validate.usernameExists(username);
-        if (existingUsername) {
-            res.status(409).json({ message: 'Username already exists' });
-            return;
-        }
-        const existingUser: boolean = await validate.emailExists(email);
-        if (existingUser) {
-            res.status(409).json({ message: 'Email already used before' });
-            return;
-        }
-
+    try {       
         if (!username || !email || !password) {
             res.status(406).json({ message: "Not accepted, missing parameter" });
             return;
-        } else if (!validate.usernameSyntax(username)) {
-            res.status(406).json({ message: 'Invalid username can not include "@"' });
-            return;
-        } else if (!validate.emailSyntax(email)) {
-            res.status(406).json({ message: 'Invalid email format' });
-            return
+        } else {
+            validate.usernameSyntax(username);
+            validate.emailSyntax(email);
+            validate.passwordSyntax(password)
         }
-        else if (!validate.passwordSyntax(password)) {
-            res.status(406).json({ message: 'Password must be at lest 6 characters and contain at least one uppercase letter, one lowercase letter, one number, and one special character' });
-            return;
-        }
+
+        await validate.usernameExists(username);
+        await validate.emailExists(email); 
 
         const hashedPassword:string = await bcrypt.hash(password, 12);
         const newUser:IUser = new User({ username, email, password: hashedPassword });

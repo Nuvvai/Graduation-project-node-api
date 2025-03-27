@@ -1,4 +1,5 @@
 import User, { IUser } from '../models/User';
+import { Response } from 'express';
 
 /**
  * Interface for the validation methods.
@@ -15,7 +16,7 @@ interface IValidate {
      * 
      * @HazemSabry
      */
-    usernameSyntax: (username: string) => boolean;
+    usernameSyntax: (username: string) => void;
 
     /**
      * Validates the syntax of an email by checking if it contains a '@' character and at least 6 characters.
@@ -25,7 +26,7 @@ interface IValidate {
      * 
      * @HazemSabry
      */
-    emailSyntax: (email: string) => boolean;
+    emailSyntax: (email: string) => void;
 
     /**
      * Validates the syntax of a password by checking if it contains at least 6 characters, one uppercase letter, one lowercase letter, one number, and one special character.
@@ -35,7 +36,7 @@ interface IValidate {
      * 
      * @HazemSabry
      */
-    passwordSyntax: (password: string) => boolean;
+    passwordSyntax: (password: string) => void;
 
     /**
      * Checks if a username already exists in the database.
@@ -45,7 +46,7 @@ interface IValidate {
      * 
      * @HazemSabry
      */
-    usernameExists: (username: string) => Promise<boolean>;
+    usernameExists: (username: string) => Promise<void>;
 
     /**
      * Checks if an email already exists in the database.
@@ -55,7 +56,7 @@ interface IValidate {
      * 
      * @HazemSabry
      */
-    emailExists: (email: string) => Promise<boolean>;
+    emailExists: (email: string) => Promise<void>;
 }
 
 /**
@@ -64,28 +65,43 @@ interface IValidate {
  * @HazemSabry
  */
 export default class Validate implements IValidate{
-    constructor() { }
+    private res:Response;
+
+    constructor(res: Response) {
+        this.res = res;
+    }
     
     
-    usernameSyntax = (username: string) => {
-        return username.indexOf('@') === -1
+    usernameSyntax (username: string) {
+        if (! (username.indexOf('@') === -1)) {
+            this.res.status(406).json({ message: 'Invalid username can not include "@"' });
+        }
     }
 
-    emailSyntax = (email: string) => {
-        return email.length >= 6 && email.indexOf('@') !== -1
+    emailSyntax (email: string) { 
+        if (! (email.length >= 6 && email.indexOf('@') !== -1)) {
+            this.res.status(406).json({ message: 'Invalid email format' });
+        }
     }
 
-    passwordSyntax = (password: string) => {
-        return /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}/.test(password)
+    passwordSyntax (password: string) { 
+        if (! (/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}/.test(password))) {
+            this.res.status(406).json({ message: 'Password must be at lest 6 characters and contain at least one uppercase letter, one lowercase letter, one number, and one special character' });
+        }
     }
 
     async usernameExists(username: string) { 
         const existingUsername: IUser | null = await User.findOne<IUser>({ username })
-        return existingUsername ? true : false;
+        if (existingUsername) {
+            this.res.status(409).json({ message: 'Username already exists' });
+        }
     }
 
     async emailExists(email: string){
         const existingEmail: IUser | null = await User.findOne<IUser>({ email })
-        return existingEmail ? true : false;
+        if (existingEmail) {
+            this.res.status(409).json({ message: 'Email already used before' });
+            return;
+        }
     }
 }
