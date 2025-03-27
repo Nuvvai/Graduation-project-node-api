@@ -105,10 +105,10 @@ export const register_controller = async (req:Request<object, object, RegisterRe
             validate.usernameSyntax(username);
             validate.emailSyntax(email);
             validate.passwordSyntax(password)
+            await validate.usernameExists(username);
+            await validate.emailExists(email);
         }
 
-        await validate.usernameExists(username);
-        await validate.emailExists(email); 
 
         const hashedPassword:string = await bcrypt.hash(password, 12);
         const newUser:IUser = new User({ username, email, password: hashedPassword });
