@@ -111,10 +111,10 @@ export const register_controller = async (req:Request<object, object, RegisterRe
             validate.usernameSyntax(username);
             validate.emailSyntax(email);
             validate.passwordSyntax(password)
+            await validate.usernameExists(username);
+            await validate.emailExists(email);
         }
 
-        await validate.usernameExists(username);
-        await validate.emailExists(email); 
 
         const response = await otpUser.find({ email }).sort({ createdAt: -1 }).limit(1);
         if (response.length === 0 || otp !== response[0].otp) {
