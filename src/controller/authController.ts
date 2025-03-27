@@ -7,6 +7,7 @@ import axios from "axios";
 import User, { IUser } from '../models/User';
 import Validate from '../utils/Validate';
 import Token from '../utils/Token';
+import otpUser from '../models/otpUser';
 
 /**The domain name of the frontend application. */
 const FRONTEND_DOMAIN_NAME: string = process.env.FRONTEND_DOMAIN_NAME || 'http://localhost:5173'
@@ -34,6 +35,10 @@ interface RegisterRequestBody {
      * The password of the register user.
      */
     password: string;
+    /**
+     * The OTP of the register user.
+     */
+    otp: string;
 }
 
 /**
@@ -86,6 +91,7 @@ export interface IJwtSignPayload  {
  * @param req.body.username - The username of the register user.
  * @param req.body.email - The email of the register user.
  * @param req.body.password - The password of the register user.
+ * @param req.body.otp - The OTP of the register user.
  * @returns A promise that resolves when the registration is successful.
  * @throws { Error } if failed to encrypt the password, or create new user, or the environment variable JWT_Token is undefined, or failed sign a JWT token.
  * @route POST /auth/register
@@ -93,7 +99,7 @@ export interface IJwtSignPayload  {
  * @HazemSabry
  */
 export const register_controller = async (req:Request<object, object, RegisterRequestBody>, res:Response, next:NextFunction):Promise<void> => {
-    const { username, email, password }: RegisterRequestBody = req.body;
+    const { username, email, password, otp }: RegisterRequestBody = req.body;
     
     const validate = new Validate(res);
 
@@ -109,6 +115,12 @@ export const register_controller = async (req:Request<object, object, RegisterRe
 
         await validate.usernameExists(username);
         await validate.emailExists(email); 
+
+        const response = await otpUser.find({ email }).sort({ createdAt: -1 }).limit(1);
+        if (response.length === 0 || otp !== response[0].otp) {
+            res.status(400).json({message: 'The OTP is not valid!'});
+            return;
+        }
 
         const hashedPassword:string = await bcrypt.hash(password, 12);
         const newUser:IUser = new User({ username, email, password: hashedPassword });

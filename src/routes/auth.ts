@@ -2,6 +2,7 @@ import express from 'express';
 const router = express.Router();
 
 import { register_controller, login_controller, refreshToken_controller, logout_controller, githubAuth_controller, githubCallback_controller, status_controller } from '../controller/authController'
+import { sendOtp } from "../controller/otpUserController";
 
 // @access public
 router.post('/register', register_controller);
@@ -23,5 +24,8 @@ router.get('/github/callback', githubCallback_controller);
 
 // @access public
 router.get('/status', status_controller);
+
+// @access public
+router.post('/sendOtp', sendOtp);
 
 export default router;
