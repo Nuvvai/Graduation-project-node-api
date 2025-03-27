@@ -1,18 +1,8 @@
 import bcrypt from 'bcryptjs';
 import { Request, Response, NextFunction } from 'express';
 import User, { IUser } from '../models/User';
+import Validate from '../utils/Validate';
 
-interface GetUserProfileRequestParams {
-    username: string;
-}
-
-interface DeleteUserRequestParams {
-    username: string;
-}
-
-interface UpdateUserProfileRequestParams {
-    username: string;
-}
 
 interface UpdateUserProfileRequestBody {
     newName?: string;
@@ -28,7 +18,7 @@ interface UpdateUserProfileRequestBody {
  * @route GET /users/me
  * @access private
  */
-export const getUserProfile = async (req: Request<GetUserProfileRequestParams>, res: Response, next: NextFunction): Promise<void> => {
+export const getUserProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const user = req.user as IUser;
     const username = user.username;
     try {
@@ -49,7 +39,7 @@ export const getUserProfile = async (req: Request<GetUserProfileRequestParams>, 
  * @route DELETE /users/me
  * @access private
  */
-export const deleteUser = async (req: Request<DeleteUserRequestParams>, res: Response, next: NextFunction): Promise<void> => {
+export const deleteUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const user = req.user as IUser;
     const username = user.username;
     try {
@@ -72,7 +62,7 @@ export const deleteUser = async (req: Request<DeleteUserRequestParams>, res: Res
  * @route PUT /users/me
  * @access private
  */
-export const updateUserProfile = async (req: Request<UpdateUserProfileRequestParams, object, UpdateUserProfileRequestBody>, res: Response, next: NextFunction): Promise<void> => {
+export const updateUserProfile = async (req: Request<object, object, UpdateUserProfileRequestBody>, res: Response, next: NextFunction): Promise<void> => {
     const { newName, newEmail, newPassword, newPasswordAgain, oldPassword } : UpdateUserProfileRequestBody = req.body;
     const user = req.user as IUser;
     const username = user.username;
@@ -82,6 +72,16 @@ export const updateUserProfile = async (req: Request<UpdateUserProfileRequestPar
             res.status(404).json({ message: 'User not found!' });
             return;
         }
+
+        const validate = new Validate(res);
+
+        validate.usernameSyntax(username);
+        if (newEmail) validate.emailSyntax(newEmail);
+        if (newPassword) validate.passwordSyntax(newPassword);
+        if (newPasswordAgain) validate.passwordSyntax(newPasswordAgain);
+        if (oldPassword) validate.passwordSyntax(oldPassword);
+        // await validate.usernameExists(username);
+
         if (newName) userExists.username = newName;
         if (newEmail) userExists.email = newEmail;
 
