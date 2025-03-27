@@ -5,20 +5,20 @@ const router: Router = express.Router();
 
 /**
  * Route for retrieving a user profile by name.
- * @route GET /users/:name
+ * @route GET /users/me
  */
-router.get('/:username', getUserProfile);
+router.get('/me', getUserProfile);
 
 /**
  * Route for deleting a user by name.
- * @route DELETE /users/:name
+ * @route DELETE /users/me
  */
-router.delete('/:username', deleteUser);
+router.delete('/me', deleteUser);
 
 /**
  * Route for updating a user profile by name.
- * @route PUT /users/:name
+ * @route PUT /users/me
  */
-router.put('/:username', updateUserProfile);
+router.put('/me', updateUserProfile);
 
 export default router;
