@@ -244,7 +244,6 @@ export const refreshToken_controller = async (req: Request, res: Response, next:
  * @HazemSabry
  */
 export const logout_controller = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    console.log('logout_controller');
     try {
         const refreshToken: string | undefined = req.cookies.refreshToken;
         if (!refreshToken) {
