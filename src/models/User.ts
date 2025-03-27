@@ -24,7 +24,6 @@ interface IRepositoryProviderSchema {
 /**
  * Interface representing a User document.
  * 
- * @interface IUser
  * @extends {Document}
  * 
  * @property {string} username - The username of the user.
@@ -57,45 +56,46 @@ export interface IUser extends Document {
     createdAt: Date;
 }
 
-// const details = {
-//         id: { type: String, unique: true, sparse: true },
-//         username: { type: String, unique: true, sparse: true  },
-//         email: { type: String, unique: true, sparse: true },
-//         accessToken: { type: String, unique: true },
-//     }
+/**
+ * Represents the schema details for a User model.
+ * 
+ * @property id - A unique identifier for the user. It is of type `String` and is marked as unique and sparse.
+ * @property username - The username of the user. It is of type `String` and is marked as unique and sparse.
+ * @property email - The email address of the user. It is of type `String` and is marked as unique and sparse.
+ * @property accessToken - A unique access token for the user. It is of type `String` and is marked as unique.
+ * 
+ * @HazemSabry
+ */
+const details = {
+        id: { type: String, unique: true, sparse: true },
+        username: { type: String, unique: true, sparse: true  },
+        email: { type: String, unique: true, sparse: true },
+        accessToken: { type: String, unique: true },
+}
 
 /**
- * Schema for Users
+ * Represents the schema for a user in the application.
+ * 
+ * @property {string} username - The unique username of the user. This field is required.
+ * @property {string} email - The unique email address of the user.
+ * @property {string} [password] - The password of the user. This field is optional.
+ * @property {any} github - Details related to the user's GitHub account.
+ * @property {any} bitbuchet - Details related to the user's Bitbucket account.
+ * @property {any} gitlab - Details related to the user's GitLab account.
+ * @property {any} azureDevOps - Details related to the user's Azure DevOps account.
+ * @property {string} role - The role of the user, which can either be 'user' or 'admin'. Defaults to 'user'.
+ * @property {Date} createdAt - The date and time when the user was created. Defaults to the current date and time.
+ * 
  * @HazemSabry
  */
 const userSchema = new Schema < IUser > ({
     username: { type: String, required: true, unique: true },
     email: { type: String, unique: true },
     password: { type: String, required: false },
-    github: {
-        id: { type: String, unique: true, sparse: true },
-        username: { type: String, unique: true, sparse: true  },
-        email: { type: String, unique: true, sparse: true },
-        accessToken: { type: String, unique: true },
-    },
-    bitbuchet: {
-        id: { type: String, unique: true, sparse: true },
-        username: { type: String, unique: true, sparse: true  },
-        email: { type: String, unique: true, sparse: true },
-        accessToken: { type: String, unique: true },
-    },
-    gitlab: {
-        id: { type: String, unique: true, sparse: true },
-        username: { type: String, unique: true, sparse: true  },
-        email: { type: String, unique: true, sparse: true },
-        accessToken: { type: String, unique: true },
-    },
-    azureDevOps: {
-        id: { type: String, unique: true, sparse: true },
-        username: { type: String, unique: true, sparse: true  },
-        email: { type: String, unique: true, sparse: true },
-        accessToken: { type: String, unique: true },
-    },
+    github: details,
+    bitbuchet: details,
+    gitlab: details,
+    azureDevOps: details,
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     createdAt: { type: Date, default: Date.now },
 });

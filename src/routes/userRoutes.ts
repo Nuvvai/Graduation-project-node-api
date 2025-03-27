@@ -1,5 +1,5 @@
 import express, { Router } from 'express';
-import { getUserProfile, deleteUser, updateUserProfile } from '../controller/userController';
+import { getUserProfile, deleteUser, updateUserProfile, updateAzureDevOpsUserProfile, updateBitbucketUserProfile, updateGitlabUserProfile, updateGithubUserProfile } from '../controller/userController';
 
 const router: Router = express.Router();
 
@@ -20,5 +20,29 @@ router.delete('/me', deleteUser);
  * @route PUT /users/me
  */
 router.put('/me', updateUserProfile);
+
+/**
+ * Route for updating a user github profile by name.
+ * @route PUT /users/me
+ */
+router.put('/me/github', updateGithubUserProfile);
+
+/**
+ * Route for updating a user gitlab profile by name.
+ * @route PUT /users/me
+ */
+router.put('/me/gitlab', updateGitlabUserProfile);
+
+/**
+ * Route for updating a user bitbucket profile by name.
+ * @route PUT /users/me
+ */
+router.put('/me/bitbucket', updateBitbucketUserProfile);
+
+/**
+ * Route for updating a user azure-devops profile by name.
+ * @route PUT /users/me
+ */
+router.put('/me/azure-devops', updateAzureDevOpsUserProfile);
 
 export default router;
