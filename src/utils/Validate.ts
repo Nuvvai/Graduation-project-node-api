@@ -75,18 +75,21 @@ export default class Validate implements IValidate{
     usernameSyntax (username: string) {
         if (! (username.indexOf('@') === -1)) {
             this.res.status(406).json({ message: 'Invalid username can not include "@"' });
+            return;
         }
     }
 
     emailSyntax (email: string) { 
         if (! (email.length >= 6 && email.indexOf('@') !== -1)) {
             this.res.status(406).json({ message: 'Invalid email format' });
+            return;
         }
     }
 
     passwordSyntax (password: string) { 
         if (! (/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}/.test(password))) {
             this.res.status(406).json({ message: 'Password must be at lest 6 characters and contain at least one uppercase letter, one lowercase letter, one number, and one special character' });
+            return;
         }
     }
 
@@ -94,6 +97,7 @@ export default class Validate implements IValidate{
         const existingUsername: IUser | null = await User.findOne<IUser>({ username })
         if (existingUsername) {
             this.res.status(409).json({ message: 'Username already exists' });
+            return;
         }
     }
 
