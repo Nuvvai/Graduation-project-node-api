@@ -1,8 +1,8 @@
-import express from 'express';
-const router = express.Router();
-
+import express, { Router } from 'express';
 import { register_controller, login_controller, refreshToken_controller, logout_controller, githubAuth_controller, githubCallback_controller, status_controller } from '../controller/authController'
 import { sendOtp } from "../controller/otpUserController";
+
+const router: Router = express.Router();
 
 // @access public
 router.post('/register', register_controller);
