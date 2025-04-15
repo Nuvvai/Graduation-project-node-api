@@ -79,10 +79,10 @@ const details = {
  * @property {string} username - The unique username of the user. This field is required.
  * @property {string} email - The unique email address of the user.
  * @property {string} [password] - The password of the user. This field is optional.
- * @property {any} github - Details related to the user's GitHub account.
- * @property {any} bitbuchet - Details related to the user's Bitbucket account.
- * @property {any} gitlab - Details related to the user's GitLab account.
- * @property {any} 'azure-devops' - Details related to the user's Azure DevOps account.
+ * @property {IRepositoryProviderSchema} github - Details related to the user's GitHub account.
+ * @property {IRepositoryProviderSchema} bitbuchet - Details related to the user's Bitbucket account.
+ * @property {IRepositoryProviderSchema} gitlab - Details related to the user's GitLab account.
+ * @property {IRepositoryProviderSchema} 'azure-devops' - Details related to the user's Azure DevOps account.
  * @property {string} role - The role of the user, which can either be 'user' or 'admin'. Defaults to 'user'.
  * @property {Date} createdAt - The date and time when the user was created. Defaults to the current date and time.
  * 
