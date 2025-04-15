@@ -48,8 +48,8 @@ export interface IUser extends Document {
     gitlab?: IRepositoryProviderSchema
     /**The bitbuchet Information of the user*/
     bitbuchet?: IRepositoryProviderSchema
-    /**The azureDevOps Information of the user*/
-    azureDevOps?: IRepositoryProviderSchema
+    /**The 'azure-devops' Information of the user*/
+    'azure-devops'?: IRepositoryProviderSchema
     /**The role of the user, either 'user' or 'admin'.*/
     role: 'user' | 'admin';
     /**The date when the user was created.*/
@@ -82,7 +82,7 @@ const details = {
  * @property {any} github - Details related to the user's GitHub account.
  * @property {any} bitbuchet - Details related to the user's Bitbucket account.
  * @property {any} gitlab - Details related to the user's GitLab account.
- * @property {any} azureDevOps - Details related to the user's Azure DevOps account.
+ * @property {any} 'azure-devops' - Details related to the user's Azure DevOps account.
  * @property {string} role - The role of the user, which can either be 'user' or 'admin'. Defaults to 'user'.
  * @property {Date} createdAt - The date and time when the user was created. Defaults to the current date and time.
  * 
@@ -95,7 +95,7 @@ const userSchema = new Schema < IUser > ({
     github: details,
     bitbuchet: details,
     gitlab: details,
-    azureDevOps: details,
+    'azure-devops': details,
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     createdAt: { type: Date, default: Date.now },
 });
