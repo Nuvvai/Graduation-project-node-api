@@ -4,6 +4,7 @@ import authRouter from './routes/auth';
 import projectsRoutes from './routes/projectRoutes';
 import deploymentRoutes from './routes/deploymentRoutes';
 import pipelineRoutes from './routes/pipelineRoutes';
+import providerRoutes from './routes/providers';
 import errorHandler from './middleware/errorHandler';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
@@ -25,6 +26,7 @@ app.use(cors({ origin: FRONTEND_DOMAIN_NAME, credentials: true }));
 
 app.use('/auth', authRouter);
 app.use(verifyToken);
+app.use('/providers', providerRoutes);
 app.use('/projects', projectsRoutes);
 app.use('/deployments', deploymentRoutes);
 app.use('/pipelines', pipelineRoutes);
