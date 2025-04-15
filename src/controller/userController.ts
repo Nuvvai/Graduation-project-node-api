@@ -150,6 +150,9 @@ export const updateUserProfile = async (req: Request<UpdateUserProfileRequestPar
  * 4. Checks if the GitHub account is already linked to another user account.
  * 5. Links the GitHub account to the authenticated user's account and saves the updated user data.
  * 
+ * @route PUT /users/me/github 
+ * @access private 
+ * 
  * @HazemSabry
  */
 export const updateGithubUserProfile = async (req: Request<UpdateUserProfileRequestParams, object, { code: string }>, res: Response): Promise<void> => {
@@ -187,9 +190,10 @@ export const updateGithubUserProfile = async (req: Request<UpdateUserProfileRequ
 
     const githubUser = userResponse.data;
     let user = await User.findOne<IUser>({ 'github.id': githubUser.id });
-    if (user) {
+    if (user?.username !== username) {
         res.status(409).json({ message: "GitHub account is already attache to another account" });
         return;
+        
     }
 
     user = await User.findOne<IUser>({ username });
@@ -221,6 +225,11 @@ export const updateGithubUserProfile = async (req: Request<UpdateUserProfileRequ
  * 
  * @returns A promise that resolves to void. Currently, this feature is not implemented
  *          and responds with a 501 status code indicating it is not supported.
+ * 
+ * @route PUT /users/me/gitlab 
+ * @access private
+ * 
+ * @HazemSabry
  */
 export const updateGitlabUserProfile = async (req: Request<UpdateUserProfileRequestParams, object, {code:string}>, res:Response): Promise<void> => {
     // const { code } = req.body;
@@ -242,6 +251,9 @@ export const updateGitlabUserProfile = async (req: Request<UpdateUserProfileRequ
  * @remarks
  * Currently, this feature is not supported
  *          and responds with a 501 status code and a message indicating the same.
+ * 
+ * @route PUT /users/me/bitbucket 
+ * @access private
  * 
  * @HazemSabry
  */
@@ -266,6 +278,9 @@ export const updateBitbucketUserProfile = async (req: Request<UpdateUserProfileR
  * @remarks
  * Currently, this feature is not supported and will return a 501 status code
  * with a message indicating that the feature is not implemented.
+ * 
+ * @route PUT /users/me/azure-devops 
+ * @access private
  * 
  * @HazemSabry
  */
