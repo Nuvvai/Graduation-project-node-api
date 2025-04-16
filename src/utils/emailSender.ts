@@ -16,6 +16,9 @@ export const sendVerificationEmail = async (
     try{
         const transporter = nodemailer.createTransport({
             service: 'gmail',
+            port: 587,
+            host: 'smtp.gmail.com',
+            secure: true,
             auth: {
                 user: process.env.NUVVAIEMAIL,
                 pass: process.env.NUVVAIPASSWORD,

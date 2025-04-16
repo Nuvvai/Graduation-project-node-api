@@ -116,7 +116,7 @@ export const register_controller = async (req:Request<object, object, RegisterRe
         }
 
 
-        const response = await otpUser.find({ email }).sort({ createdAt: -1 }).limit(1);
+        const response = await otpUser.find({ username, email, otp }).sort({ createdAt: -1 }).limit(1);
         if (response.length === 0 || otp !== response[0].otp) {
             res.status(400).json({message: 'The OTP is not valid!'});
             return;
