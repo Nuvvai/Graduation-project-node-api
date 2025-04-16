@@ -130,10 +130,12 @@ export const register_controller = async (req:Request<object, object, RegisterRe
         await token.sendRefreshToken(newUser);
         res.status(200).json({
             isAuthenticated: true,
-            isGithubAuthenticated: newUser?.github ? true : false,
-            isGitLabAuthenticated: false,
-            isBitbucketAuthenticated: false,
-            isAzureDevOpsAuthenticated: false,
+            isProviderAuthenticated: {
+                github: newUser?.github ? true : false,
+                gitlab: false,
+                bitbucket: false,
+                'azure-devops': false,
+            },
             user: {
                 username: newUser.username,
             }
@@ -190,10 +192,12 @@ export const login_controller = async (req: Request<object, object, LoginRequest
         await token.sendRefreshToken(existingUser);
         res.status(200).json({
             isAuthenticated: true,
-            isGithubAuthenticated: existingUser?.github ? true : false,
-            isGitLabAuthenticated: false,
-            isBitbucketAuthenticated: false,
-            isAzureDevOpsAuthenticated: false,
+            isProviderAuthenticated: {
+                github: existingUser?.github ? true : false,
+                gitlab: false,
+                bitbucket: false,
+                'azure-devops': false
+            },
             user: {
                 username: existingUser.username,
             }
@@ -431,10 +435,12 @@ export const status_controller = async (req:Request, res:Response): Promise<void
 
         res.status(200).json({
             isAuthenticated: true,
-            isGithubAuthenticated: user?.github?.id ? true : false,
-            isGitLabAuthenticated: user?.gitlab?.id ? true : false,
-            isBitbucketAuthenticated: user?.bitbuchet?.id ? true : false,
-            isAzureDevOpsAuthenticated: user?.azureDevOps?.id ? true : false,
+            isProviderAuthenticated: {
+                github: user?.github?.id ? true : false,
+                gitlab: user?.gitlab?.id ? true : false,
+                bitbucket: user?.bitbuchet?.id ? true : false,
+                'azure-devops': user?.['azure-devops']?.id ? true : false
+            },
             user: {
                 username: decoded.username,
             }

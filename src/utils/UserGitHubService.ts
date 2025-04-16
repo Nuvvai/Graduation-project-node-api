@@ -2,12 +2,32 @@ import axios from "axios";
 
 /**
  * Interface for the UserGitHubService class.
+ * 
+ * @HazemSabry
  */
 interface IUserGitHubService {
     /**
+     * Fetches a list of GitHub repositories for the authenticated user.
+     *
+     * @async
+     * @function
+     * @throws {Error} Throws an error if the request to fetch repositories fails.
+     * 
+     * @returns {Promise<unknown[]>} A promise that resolves to an array of repository objects.
+     *
+     * @example
+     * const userGitHubService = new UserGitHubService();
+     * const repos = await userGitHubService.getGitHubRepos();
+     * console.log(repos);
+     * 
+     * @HazemSabry
+     */
+    getRepos (): Promise<unknown[]>
+
+    /**
      * Generates a fine-grained GitHub repository token for a specific user and repository.
      *
-     * @param githubUsername - The GitHub username of the repository owner.
+     * @param username - The GitHub username of the repository owner.
      * @param userAccessToken - The user's personal access token for authentication.
      * @param repoName - The name of the repository for which the token is being generated.
      * @returns A promise that resolves to an object containing the repository token (`repoToken`) 
@@ -17,7 +37,7 @@ interface IUserGitHubService {
      * 
      * @HazemSabry
      */
-    generateRepoToken(githubUsername: string, userAccessToken: string, repoName: string): Promise<{ repoToken: string } | void>;
+    generateRepoToken(username: string, userAccessToken: string, repoName: string): Promise<{ repoToken: string } | void>;
     
     /**
      * Creates a GitHub webhook for a specified repository.
@@ -44,17 +64,45 @@ interface IUserGitHubService {
  * @HazemSabry
  */
 class UserGitHubService implements IUserGitHubService {
-    /**
-     * The URL of the Jenkins server for receiving webhook payloads.
-     */
+    /**The URL of the Jenkins server for receiving webhook payloads.*/
     private JENKINS_URL: string;
+    /**The GitHub username of the user.*/
+    private username: string;
+    /**The GitHub personal access token for authentication.*/
+    private accessToken: string;
 
-    constructor(JENKINS_URL: string = process.env.JENKINS_URL || 'http://localhost:8080') {
-
+    constructor(username:string, accessToken: string, JENKINS_URL: string = process.env.JENKINS_URL || 'http://localhost:8080') {
+        this.username = username;
+        this.accessToken = accessToken;
         this.JENKINS_URL = JENKINS_URL;
     }
 
-    async generateRepoToken (githubUsername:string, userAccessToken:string, repoName:string): Promise<{repoToken:string} | void> {
+    async getRepos (): Promise<unknown[]> {
+        try {
+            const response = await axios.get("https://api.github.com/user/repos", {
+                headers: {
+                    Authorization: `Bearer ${this.accessToken}`,
+                    Accept: "application/vnd.github+json"
+                },
+                params: {
+                    visibility: "all", // optional: 'all', 'public', or 'private'
+                    affiliation: "owner", // optional: 'owner', 'collaborator', etc.
+                    per_page: 100 // optional: number of repos per page (max 100)
+                }
+            });
+
+            return response.data; // Array of repo objects
+        } catch (error: unknown) {
+            if (axios.isAxiosError(error)) {
+                console.error("Error fetching GitHub repos:", error.response?.data || error.message);
+            } else {
+                console.error("Error fetching GitHub repos:", error);
+            }
+            throw new Error("Failed to fetch GitHub repositories");
+        }
+    };
+
+    async generateRepoToken ( repoName:string): Promise<{repoToken:string} | void> {
         try {
 
             /**
@@ -63,11 +111,11 @@ class UserGitHubService implements IUserGitHubService {
             const tokenResponse = await axios.post(
                 "https://api.github.com/user/repos",
                 {
-                    owner: githubUsername,
+                    owner: this.username,
                     repo: repoName,
                     permissions: { contents: "write" }, // Allow Jenkins checkout
                 },
-                { headers: { Authorization: `Bearer ${userAccessToken}` } }
+                { headers: { Authorization: `Bearer ${this.accessToken}` } }
             );
 
             return {repoToken: tokenResponse.data.token };
@@ -77,7 +125,7 @@ class UserGitHubService implements IUserGitHubService {
         }
     }
     
-    async createWebhook(repoFullName: string, githubToken: string) {
+    async createWebhook(repoFullName: string) {
         /**
          * Configuration for the GitHub webhook.
          */
@@ -99,7 +147,7 @@ class UserGitHubService implements IUserGitHubService {
             const response = await axios.post(
                 `https://api.github.com/repos/${repoFullName}/hooks`,
                 webhookConfig,
-                { headers: { Authorization: `token ${githubToken}` } }
+                { headers: { Authorization: `token ${this.accessToken}` } }
             );
             if (response.status === 200) {
                 return({ message: "Webhook created" });
