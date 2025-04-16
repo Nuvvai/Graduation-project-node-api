@@ -23,25 +23,25 @@ router.put('/me', updateUserProfile);
 
 /**
  * Route for updating a user github profile by name.
- * @route PUT /users/me
+ * @route PUT /users/me/github
  */
 router.put('/me/github', updateGithubUserProfile);
 
 /**
  * Route for updating a user gitlab profile by name.
- * @route PUT /users/me
+ * @route PUT /users/me/gitlab
  */
 router.put('/me/gitlab', updateGitlabUserProfile);
 
 /**
  * Route for updating a user bitbucket profile by name.
- * @route PUT /users/me
+ * @route PUT /users/me/bitbucket
  */
 router.put('/me/bitbucket', updateBitbucketUserProfile);
 
 /**
  * Route for updating a user azure-devops profile by name.
- * @route PUT /users/me
+ * @route PUT /users/me/azure-devops
  */
 router.put('/me/azure-devops', updateAzureDevOpsUserProfile);
 
