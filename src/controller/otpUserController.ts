@@ -4,6 +4,7 @@ import User, {IUser} from '../models/User';
 import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import Validate from '../utils/Validate';
+import { sendPasswordResetConfirmation } from '../utils/emailSender';
 
 interface sendOtpRequestBody {
     username?: string;
@@ -33,10 +34,16 @@ export const sendOTP = async (
     next: NextFunction
 ): Promise<void> => {
     let { username, email } = req.body;
+    const validate = new Validate(res);
     const reason = req.query.reason as string | undefined;
     try{
+        validate.emailSyntax(email)
+        if (reason !== "forgotPassword" && reason !== "verifyEmail") {
+            res.status(400).json({ message: "Invalid reason!" });
+            return;
+        }
         const userExists = await User.findOne<IUser>({ email });
-        if (userExists && reason === undefined) {
+        if (userExists && reason === "verifyEmail") {
             res.status(409).json({ message: 'User is already registered!' });
             return;
         }
@@ -44,12 +51,12 @@ export const sendOTP = async (
             res.status(404).json({ message: 'User not found!' });
             return;
         }
-        if(!username && reason === undefined){
+        if(!username && reason === "verifyEmail"){
             res.status(400).json({ message: 'Username is required!' });
             return;
         }
         if(reason === "forgotPassword"){
-            username = userExists?.username;
+            username = userExists?.username || '';
         }
         const otp = await generateUniqueOtp();
         const otpPayload = { username, email, otp };
@@ -119,6 +126,7 @@ export const resetPassword = async (
         const hashedPassword:string = await bcrypt.hash(newPassword, 12);
         userExists.password = hashedPassword;
         await userExists.save();
+        await sendPasswordResetConfirmation(userExists.username, email);
         res.status(200).json({ message: "Password reset successful!" });
     } catch (error) {
         next(error);

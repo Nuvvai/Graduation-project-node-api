@@ -16,11 +16,12 @@ export interface IotpUser extends Document {
 const otpUserSchema = new mongoose.Schema({
     username: {
         type: String,
-        required: true,
+        required: [true, "Username is required!"],
+        trim: true
     },
     email: {
         type: String,
-        required: true,
+        required: [true, "Email is required!"],
         trim: true,
         lowercase: true,
     },
@@ -31,6 +32,8 @@ const otpUserSchema = new mongoose.Schema({
     attempts: {
         type: Number,
         default: 0,
+        min: 0,
+        max: 3
     },
     createdAt: {
         type: Date,
@@ -39,7 +42,8 @@ const otpUserSchema = new mongoose.Schema({
     },
 });
 
-otpUserSchema.pre("save", async function (next) {
+
+otpUserSchema.pre<IotpUser>("save", async function (next) {
     if (this.isNew) {
         const success = await sendVerificationEmail(this.username, this.email, this.otp);
         if (!success) {

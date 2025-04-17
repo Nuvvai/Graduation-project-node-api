@@ -7,23 +7,27 @@ import otpUser, {IotpUser}  from '../models/otpUser';
  * @returns {Promise<string>} The generated unique OTP.
  */
 export const generateUniqueOtp = async (): Promise<string> => {
-    let otp = otpGenerator.generate(6, {
-        upperCaseAlphabets: false,
-        lowerCaseAlphabets: false,
-        specialChars: false,
-        digits: true,
-    });
-
-    let otpUserExists = await otpUser.findOne<IotpUser>({ otp });
-    while (otpUserExists) {
-        otp = otpGenerator.generate(6, {
-        upperCaseAlphabets: false,
-        lowerCaseAlphabets: false,
-        specialChars: false,
-        digits: true,
+    try{
+        let otp = otpGenerator.generate(6, {
+            upperCaseAlphabets: false,
+            lowerCaseAlphabets: false,
+            specialChars: false,
+            digits: true,
         });
-        otpUserExists = await otpUser.findOne<IotpUser>({ otp });
-    }
 
-    return otp;
+        let otpUserExists = await otpUser.findOne<IotpUser>({ otp });
+        while (otpUserExists) {
+            otp = otpGenerator.generate(6, {
+            upperCaseAlphabets: false,
+            lowerCaseAlphabets: false,
+            specialChars: false,
+            digits: true,
+            });
+            otpUserExists = await otpUser.findOne<IotpUser>({ otp });
+        }
+        return otp;
+        
+    }catch (error) {
+        throw new Error("Failed to generate OTP!")
+    }
 };
