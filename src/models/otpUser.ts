@@ -1,10 +1,11 @@
-import mongoose from "mongoose";
+import mongoose, { Document } from 'mongoose';
 import { sendVerificationEmail } from "../utils/emailSender";
 
 export interface IotpUser extends Document {
     username: string;
     email: string;
     otp: string;
+    attempts: number;
     createdAt: Date;
 }
 
@@ -26,6 +27,10 @@ const otpUserSchema = new mongoose.Schema({
     otp: {
         type: String,
         required: true,
+    },
+    attempts: {
+        type: Number,
+        default: 0,
     },
     createdAt: {
         type: Date,

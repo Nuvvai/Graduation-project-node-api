@@ -53,6 +53,7 @@ export const sendOTP = async (
         }
         const otp = await generateUniqueOtp();
         const otpPayload = { username, email, otp };
+        await otpUser.deleteMany({ email });
         await otpUser.create(otpPayload);
         res.status(200).json({message: 'OTP sent successfully!'});
     } catch (error) {
@@ -75,7 +76,17 @@ export const verifyOTP = async (
     try {
         const otpUserExists = await otpUser.findOne<IotpUser>({ email, otp }).sort({ createdAt: -1 }).limit(1);
         if (!otpUserExists) {
-            res.status(400).json({ message: 'Invalid OTP!' });
+            res.status(400).json({ message: "No OTP record found. Please request a new OTP.!"});
+            return;
+        }
+        if(otpUserExists.attempts >= 3) {
+            res.status(429).json({ message: "Maximum attempts reached!"});
+            return;
+        }
+        if(otpUserExists.otp !== otp){
+            otpUserExists.attempts += 1;
+            await otpUserExists.save();
+            res.status(400).json({ message: `Invalid OTP! ${3-otpUserExists.attempts} attempts remaining` });
             return;
         }
         await otpUser.deleteOne({ email, otp });
