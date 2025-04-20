@@ -55,6 +55,9 @@ export const sendOTP = async (
             res.status(400).json({ message: 'Username is required!' });
             return;
         }
+        if(username){
+            validate.usernameSyntax(username)
+        }
         if(reason === "forgotPassword"){
             username = userExists?.username || '';
         }

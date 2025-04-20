@@ -29,7 +29,7 @@ export const sendVerificationEmail = async (
             },
         }as TransportOptions);
         const mailOptions: SendMailOptions = {
-            from: process.env.NUVVAIEMAIL,
+            from: `"Nuvvai Team" <${process.env.NUVVAIEMAIL}>`,
             to: email,
             subject: 'Nuvvai - Your OTP for Email Verification',
             text: `Dear ${username},\n\nYou must confirm your identity using this one-time pass code: ${otp}, note that this code will expire in 5 minutes.\n\nRegards,\n\nNuvvai Team`,

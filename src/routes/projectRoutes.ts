@@ -1,5 +1,5 @@
 import express, { Router } from 'express';
-import { createProject, getAllProjects, deleteProject, deleteAllProjects } from '../controller/projectController';
+import { createProject, getAllProjects, deleteProject, deleteAllProjects, createManifestDockerFiles } from '../controller/projectController';
 
 const router: Router = express.Router();
 
@@ -26,5 +26,11 @@ router.delete('/:username/:projectName', deleteProject);
  * @route DELETE /projects/:username
  */
 router.delete('/:username', deleteAllProjects);
+
+/**
+ * Route for creating a manifest file for a specific project.
+ * @route POST /projects/:username/:projectName/manifest
+ */
+router.post('/:username/:projectName/files', createManifestDockerFiles)
 
 export default router;

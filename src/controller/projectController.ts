@@ -210,3 +210,13 @@ export const deleteAllProjects = async (
         next(error);
     }
 };
+
+
+
+export const createManifestDockerFiles = async (
+    req: Request<CreateProjectRequestParams, {}, CreateProjectRequestBody>,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+
+}
