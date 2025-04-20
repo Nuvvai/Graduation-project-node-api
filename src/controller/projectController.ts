@@ -33,7 +33,7 @@ interface DeleteAllProjectsRequestParams {
  * @access private
  */
 export const createProject = async (
-    req: Request<CreateProjectRequestParams, {}, CreateProjectRequestBody>,
+    req: Request<CreateProjectRequestParams, object, CreateProjectRequestBody>,
     res: Response,
     next: NextFunction
 ): Promise<void> => {
@@ -210,13 +210,3 @@ export const deleteAllProjects = async (
         next(error);
     }
 };
-
-
-
-export const createManifestDockerFiles = async (
-    req: Request<CreateProjectRequestParams, {}, CreateProjectRequestBody>,
-    res: Response,
-    next: NextFunction
-): Promise<void> => {
-
-}
