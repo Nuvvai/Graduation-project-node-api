@@ -391,22 +391,25 @@ class GenerateDockerFile implements IGenerateDockerfile {
             return;
         };
         
-        const dockerfileContent = `# This Dockerfile is used a single-stage to build ${projectName} a Nginx server For the Application Owner ${this.username}.\n
-                        # The stage is: production.\n\n
-                        # Stage 1: Use a lightweight Nginx web server(Alpine version) \n
-                        # - Set working directory\n
-                        # - Remove default files safely\n
-                        # - Copy static files (HTML, CSS, JS) with correct permissions\n
-                        # - Switch to a non-root user for security\n
-                        FROM nginx:alpine AS production\n
-                        WORKDIR /usr/share/nginx/html\n
-                        RUN rm -rf ./*\n
-                        COPY --chown=nginx:nginx . .\n
-                        USER nginx\n\n
-                        # - Expose port 80 inside the container (Nginx runs on port 80)\n
-                        EXPOSE 80\n\n
-                        # - Start Nginx\n
-                        CMD ["nginx", "-g", "daemon off;"]\n`;
+        const dockerfileContent = `# This Dockerfile is used a single-stage to build ${projectName} a Nginx server For the Application Owner ${this.username}.
+# The stage is: production.
+
+# Stage 1: Use a lightweight Nginx web server(Alpine version)
+# - Set working directory
+# - Remove default files safely
+# - Copy static files (HTML, CSS, JS) with correct permissions
+# - Switch to a non-root user for security
+FROM nginx:alpine AS production
+WORKDIR /usr/share/nginx/html
+RUN rm -rf ./*
+COPY --chown=nginx:nginx . .
+USER nginx
+
+# - Expose port 80 inside the container (Nginx runs on port 80)
+EXPOSE 80
+
+# - Start Nginx
+CMD ["nginx", "-g", "daemon off;"]`;
         
         return dockerfileContent;
     };
@@ -418,22 +421,25 @@ class GenerateDockerFile implements IGenerateDockerfile {
             return;
         };
 
-        const dockerfileContent = `# This Dockerfile is used a single-stage to build ${projectName} a Nginx server For the Application Owner ${this.username}.\n
-                        # The stage is: production.\n\n
-                        # Stage 1: Use a lightweight Apache web server (Alpine version)\n
-                        # - Set working directory\n
-                        # - Remove default files safely\n
-                        # - Copy static files (HTML, CSS, JS) with correct permissions\n
-                        # - Switch to a non-root user for security\n
-                        FROM httpd:alpine AS production\n
-                        WORKDIR /usr/local/apache2/htdocs/\n
-                        RUN rm -rf ./*\n
-                        COPY --chown=www-data:www-data . .\n
-                        USER www-data\n\n
-                        # - Expose port 80 inside the container (Apache runs on port 80)\n
-                        EXPOSE 80\n\n
-                        # - Start Apache in foreground mode\n
-                        CMD ["httpd", "-D", "FOREGROUND"]\n`;
+        const dockerfileContent = `# This Dockerfile is used a single-stage to build ${projectName} a Nginx server For the Application Owner ${this.username}.
+# The stage is: production.
+
+# Stage 1: Use a lightweight Apache web server (Alpine version)
+# - Set working directory
+# - Remove default files safely
+# - Copy static files (HTML, CSS, JS) with correct permissions
+# - Switch to a non-root user for security
+FROM httpd:alpine AS production
+WORKDIR /usr/local/apache2/htdocs/
+RUN rm -rf ./*
+COPY --chown=www-data:www-data . .
+USER www-data
+
+# - Expose port 80 inside the container (Apache runs on port 80)
+EXPOSE 80
+
+# - Start Apache in foreground mode
+CMD ["httpd", "-D", "FOREGROUND"]`;
     
         return dockerfileContent;
     };
@@ -444,29 +450,32 @@ class GenerateDockerFile implements IGenerateDockerfile {
             this.res.status(406).json({ error: 'Project name and PHP version are required' });
             return;
         };
-        let dockerfileContent = `# This Dockerfile is used to build a multi-stage Docker image for ${projectName} a PHP application For the Application Owner ${this.username}\n
-                        # and an Apache server. The stages are: composer and production.\n\n
-                        # Stage 1: Use Composer for dependency management if composer.json exists\n
-                        # - Sets the working directory to /usr/src/app\n
-                        # - Only copy composer files if they exist (prevents Docker COPY failure)\n
-                        # - Only run Composer if composer.json is present\n
-                        FROM composer:latest AS composer\n
-                        WORKDIR /usr/src/app\n
-                        COPY composer.json composer.lock ./ || true\n
-                        RUN test -f composer.json && composer install --no-dev --optimize-autoloader || echo "No composer.json found, skipping install"\n\n
-                        # Stage 2: PHP with Apache\n
-                        # - Sets the working directory to /var/www/html\n
-                        # - Install necessary PHP extensions\n
-                        # - Copy project files\n
-                        # - Only copy vendor if composer.json exists\n
-                        # - Set correct permissions && Change user Owner\n
-                        FROM php:${PHP_VERSION}-apache AS production\n
-                        WORKDIR /var/www/html\n
-                        RUN docker-php-ext-install mysqli pdo pdo_mysql\n
-                        COPY . .\n
-                        RUN test -f composer.json && cp -r vendor /var/www/html/vendor || echo "No vendor folder found"\n
-                        RUN chmod -R 755 /var/www/html && \\ \n
-                        chown -R www-data:www-data /var/www/html\n`;
+        let dockerfileContent = `# This Dockerfile is used to build a multi-stage Docker image for ${projectName} a PHP application For the Application Owner ${this.username}
+# and an Apache server. The stages are: composer and production.
+
+# Stage 1: Use Composer for dependency management if composer.json exists
+# - Sets the working directory to /usr/src/app
+# - Only copy composer files if they exist (prevents Docker COPY failure)
+# - Only run Composer if composer.json is present
+FROM composer:latest AS composer
+WORKDIR /usr/src/app
+COPY composer.json composer.lock ./ || true
+RUN test -f composer.json && composer install --no-dev --optimize-autoloader || echo "No composer.json found, skipping install"
+
+# Stage 2: PHP with Apache
+# - Sets the working directory to /var/www/html
+# - Install necessary PHP extensions
+# - Copy project files
+# - Only copy vendor if composer.json exists
+# - Set correct permissions && Change user Owner
+FROM php:${PHP_VERSION}-apache AS production
+WORKDIR /var/www/html
+RUN docker-php-ext-install mysqli pdo pdo_mysql
+COPY . .
+RUN test -f composer.json && cp -r vendor /var/www/html/vendor || echo "No vendor folder found"
+RUN chmod -R 755 /var/www/html && \\ 
+    chown -R www-data:www-data /var/www/html
+`;
 
         if (envVars) {
             envVars.forEach((env) => {
@@ -475,10 +484,10 @@ class GenerateDockerFile implements IGenerateDockerfile {
             dockerfileContent += "\n";
         }
 
-        dockerfileContent += `\n# - Expose 80 port\n
-                        EXPOSE 80\n\n
-                        # - Start Apache\n
-                        CMD ["apache2-foreground"]\n`;
+        dockerfileContent += `# - Expose 80 port\n
+EXPOSE 80
+# - Start Apache
+CMD ["apache2-foreground"]`;
     
         return dockerfileContent;
     };
@@ -490,27 +499,30 @@ class GenerateDockerFile implements IGenerateDockerfile {
             return;
         };
         let dockerfileContent = '';
-        dockerfileContent += `# This Dockerfile is used to build a multi-stage Docker image for ${projectName} a Angular application For the Application Owner ${this.username}\n
-                        # and an Nginx server. The stages are: build and production.\n\n
-                        # Stage 1: Base image for Node.js\n
-                        # - Sets the working directory to /usr/src/app\n
-                        # - Copy only package.json & package-lock.json first (Better Caching)\n
-                        # - Install dependencies\n
-                        # - Copy the rest of the project files\n
-                        # - Build the Angular application (Production Mode)\n
-                        FROM node:${NODE_VERSION}-alpine AS build\n
-                        WORKDIR /usr/src/app\n
-                        COPY package*.json ./\n
-                        RUN npm install --legacy-peer-deps\n
-                        COPY . .\n
-                        RUN ${buildCommand}\n\n
-                        # Stage 2: Deploy with Nginx\n
-                        # - Set an argument for app name (optional)\n
-                        # - Copy the built application from the build stage to the nginx html directory\n
-                        # - Set correct ownership for security\n
-                        FROM nginx:alpine AS production\n
-                        COPY --from=build /usr/src/app/${publishDirectory}/${APP_NAME} /usr/share/nginx/html\n
-                        RUN chown -R nginx:nginx /usr/share/nginx/html\n\n`;
+        dockerfileContent += `# This Dockerfile is used to build a multi-stage Docker image for ${projectName} a Angular application For the Application Owner ${this.username}
+# and an Nginx server. The stages are: build and production.
+
+# Stage 1: Base image for Node.js
+# - Sets the working directory to /usr/src/app
+# - Copy only package.json & package-lock.json first (Better Caching)
+# - Install dependencies
+# - Copy the rest of the project files
+# - Build the Angular application (Production Mode)
+FROM node:${NODE_VERSION}-alpine AS build
+WORKDIR /usr/src/app
+COPY package*.json ./
+RUN npm install --legacy-peer-deps
+COPY . .
+RUN ${buildCommand}
+
+# Stage 2: Deploy with Nginx
+# - Set an argument for app name (optional)
+# - Copy the built application from the build stage to the nginx html directory
+# - Set correct ownership for security
+FROM nginx:alpine AS production
+COPY --from=build /usr/src/app/${publishDirectory}/${APP_NAME} /usr/share/nginx/html\n
+RUN chown -R nginx:nginx /usr/share/nginx/html
+`;
 
         if (envVars) {
             envVars.forEach((env) => {
@@ -519,53 +531,59 @@ class GenerateDockerFile implements IGenerateDockerfile {
             dockerfileContent += "\n";
         }
 
-        dockerfileContent += `\n# - Expose port 80\n
-                        EXPOSE 80\n\n
-                        # - Switch to non-root user\n
-                        USER nginx\n\n
-                        # - Run the application\n
-                        CMD ["nginx", "-g", "daemon off;"]`;
+        dockerfileContent += `# - Expose port 80
+EXPOSE 80
+
+# - Switch to non-root user
+USER nginx
+
+# - Run the application
+CMD ["nginx", "-g", "daemon off;"]`;
     
         return dockerfileContent;
     };
 
     async react (): Promise<string | void> {
-        const { projectName, VERSION: NODE_VERSION, buildCommand, envVars, publishDirectory }: IFrontendDockerfileRequestBody = this.req.body;
+        const { projectName, VERSION: NODE_VERSION, buildCommand, envVars, publishDirectory }: IFrontendDockerfileRequestBody = this.req.body.inputsObject;
         if (!projectName || !NODE_VERSION || !buildCommand || !publishDirectory) {
             this.res.status(406).json({ error: 'Project name, Node version, Build Command, and Publish Directory are required' });
             return;
         };
 
-        let dockerfileContent = `# This Dockerfile is used to build a multi-stage Docker image for ${projectName} a React application For the Application Owner ${this.username}\n
-                        # and an Nginx server. The stages are: base, dependencies, and production.\n\n
-                        # Stage 1: Base image for Node.js\n
-                        # - Sets the working directory to /usr/src/app\n
-                        FROM node:${NODE_VERSION}-alpine AS base\n
-                        WORKDIR /usr/src/app\n\n
-                        # Stage 2: Install dependencies\n
-                        # - Uses the baseImage as the starting point\n
-                        # - Copies package.json and package-lock.json (if exists) to the working directory\n
-                        # - Installs project dependencies using npm\n
-                        # - Utilizes Docker build cache for faster builds\n
-                        FROM base AS dependencies\n
-                        COPY package*.json* ./\n
-                        RUN --mount=type=cache,target=/usr/src/app/.npm \\ \n
-                        npm set cache / usr / src / app /.npm && \\ \n'
-                        npm install--only = production\n\n
-                        # Stage 3: Build the application\n
-                        # - Uses the dependencies stage as the starting point
-                        # - Copies the entire project to the working directory
-                        # - Runs the build script
-                        FROM dependencies AS build
-                        COPY. .\n
-                        RUN ${ buildCommand} \n\n
-                        # Stage 4: Nginx production\n
-                        # - Copies the Nginx configuration file\n
-                        # - Copies the built application from the build stage\n
-                        # - Ensure proper permissions for Nginx\n
-                        FROM nginx:alpine AS production\n
-                        COPY --link --from=build /usr/src/app/dist /usr/share/nginx/html\n
-                        RUN chown -R nginx:nginx /usr/share/nginx/html\n\n`;
+        let dockerfileContent = `# This Dockerfile is used to build a multi-stage Docker image for ${projectName} a React application For the Application Owner ${this.username}
+# and an Nginx server. The stages are: base, dependencies, and production.
+# Stage 1: Base image for Node.js
+# - Sets the working directory to /usr/src/app
+FROM node:${NODE_VERSION}-alpine AS base
+WORKDIR /usr/src/app
+
+# Stage 2: Install dependencies
+# - Uses the baseImage as the starting point
+# - Copies package.json and package-lock.json (if exists) to the working directory
+# - Installs project dependencies using npm
+# - Utilizes Docker build cache for faster builds
+FROM base AS dependencies
+COPY package*.json* ./
+RUN --mount=type=cache,target=/usr/src/app/.npm \\ 
+    npm set cache / usr / src / app /.npm && \\
+    npm install--only = production
+
+# Stage 3: Build the application
+# - Uses the dependencies stage as the starting point
+# - Copies the entire project to the working directory
+# - Runs the build script
+FROM dependencies AS build
+COPY . .
+RUN ${ buildCommand}
+
+# Stage 4: Nginx production
+# - Copies the Nginx configuration file
+# - Copies the built application from the build stage
+# - Ensure proper permissions for Nginx
+FROM nginx:alpine AS production
+COPY --link --from=build /usr/src/app/dist /usr/share/nginx/html
+RUN chown -R nginx:nginx /usr/share/nginx/html
+`;
 
         if (envVars) {
             envVars.forEach((env) => {
@@ -574,12 +592,14 @@ class GenerateDockerFile implements IGenerateDockerfile {
             dockerfileContent += "\n";
         }
 
-        dockerfileContent += `\n# - Expose port 80\n
-                        EXPOSE 80\n\n
-                        # - Switch to non-root user\n
-                        USER nginx\n\n
-                        # - Run the application\n
-                        CMD ["nginx", "-g", "daemon off;"]`;
+        dockerfileContent += `# - Expose port 80
+EXPOSE 80
+
+# - Switch to non-root user
+USER nginx
+
+# - Run the application
+CMD ["nginx", "-g", "daemon off;"]`;
     
         return dockerfileContent;
     };
@@ -590,36 +610,41 @@ class GenerateDockerFile implements IGenerateDockerfile {
             this.res.status(406).json({ error: 'Project name, Node version, Build Command, and Publish Directory are required' });
             return;
         };
-        let dockerfileContent = `# This Dockerfile is used to build a multi-stage Docker image for ${projectName} a Vue.js application For the Application Owner ${this.username}\n
-                        # and an Nginx server. The stages are: base, dependencies, and production.\n\n
-                        # Stage 1: Base image for Node.js\n
-                        # - Sets the working directory to /usr/src/app\n
-                        FROM node:${NODE_VERSION}-alpine AS base\n
-                        WORKDIR /usr/src/app\n\n
-                        # Stage 2: Install dependencies\n
-                        # - Uses the baseImage as the starting point\n
-                        # - Copies package.json and package-lock.json (if exists) to the working directory\n
-                        # - Installs project dependencies using npm\n
-                        # - Utilizes Docker build cache for faster builds\n
-                        FROM base AS dependencies\n
-                        COPY package*.json* ./\n
-                        RUN --mount=type=cache,target=/usr/src/app/.npm \\ \n
-                        npm set cache /usr/src/app/.npm && \\ \n
-                        npm install --only=production\n\n
-                        # Stage 3: Build the application\n
-                        # - Uses the dependencies stage as the starting point
-                        # - Copies the entire project to the working directory
-                        # - Runs the build script
-                        FROM dependencies AS build
-                        COPY . .\n
-                        RUN ${buildCommand}\n\n
-                        # Stage 4: Nginx production\n
-                        # - Copies the Nginx configuration file\n
-                        # - Copies the built application from the build stage\n
-                        # - Ensure proper permissions for Nginx\n
-                        FROM nginx:alpine AS production\n
-                        COPY --link --from=build /usr/src/app/dist /usr/share/nginx/html\n
-                        RUN chown -R nginx:nginx /usr/share/nginx/html\n\n`;
+        let dockerfileContent = `# This Dockerfile is used to build a multi-stage Docker image for ${projectName} a Vue.js application For the Application Owner ${this.username}
+# and an Nginx server. The stages are: base, dependencies, and production.
+
+# Stage 1: Base image for Node.js
+# - Sets the working directory to /usr/src/app
+FROM node:${NODE_VERSION}-alpine AS base
+WORKDIR /usr/src/app
+
+# Stage 2: Install dependencies
+# - Uses the baseImage as the starting point
+# - Copies package.json and package-lock.json (if exists) to the working directory
+# - Installs project dependencies using npm
+# - Utilizes Docker build cache for faster builds
+FROM base AS dependencies
+COPY package*.json* ./
+RUN --mount=type=cache,target=/usr/src/app/.npm \\
+    npm set cache /usr/src/app/.npm && \\
+    npm install --only=production
+
+# Stage 3: Build the application
+# - Uses the dependencies stage as the starting point
+# - Copies the entire project to the working directory
+# - Runs the build script
+FROM dependencies AS build
+COPY . .
+RUN ${buildCommand}
+
+# Stage 4: Nginx production
+# - Copies the Nginx configuration file
+# - Copies the built application from the build stage
+# - Ensure proper permissions for Nginx
+FROM nginx:alpine AS production
+COPY --link --from=build /usr/src/app/dist /usr/share/nginx/html
+RUN chown -R nginx:nginx /usr/share/nginx/html
+`;
 
         if (envVars) {
             envVars.forEach((env) => {
@@ -628,12 +653,14 @@ class GenerateDockerFile implements IGenerateDockerfile {
             dockerfileContent += "\n";
         }
 
-        dockerfileContent += `\n# - Expose port 80\n
-                        EXPOSE 80\n\n
-                        # - Switch to non-root user\n
-                        USER nginx\n\n
-                        # - Run the application\n
-                        CMD ["nginx", "-g", "daemon off;"]`;
+        dockerfileContent += `# - Expose port 80
+EXPOSE 80
+
+# - Switch to non-root user
+USER nginx
+
+# - Run the application
+CMD ["nginx", "-g", "daemon off;"]`;
     
         return dockerfileContent;
     };
@@ -649,34 +676,38 @@ class GenerateDockerFile implements IGenerateDockerfile {
             this.res.status(406).json({ error: 'Project name, Node version, Port, and Run Command are required' });
             return;
         };
-        let dockerfileContent = `# This Dockerfile is used to build a multi-stage Docker image for ${projectName} a Node.js application For the Application Owner ${this.username}\n
-                        # The stages are: base, dependencies, and production.\n\n
-                        # Stage 1: Base Image\n
-                        # - Sets the working directory to /usr/src/app\n
-                        # - Copies package.json and package-lock.json (if exists) to the working directory\n
-                        FROM node:${NODE_VERSION}-slim AS build\n
-                        WORKDIR /usr/src/app\n\n
-                        FROM base AS dependencies\n
-                        COPY package*.json* ./\n
-                        # Stage 2: Dependencies\n
-                        # - Uses the baseImage as the starting point\n
-                        # - Installs project dependencies using npm\n
-                        # - Utilizes Docker build cache for faster builds\n
-                        FROM base AS dependencies\n
-                        ENV NODE_ENV production
-                        RUN --mount=type=cache,target=/usr/src/app/.npm \\ \n
-                        npm set cache /usr/src/app/.npm && \\ \n
-                        npm install --only=production\n\n
-                        # Stage 3: Production\n
-                        # - Uses the base stage as the starting point\n
-                        # - Sets the NODE_ENV environment variable to production\n
-                        # - Copy the dependencies from the dependencies stage\n
-                        # - Switch to non-root user\n
-                        FROM base AS production\n
-                        ENV NODE_ENV production\n
-                        COPY --from=dependencies /usr/src/app/node_modules ./node_modules\n
-                        COPY --chown=node:node ./src/ .
-                        USER node\n\n`;
+        let dockerfileContent = `# This Dockerfile is used to build a multi-stage Docker image for ${projectName} a Node.js application For the Application Owner ${this.username}
+# The stages are: base, dependencies, and production.
+
+# Stage 1: Base Image
+# - Sets the working directory to /usr/src/app
+# - Copies package.json and package-lock.json (if exists) to the working directory
+FROM node:${NODE_VERSION}-slim AS build
+WORKDIR /usr/src/app
+
+FROM base AS dependencies
+COPY package*.json* ./
+# Stage 2: Dependencies
+# - Uses the baseImage as the starting point
+# - Installs project dependencies using npm
+# - Utilizes Docker build cache for faster builds
+FROM base AS dependencies
+ENV NODE_ENV production
+RUN --mount=type=cache,target=/usr/src/app/.npm \\
+    npm set cache /usr/src/app/.npm && \\
+    npm install --only=production
+
+# Stage 3: Production
+# - Uses the base stage as the starting point
+# - Sets the NODE_ENV environment variable to production
+# - Copy the dependencies from the dependencies stage
+# - Switch to non-root user
+FROM base AS production
+ENV NODE_ENV production
+COPY --from=dependencies /usr/src/app/node_modules ./node_modules
+COPY --chown=node:node ./src/ .
+USER node
+`;
 
         if (envVars) {
             envVars.forEach((env) => {
@@ -685,10 +716,11 @@ class GenerateDockerFile implements IGenerateDockerfile {
             dockerfileContent += "\n";
         }
 
-        dockerfileContent += `\n# Exposes port ${port} for the application\n
-                        EXPOSE ${port}\n\n
-                        # Sets the default command to run the production server\n
-                        CMD ${runCommand}\n`;
+        dockerfileContent += `# Exposes port ${port} for the application
+EXPOSE ${port}
+
+# Sets the default command to run the production server
+CMD ${runCommand}`;
     
         return dockerfileContent;
     };
@@ -700,30 +732,32 @@ class GenerateDockerFile implements IGenerateDockerfile {
             return;
         };
         let dockerfileContent = '';
-        dockerfileContent += `# This Dockerfile is used to build a single-stage Docker image for ${projectName} a Django application For the Application Owner ${this.username}\n
-                        # The stages are: production.\n\n
-                        # Stage 1: Base image for Python\n
-                        # - Disable output buffering\n
-                        # - Set the working directory to /usr/src/app\n
-                        # - Create a non-root user for security\n
-                        # - Copies requirements.txt to the working directory\n
-                        # - Install any needed packages specified in requirements.txt\n
-                        # - Copies the entire project to the working directory && Ensure Gunicorn is installed if it's missing\n
-                        # - Collect static files and run migrations\n
-                        # - Change ownership to the non-root user\n
-                        # - Switch to non-root user\n
-                        FROM python:${PYTHON_VERSION}-slim AS production\n
-                        ENV PYTHONUNBUFFERED=1\n
-                        WORKDIR /usr/src/app\n
-                        RUN addgroup --system django && adduser --system --ingroup django django\n
-                        COPY requirements.txt  .\n
-                        RUN pip install --no-cache-dir -r requirements.txt && \\ \n
-                        if ! command -v gunicorn &> /dev/null; then pip install gunicorn; fi\n
-                        COPY . .\n
-                        RUN python manage.py collectstatic --noinput && \\ \n
-                        python manage.py migrate\n
-                        RUN chown -R django:django /usr/src/app\n
-                        USER django\n\n`;
+        dockerfileContent += `# This Dockerfile is used to build a single-stage Docker image for ${projectName} a Django application For the Application Owner ${this.username}
+# The stages are: production.
+
+# Stage 1: Base image for Python
+# - Disable output buffering
+# - Set the working directory to /usr/src/app
+# - Create a non-root user for security
+# - Copies requirements.txt to the working directory
+# - Install any needed packages specified in requirements.txt
+# - Copies the entire project to the working directory && Ensure Gunicorn is installed if it's missing
+# - Collect static files and run migrations
+# - Change ownership to the non-root user
+# - Switch to non-root user
+FROM python:${PYTHON_VERSION}-slim AS production
+ENV PYTHONUNBUFFERED=1
+WORKDIR /usr/src/app\n
+RUN addgroup --system django && adduser --system --ingroup django django
+COPY requirements.txt  .
+RUN pip install --no-cache-dir -r requirements.txt && \\
+    if ! command -v gunicorn &> /dev/null; then pip install gunicorn; fi
+COPY . .
+RUN python manage.py collectstatic --noinput && \\
+    python manage.py migrate
+RUN chown -R django:django /usr/src/app
+USER django
+`;
 
         if (envVars) {
             envVars.forEach((env) => {
@@ -732,10 +766,11 @@ class GenerateDockerFile implements IGenerateDockerfile {
             dockerfileContent += "\n";
         }
 
-        dockerfileContent += `\n# - Expose ${port} port\n
-                        EXPOSE ${port}\n\n
-                        # - Use Gunicorn for production\n
-                        CMD ["gunicorn", "--bind", "0.0.0.0:8000", "project.wsgi:application"]\n`;
+        dockerfileContent += `# - Expose ${port} port
+EXPOSE ${port}
+
+# - Use Gunicorn for production
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "project.wsgi:application"]`;
     
         return dockerfileContent;
     };
@@ -746,29 +781,30 @@ class GenerateDockerFile implements IGenerateDockerfile {
             this.res.status(406).json({ error: 'Project name, Python version, and port are required' });
             return;
         };
-        let dockerfileContent = '';
-        dockerfileContent += `# This Dockerfile is used to build a single-stage Docker image for ${projectName} a Django application For the Application Owner ${this.username}\n
-                        # The stages are: production.\n\n
-                        # Stage 1: Base image for Python\n
-                        # - Disable output buffering\n
-                        # - Set the working directory to /usr/src/app\n
-                        # - Create a non-root user for security\n
-                        # - Copies requirements.txt to the working directory\n
-                        # - Install any needed packages specified in requirements.txt\n
-                        # - Copies the entire project to the working directory && Ensure Gunicorn is installed if it's missing\n
-                        # - Collect static files and run migrations\n
-                        # - Change ownership to the non-root user\n
-                        # - Switch to non-root user\n
-                        FROM python:${PYTHON_VERSION}-slim AS production\n
-                        ENV PYTHONUNBUFFERED=1\n
-                        WORKDIR /usr/src/app\n
-                        RUN addgroup --system flask && adduser --system --ingroup flask flask\n
-                        COPY requirements.txt  .\n
-                        RUN pip install --no-cache-dir -r requirements.txt && \\ \n
-                        if ! command -v gunicorn &> /dev/null; then pip install gunicorn; fi\n
-                        COPY . .\n
-                        RUN chown -R flask:flask /usr/src/app\n
-                        USER flask\n\n`;
+        let dockerfileContent =  `# This Dockerfile is used to build a single-stage Docker image for ${projectName} a Django application For the Application Owner ${this.username}
+# The stages are: production.
+
+# Stage 1: Base image for Python
+# - Disable output buffering
+# - Set the working directory to /usr/src/app
+# - Create a non-root user for security
+# - Copies requirements.txt to the working directory
+# - Install any needed packages specified in requirements.txt
+# - Copies the entire project to the working directory && Ensure Gunicorn is installed if it's missing\n
+# - Collect static files and run migrations
+# - Change ownership to the non-root user
+# - Switch to non-root user
+FROM python:${PYTHON_VERSION}-slim AS production
+ENV PYTHONUNBUFFERED=1
+WORKDIR /usr/src/app
+RUN addgroup --system flask && adduser --system --ingroup flask flask
+COPY requirements.txt  .
+RUN pip install --no-cache-dir -r requirements.txt && \\ 
+    if ! command -v gunicorn &> /dev/null; then pip install gunicorn; fi
+COPY . .
+RUN chown -R flask:flask /usr/src/app
+USER flask
+`;
 
         if (envVars) {
             envVars.forEach((env) => {
@@ -777,10 +813,11 @@ class GenerateDockerFile implements IGenerateDockerfile {
             dockerfileContent += "\n";
         }
 
-        dockerfileContent += `\n# - Expose ${port} port\n
-                        EXPOSE ${port}\n\n
-                        # - Use Gunicorn for production\n
-                        CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app:app"]\n`;
+        dockerfileContent += `# - Expose ${port} port
+EXPOSE ${port}
+
+# - Use Gunicorn for production
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app:app"]\n`;
     
         return dockerfileContent;
     };
@@ -792,30 +829,34 @@ class GenerateDockerFile implements IGenerateDockerfile {
             return;
         };
         let dockerfileContent = '';
-        dockerfileContent += `# This Dockerfile is used to build a multi-stage Docker image for ${projectName} a Golang application For the Application Owner ${this.username}\n
-                        # The stages are: build and production.\n\n
-                        # Stage 1: Build the Go application\n
-                        # - Set working directory\n
-                        # - Enable static binary build\n
-                        # - Copy Go module files\n
-                        # - Download dependencies\n
-                        # - Copy the source code\n
-                        # - Build the application\n
-                        FROM golang:${ GOLANG_VERSION} -slim AS build\n
-                        WORKDIR /build\n
-                        ENV CGO_ENABLED=0\n
-                        COPY go.* .\n
-                        RUN go mod download\n
-                        COPY . .\n
-                        RUN go build -o /build/bin/app\n\n
-                        # Stage 2: Create a minimal final image\n
-                        # - Set working directory\n
-                        # - Copy the compiled binary from the build stage\n
-                        FROM gcr.io/distroless/static AS production\n
-                        WORKDIR /app\n
-                        COPY --from=build /build/bin/app /app/bin\n\n
-                        # - Run as a non-root user for security\n
-                        USER nonroot\n\n`;
+        dockerfileContent += `# This Dockerfile is used to build a multi-stage Docker image for ${projectName} a Golang application For the Application Owner ${this.username}
+# The stages are: build and production.
+
+# Stage 1: Build the Go application
+# - Set working directory
+# - Enable static binary build
+# - Copy Go module files
+# - Download dependencies
+# - Copy the source code
+# - Build the application
+FROM golang:${ GOLANG_VERSION} -slim AS build
+WORKDIR /build
+ENV CGO_ENABLED=0
+COPY go.* .
+RUN go mod download
+COPY . .
+RUN go build -o /build/bin/app
+
+# Stage 2: Create a minimal final image
+# - Set working directory
+# - Copy the compiled binary from the build stage
+FROM gcr.io/distroless/static AS production
+WORKDIR /app
+COPY --from=build /build/bin/app /app/bin
+
+# - Run as a non-root user for security
+USER nonroot
+`;
 
         if (envVars) {
             envVars.forEach((env) => {
@@ -824,10 +865,11 @@ class GenerateDockerFile implements IGenerateDockerfile {
             dockerfileContent += "\n";
         }
 
-        dockerfileContent += `\n# - Expose ${port} port\n
-                        EXPOSE ${port}\n\n
-                        # - Start the application\n
-                        CMD ["/app/bin"]\n`;
+        dockerfileContent += `# - Expose ${port} port
+EXPOSE ${port}
+
+# - Start the application
+CMD ["/app/bin"]`;
     
         return dockerfileContent;
     };
@@ -838,40 +880,43 @@ class GenerateDockerFile implements IGenerateDockerfile {
             this.res.status(406).json({ error: 'Project name, PHP version, and port are required' });
             return '';
         };
-        let dockerfileContent = `# This Dockerfile is used to build a multi-stage Docker image for ${projectName} a Laravel application For the Application Owner ${this.username}\n
-                        # and an Apache server. The stages are: composer and production.\n\n
-                        # Stage 1: Composer Dependencies\n
-                        # - Sets the working directory to /usr/src/app\n
-                        # - Copy only dependency files to optimize caching\n
-                        # - Install dependency for production.\n
-                        FROM composer:2.2 AS composer\n
-                        WORKDIR /usr/src/app\n
-                        COPY composer.json composer.lock .\n
-                        RUN composer install --no-dev --no-interaction --prefer-dist\n\n
-                        # Stage 2: Laravel Application\n
-                        # - Set environment variables\n
-                        # - Enable Apache mod_rewrite (required by Laravel)\n
-                        # - Install system dependencies && clean up cache and reduce image size\n
-                        # - Install PHP extensions needed by Laravel\n
-                        # - Set the working directory\n
-                        # - Copy pre-installed vendor folder from the composer stage\n
-                        # - Copy the rest of the Laravel application\n
-                        # - Set the correct file permissions\n
-                        FROM php:${PHP_VERSION}-apache AS production\n
-                        ENV DEBIAN_FRONTEND=noninteractive\n
-                        RUN a2enmod rewrite\n
-                        RUN apt-get update && apt-get install -y --no-install-recommends \\ \n
-                        git \\ \n
-                        curl \\ \n
-                        zip \\ \n
-                        unzip \\ \n
-                        && rm -rf /var/lib/apt/lists/*\n
-                        RUN docker-php-ext-install pdo pdo_mysql\n
-                        WORKDIR /var/www/html\n
-                        COPY --from=composer /app/vendor /var/www/html/vendor\n
-                        COPY . /var/www/html\n
-                        RUN chmod -R 755 /var/www/html \\ \n
-                        && chown -R www-data:www-data /var/www/html\n\n`
+        let dockerfileContent = `# This Dockerfile is used to build a multi-stage Docker image for ${projectName} a Laravel application For the Application Owner ${this.username}
+# and an Apache server. The stages are: composer and production.
+
+# Stage 1: Composer Dependencies
+# - Sets the working directory to /usr/src/app
+# - Copy only dependency files to optimize caching
+# - Install dependency for production.
+FROM composer:2.2 AS composer
+WORKDIR /usr/src/app
+COPY composer.json composer.lock .
+RUN composer install --no-dev --no-interaction --prefer-dist
+
+# Stage 2: Laravel Application
+# - Set environment variables
+# - Enable Apache mod_rewrite (required by Laravel)
+# - Install system dependencies && clean up cache and reduce image size
+# - Install PHP extensions needed by Laravel
+# - Set the working directory
+# - Copy pre-installed vendor folder from the composer stage
+# - Copy the rest of the Laravel application
+# - Set the correct file permissions
+FROM php:${PHP_VERSION}-apache AS production
+ENV DEBIAN_FRONTEND=noninteractive
+RUN a2enmod rewrite
+RUN apt-get update && apt-get install -y --no-install-recommends \\
+    git \\
+    curl \\
+    zip \\
+    unzip \\
+    && rm -rf /var/lib/apt/lists/*
+RUN docker-php-ext-install pdo pdo_mysql
+WORKDIR /var/www/html
+COPY --from=composer /app/vendor /var/www/html/vendor
+COPY . /var/www/html
+RUN chmod -R 755 /var/www/html \\
+    && chown -R www-data:www-data /var/www/html
+`
 
         if (envVars) {
             envVars.forEach((env) => {
@@ -880,17 +925,19 @@ class GenerateDockerFile implements IGenerateDockerfile {
             dockerfileContent += "\n";
         }
 
-        dockerfileContent += `\n# - Expose ${port} port\n
-                        EXPOSE ${port}\n\n
-                        # - Set Apache DocumentRoot to Laravel's public directory\n
-                        RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf\n\n
-                        # - Start Laravel\n
-                        CMD ["sh", "-c", "cp .env.example .env && php artisan key:generate && php artisan migrate --force && apache2-foreground"]\n`;
+        dockerfileContent += `# - Expose ${port} port
+EXPOSE ${port}
+
+# - Set Apache DocumentRoot to Laravel's public directory
+RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
+
+# - Start Laravel
+CMD ["sh", "-c", "cp .env.example .env && php artisan key:generate && php artisan migrate --force && apache2-foreground"]`;
     
         return dockerfileContent;
     };
 
-    async technologyPath(path: string, webServer: string): Promise<string | void> {
+    async technologyPath(path: string, webServer: string = 'nginx'): Promise<string | void> {
         
         switch (path) {
             case 'vanilla-jS':
@@ -901,25 +948,25 @@ class GenerateDockerFile implements IGenerateDockerfile {
                 } else {
                     throw new Error(`Unknown Dockerfile name: ${name}`);
                 }
-            case 'PHP':
+            case 'php':
                 return await this.apachePHPWebServer();
-            case 'React':
+            case 'react':
                 return await this.react();
-            case 'Angular':
+            case 'angular':
                 return await this.angular();
-            case 'Vue':
+            case 'vue':
                 return await this.vue();
-            case 'Svelte':
+            case 'svelte':
                 return await this.svelte();
-            case 'Node.js':
+            case 'nodejs':
                 return await this.nodeJS();
-            case 'Django':
+            case 'django':
                 return await this.django();
-            case 'Flask':
+            case 'flask':
                 return await this.flask();
-            case 'Golang':
+            case 'golang':
                 return await this.golang();
-            case 'Laravel':
+            case 'laravel':
                 return await this.laravel();
             default:
                 throw new Error(`Unknown Dockerfile name: ${name}`);
