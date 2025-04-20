@@ -5,12 +5,13 @@ import projectsRoutes from './routes/projectRoutes';
 import deploymentRoutes from './routes/deploymentRoutes';
 import pipelineRoutes from './routes/pipelineRoutes';
 import providerRoutes from './routes/providers';
+import userRoutes from './routes/userRoutes';
+import deployRoutes from './routes/deploy';
 import errorHandler from './middleware/errorHandler';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import cors from 'cors';
 import { verifyToken } from './middleware/verifyToken';
-import userRoutes from './routes/userRoutes';
 import { verifyAdmin } from './middleware/verifyAdmin';
 
 
@@ -31,6 +32,7 @@ app.use('/projects', projectsRoutes);
 app.use('/deployments', deploymentRoutes);
 app.use('/pipelines', pipelineRoutes);
 app.use('/users', userRoutes);
+app.use('/deploy',deployRoutes );
 app.use('/admin', verifyAdmin, adminRoutes);
 
 app.use(errorHandler);
