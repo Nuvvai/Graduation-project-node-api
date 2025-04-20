@@ -8,50 +8,45 @@ interface IOrgGitHubService {
 
     /**
      * Creates a new private repository inside an organization.
-     * @param org - The name of the organization.
      * @param repoName - The name of the repository to create.
      * @returns The URL of the created repository.
      * 
      * @HazemSabry
      */
-    createPrivateRepo(org: string, repoName: string): Promise<string>;
+    createPrivateRepo(repoName: string): Promise<string>;
 
     /**
      * Gets the latest commit SHA of the default branch (e.g., main).
-     * @param org - The name of the organization.
      * @param repoName - The name of the repository.
      * @param branch - The name of the branch (default is "main").
      * @returns The SHA of the latest commit.
      * 
      * @HazemSabry
      */
-    getLatestCommitSha(org: string, repoName: string, branch?: string): Promise<string>;
+    getLatestCommitSha(repoName: string, branch?: string): Promise<string>;
 
     /**
      * Creates a new branch from a given commit SHA.
-     * @param org - The name of the organization.
      * @param repoName - The name of the repository.
      * @param newBranch - The name of the new branch to create.
      * @param baseSha - The SHA of the commit to base the new branch on.
      * 
      * @HazemSabry
      */
-    createBranch(org: string, repoName: string, newBranch: string, baseSha: string): Promise<void>;
+    createBranch(repoName: string, newBranch: string, baseSha: string): Promise<void>;
 
     /**
      * Adds a file to the specified branch.
-     * @param org - The name of the organization.
      * @param repoName - The name of the repository.
      * @param branch - The name of the branch to add the file to.
      * @param filePath - The path of the file to add.
      * @param content - The content of the file to add.
      * @HazemSabry
      */
-    addFileToBranch(org: string, repoName: string, branch: string, filePath: string, content: string): Promise<void>;
+    addFileToBranch(repoName: string, branch: string, filePath: string, content: string): Promise<void>;
 
     /**
      * Orchestrates the process: creates a repo, branch, and adds files.
-     * @param org - The name of the organization.
      * @param repoName - The name of the repository to create.
      * @param branchName - The name of the branch to create.
      * @param files - An array of objects containing file paths and contents to add.
@@ -59,7 +54,7 @@ interface IOrgGitHubService {
      * 
      * @HazemSabry
      */
-    setupRepoWithFiles(org: string, repoName: string, branchName: string, files: Array<{ path: string, content: string }>): Promise<string | void>;
+    setupRepoWithFiles(repoName: string, branchName: string, files: Array<{ path: string, content: string }>): Promise<string | void>;
 }
 
 
@@ -77,50 +72,66 @@ class OrgGitHubService implements IOrgGitHubService{
      */
     private octokit: Octokit;
 
+    /**The name of the organization to interact with.*/
+    private org: string;
+
     /**
      * Creates an instance of GitHubService.
      * @param authToken - The authentication token for GitHub API.
      * @HazemSabry
      */
-    constructor(authToken: string | undefined = process.env.GITHUB_API_Access_Token) {
+    constructor(org: string, authToken: string | undefined = process.env.GITHUB_API_Access_Token) {
+        if (!authToken) {
+            throw new Error("GitHub API access token is required.");
+        }
         this.octokit = new Octokit({ auth: authToken });
+        this.org = org;
     }
 
-    async createPrivateRepo(org: string, repoName: string): Promise<string>{
+    async createPrivateRepo( repoName: string): Promise<string>{
+        // Step 1: Check if the repository already exists
         try {
-            const response = await this.octokit.request("POST /orgs/{org}/repos", {
-                org,
-                name: repoName,
-                private: true,
-                description: "Private repo created via API",
-            });
-
-            console.log(`✅ Repository created: ${response.data.html_url}`);
-            return response.data.html_url;
-        } catch (error) {
-            console.error("❌ Error creating repository:", error);
-            throw error;
-        }
-    }
-
-    async getLatestCommitSha(org: string, repoName: string, branch: string = "main") {
-        try {
-            const { data } = await this.octokit.request("GET /repos/{owner}/{repo}/branches/{branch}", {
-                owner: org,
+            const response = await this.octokit.request("GET /repos/{owner}/{repo}", {
+                owner: this.org,
                 repo: repoName,
-                branch,
             });
-            return data.commit.sha;
-        } catch (error) {
-            console.error("❌ Error getting latest commit SHA:", error);
-            throw error;
-        }
+            return response.data.html_url; // Return the existing repository URL
+            
+        } catch (error: unknown) {
+            if ((error as { status?: number }).status === 404) {
+                    try {
+                        const createResponse = await this.octokit.request("POST /orgs/{org}/repos", {
+                            org: this.org,
+                            name: repoName,
+                            private: true,
+                            description: "Private repo created via API",
+                        });
+                        return createResponse.data.html_url; // Return the newly created repository URL
+                    } catch (error) {
+                        console.error("❌ Error creating repository:", error);
+                        throw error;
+                    }
+
+                } else {
+                    console.error("❌ Error checking repository existence:", error);
+                    throw error;
+                }
+            }
     }
 
-    async createBranch(org:string, repoName:string, newBranch:string, baseSha:string): Promise<void> {
+    async getLatestCommitSha(repoName: string, branch: string = "main") {
+        const { data } = await this.octokit.request("GET /repos/{owner}/{repo}/branches/{branch}", {
+            owner: this.org,
+            repo: repoName,
+            branch,
+        });
+        return data.commit.sha;
+    }
+
+    async createBranch( repoName:string, newBranch:string, baseSha:string): Promise<void> {
         try {
             await this.octokit.request("POST /repos/{owner}/{repo}/git/refs", {
-                owner: org,
+                owner: this.org,
                 repo: repoName,
                 ref: `refs/heads/${newBranch}`,
                 sha: baseSha,
@@ -132,10 +143,10 @@ class OrgGitHubService implements IOrgGitHubService{
         }
     }
 
-    async addFileToBranch(org: string, repoName: string, branch: string, filePath: string, content: string): Promise<void>{
+    async addFileToBranch( repoName: string, branch: string, filePath: string, content: string ): Promise<void>{
         try {
             await this.octokit.request("PUT /repos/{owner}/{repo}/contents/{path}", {
-                owner: org,
+                owner: this.org,
                 repo: repoName,
                 path: filePath,
                 message: `Add ${filePath} to ${branch}`,
@@ -149,20 +160,30 @@ class OrgGitHubService implements IOrgGitHubService{
         }
     }
 
-    async setupRepoWithFiles(org: string, repoName: string, branchName: string, files: Array<{path:string, content: string}>): Promise<string | void> {
+    async setupRepoWithFiles( repoName: string, branchName: string, files: Array<{path:string, content: string}>): Promise<string | void> {
         try {
             // Step 1: Create the private repository
-            const repoURL:string = await this.createPrivateRepo(org, repoName);
+            const repoURL:string = await this.createPrivateRepo( repoName);
 
-            // Step 2: Get the latest commit SHA from the default branch
-            const latestCommitSha = await this.getLatestCommitSha(org, repoName);
-
-            // Step 3: Create a new branch from the latest commit
-            await this.createBranch(org, repoName, branchName, latestCommitSha);
-
+            let latestCommitSha: string | undefined;
+            try {
+                // Step 2: Try to get the latest commit SHA from the default branch
+                latestCommitSha = await this.getLatestCommitSha(repoName);
+            } catch (error: unknown) {
+                if ((error as { status?: number })?.status === 404) {
+                    const initialFilePath = "README.md";
+                    const initialFileContent = `# Repo For User ${repoName}`;
+                    await this.addFileToBranch(repoName, "main", initialFilePath, initialFileContent);
+                    latestCommitSha = await this.getLatestCommitSha(repoName); // Retry after creating the initial commit
+                } else {
+                    throw error;
+                }
+            }
+            
+            await this.createBranch( repoName, branchName, latestCommitSha);
             // Step 4: Add each file to the new branch
             for (const file of files) {
-                await this.addFileToBranch(org, repoName, branchName, file.path, file.content);
+                await this.addFileToBranch(repoName, branchName, file.path, file.content);
             }
 
             console.log("🎉 All files have been added successfully!");
