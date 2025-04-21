@@ -92,10 +92,10 @@ export const updateUserProfile = async (req: Request<UpdateUserProfileRequestPar
         const validate = new Validate(res);
 
         validate.usernameSyntax(username);
-        if (newEmail) validate.emailSyntax(newEmail);
-        if (newPassword) validate.passwordSyntax(newPassword);
-        if (newPasswordAgain) validate.passwordSyntax(newPasswordAgain);
-        if (oldPassword) validate.passwordSyntax(oldPassword);
+        if (newEmail) if(!(await validate.emailSyntax(newEmail))) return;
+        if (newPassword) if(!(await validate.passwordSyntax(newPassword))) return;
+        if (newPasswordAgain) if(!(await validate.passwordSyntax(newPasswordAgain))) return;
+        if (oldPassword) if(!(await validate.passwordSyntax(oldPassword))) return;
         // await validate.usernameExists(username);
 
         if (newName) userExists.username = newName;
