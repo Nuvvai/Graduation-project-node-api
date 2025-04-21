@@ -37,7 +37,7 @@ export const sendOTP = async (
     const validate = new Validate(res);
     const reason = req.query.reason as string | undefined;
     try{
-        validate.emailSyntax(email)
+        if (!(await validate.emailSyntax(email))) return;
         if (reason !== "forgotPassword" && reason !== "verifyEmail") {
             res.status(400).json({ message: "Invalid reason!" });
             return;
@@ -56,7 +56,7 @@ export const sendOTP = async (
             return;
         }
         if(username){
-            validate.usernameSyntax(username)
+            if (!(await validate.usernameSyntax(username))) return;
         }
         if(reason === "forgotPassword"){
             username = userExists?.username || '';
@@ -125,7 +125,7 @@ export const resetPassword = async (
             res.status(404).json({ message: 'User not found!' });
             return;
         }
-        validate.passwordSyntax(newPassword)
+        if (!(await validate.passwordSyntax(newPassword))) return;
         const hashedPassword:string = await bcrypt.hash(newPassword, 12);
         userExists.password = hashedPassword;
         await userExists.save();

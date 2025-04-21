@@ -103,11 +103,12 @@ export const register_controller = async (req:Request<object, object, RegisterRe
             res.status(406).json({ message: "Not accepted, missing parameter" });
             return;
         } else {
-            validate.usernameSyntax(username);
-            validate.emailSyntax(email);
-            validate.passwordSyntax(password)
-            await validate.usernameExists(username);
-            await validate.emailExists(email);
+            if (!(await validate.usernameSyntax(username))) return;
+            if (!(await validate.emailSyntax(email))) return;
+            if (!(await validate.passwordSyntax(password))) return;
+            
+            if (await validate.usernameExists(username)) return;
+            if (await validate.emailExists(email)) return;
         }
 
         const hashedPassword:string = await bcrypt.hash(password, 12);
