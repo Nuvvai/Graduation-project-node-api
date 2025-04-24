@@ -8,6 +8,8 @@
     "dev": "nodemon -r dotenv/config src/server.ts",
     "build": "tsc",
     "test": "jest --coverage",
+    "test:unit": "jest tests/unit --coverage",
+    "test:integration": "jest tests/integration --coverage",
     "lint": "eslint src/**/*.ts",
     "typeCheck": "tsc --noEmit",
     "precommit": "npm run lint && npm test"

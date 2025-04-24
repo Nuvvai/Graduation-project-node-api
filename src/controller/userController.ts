@@ -4,17 +4,6 @@ import User, { IUser } from '../models/User';
 import axios from 'axios';
 import Validate from '../utils/Validate';
 
-interface GetUserProfileRequestParams {
-    username: string;
-}
-
-interface DeleteUserRequestParams {
-    username: string;
-}
-
-interface UpdateUserProfileRequestParams {
-    username: string;
-}
 
 interface UpdateUserProfileRequestBody {
     newName?: string;
@@ -74,7 +63,7 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
  * @route PUT /users/me
  * @access private
  */
-export const updateUserProfile = async (req: Request<UpdateUserProfileRequestParams, object, UpdateUserProfileRequestBody>, res: Response, next: NextFunction): Promise<void> => {
+export const updateUserProfile = async (req: Request<{}, {}, UpdateUserProfileRequestBody>, res: Response, next: NextFunction): Promise<void> => {
     const { newName, newEmail, newPassword, newPasswordAgain, oldPassword }: UpdateUserProfileRequestBody = req.body;
     if (!newName &&!newEmail &&!newPassword &&!newPasswordAgain) {
         res.status(400).json({ message: 'No fields provided to update!' });
@@ -155,7 +144,7 @@ export const updateUserProfile = async (req: Request<UpdateUserProfileRequestPar
  * 
  * @HazemSabry
  */
-export const updateGithubUserProfile = async (req: Request<UpdateUserProfileRequestParams, object, { code: string }>, res: Response): Promise<void> => {
+export const updateGithubUserProfile = async (req: Request<object, object, { code: string }>, res: Response): Promise<void> => {
     const {username} = req.user as IUser;
     
     const { code } = req.body;
@@ -231,7 +220,7 @@ export const updateGithubUserProfile = async (req: Request<UpdateUserProfileRequ
  * 
  * @HazemSabry
  */
-export const updateGitlabUserProfile = async (req: Request<UpdateUserProfileRequestParams, object, {code:string}>, res:Response): Promise<void> => {
+export const updateGitlabUserProfile = async (req: Request<object, object, {code:string}>, res:Response): Promise<void> => {
     // const { code } = req.body;
     // Implement Gitlab OAuth flow and update user's profile with Gitlab data.
     res.status(501).json({ message: "This feature is not supported" });
@@ -257,7 +246,7 @@ export const updateGitlabUserProfile = async (req: Request<UpdateUserProfileRequ
  * 
  * @HazemSabry
  */
-export const updateBitbucketUserProfile = async (req: Request<UpdateUserProfileRequestParams, object, {code:string}>, res:Response): Promise<void> => {
+export const updateBitbucketUserProfile = async (req: Request<object, object, {code:string}>, res:Response): Promise<void> => {
     // const { code } = req.body;
     // Implement Gitlab OAuth flow and update user's profile with Gitlab data.
     res.status(501).json({ message: "This feature is not supported" });
@@ -284,7 +273,7 @@ export const updateBitbucketUserProfile = async (req: Request<UpdateUserProfileR
  * 
  * @HazemSabry
  */
-export const updateAzureDevOpsUserProfile = async (req: Request<UpdateUserProfileRequestParams, object, {code:string}>, res:Response): Promise<void> => {
+export const updateAzureDevOpsUserProfile = async (req: Request<object, object, {code:string}>, res:Response): Promise<void> => {
     // const { code } = req.body;
     // Implement Gitlab OAuth flow and update user's profile with Gitlab data.
     res.status(501).json({ message: "This feature is not supported" });

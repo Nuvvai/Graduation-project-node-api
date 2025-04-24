@@ -5,7 +5,6 @@ import Project from '../../src/models/Project';
 import User from '../../src/models/User';
 import jenkins from '../../src/utils/jenkinsClient';
 import { generatePipelineScript } from '../../src/utils/generatePipelineScript';
-import xml2js from 'xml2js';
 import mongoose from 'mongoose';
 import jwt from "jsonwebtoken";
 
