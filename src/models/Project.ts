@@ -6,6 +6,7 @@ export interface IProject extends Document {
     repositoryUrl: string;
     framework: 'React' | 'Angular' | 'VueJS' | 'Wordpress' | 'Svelte' | 'VanillaJS'| 'NodeJS' | 'Golang' | 'Laravel' | 'Flask' | 'Django' | 'PHP';
     description?: string;
+    orgRepositoryUrl?: string;
     // add them if needed
     // buildCommand: string;
     // startCommand: string;
@@ -56,6 +57,15 @@ const projectSchema: Schema<IProject> = new Schema<IProject>({
     },
     description: {
         type: String,
+    },
+    orgRepositoryUrl: {
+        type: String,
+        validate: {
+            validator: function (value: string): boolean {
+                return /^https:\/\/github\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+(?:\.git)?$/.test(value);
+            },
+            message: "Organization Repository URL must be a valid GitHub repository URL.",
+        }
     },
     // buildCommand:{
     //     type: String,

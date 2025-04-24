@@ -13,6 +13,18 @@ interface CreateProjectRequestBody {
     description?: string;
 }
 
+interface UpdateProjectRequestParams {
+    username: string;
+    projectName: string;
+}
+
+interface UpdateProjectRequestBody {
+    repositoryUrl: string;
+    framework: string;
+    description?: string;
+    orgRepositoryUrl?: string;
+}
+
 interface GetAllProjectsRequestParams {
     username: string;
 }
@@ -81,6 +93,55 @@ export const createProject = async (
         next(error);
     }
 };
+
+
+/**
+ * @author Mennatallah Ashraf
+ * @des Controller function for updating a project by username and project name.
+ * @route PUT /projects/:username/:projectName
+ * @access private
+ */
+export const updateProject = async (
+    req: Request<UpdateProjectRequestParams, object, UpdateProjectRequestBody>,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    const { username, projectName } : UpdateProjectRequestParams = req.params;
+    const { repositoryUrl, framework, description, orgRepositoryUrl } : UpdateProjectRequestBody= req.body;
+    const user = req.user as IUser;
+
+    try {
+        const userExists = await User.findOne<IUser>({ username });
+        if (!userExists) {
+            res.status(404).json({ message: 'User not found!' });
+            return;
+        }
+        const currentUser = await User.findOne<IUser>({ username: user.username });
+        if (!currentUser) {
+            res.status(404).json({ message: "Current user not found!" });
+            return;
+        }
+        if ((user.username !== username) && (currentUser.role !== 'admin')) {
+            res.status(403).json({ message: "Unauthorized action!" });
+            return;
+        }
+        const projectExists = await Project.findOne<IProject>({ username, projectName });
+        if (!projectExists) {
+            res.status(404).json({ message: 'Project not found!' });
+            return;
+        }
+
+        const updatedProject = await Project.findOneAndUpdate<IProject>(
+            { username, projectName },
+            { repositoryUrl, framework, description, orgRepositoryUrl },
+            { new: true }
+        );
+
+        res.status(200).json({message: "Project updated successfully!", updatedProject });
+    } catch (error) {
+        next(error);
+    }
+}
 
 /**
  * @author Mennatallah Ashraf
