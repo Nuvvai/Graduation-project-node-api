@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import Deployment, { IDeployment } from '../models/Deployment'; 
 import Project, {IProject} from '../models/Project';
 import User, { IUser } from '../models/User';
+import { createDeploymentService } from '../services/deploymentService';
 
 interface CreateDeploymentRequestParams {
     username: string;
@@ -49,48 +50,18 @@ export const createDeployment = async (
     next: NextFunction
 ): Promise<void> => {
     const { username, projectName} : CreateDeploymentRequestParams = req.params;
-    const { deploymentName, status = 'No status', startTime = new Date(), endTime = new Date() } : CreateDeploymentRequestBody= req.body;
+    const deploymentName = `${username}-${projectName}-deployment`;
     const user = req.user as IUser;
     try {
-        const userExists = await User.findOne<IUser>({ username });
-        if (!userExists) {
-            res.status(404).json({ message: 'User not found!' });
-            return;
-        }
-        const currentUser = await User.findOne<IUser>({ username: user.username });
-        if (!currentUser) {
-            res.status(404).json({ message: "Current user not found!" });
-            return;
-        }
-        if ((user.username !== username) && (currentUser.role !== 'admin')) {
-            res.status(403).json({ message: "Unauthorized action!" });
-            return;
-        }
-        const projectExists = await Project.findOne<IProject>({ username, projectName });
-        if (!projectExists) {
-            res.status(404).json({ message: "Project not found!" })
-            return;
-        }
-        const deploymentExists = await Deployment.findOne<IDeployment>({username, projectName, deploymentName})
-        if(deploymentExists){
-            res.status(403).json({message: "Deployment with the same name already exists!"})
-            return;
-        }
-        if(!deploymentName){
-            res.status(400).json({message: "Deployment name is required!"});
-            return;
-        }
-        const deployment = new Deployment({
-            deploymentName,
-            projectName,
-            username,
-            status,
-            startTime,
-            endTime
-        });
-
-        await deployment.save();
-        res.status(201).json(deployment)
+        const newDeployment = await createDeploymentService(
+            {
+                username,
+                projectName,
+                deploymentName
+            },
+            user.username
+        );
+        res.status(201).json(newDeployment)
     } catch (error) {
         next(error);
     }
