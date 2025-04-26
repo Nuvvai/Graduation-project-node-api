@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import Project, {IProject} from '../models/Project';
 import User, { IUser } from '../models/User';
+import { createProjectService, CreateProjectData } from '../services/projectService';
 
 interface CreateProjectRequestParams {
     username: string;
@@ -54,40 +55,16 @@ export const createProject = async (
     const user = req.user as IUser;
 
     try {
-        if (!projectName || !username || !repositoryUrl || !framework) {
-            res.status(400).json({ message: 'All required fields must be provided!' });
-            return;
-        }
-        const userExists = await User.findOne<IUser>({ username });
-        if (!userExists) {
-            res.status(404).json({ message: 'User not found!' });
-            return;
-        }
-        const currentUser = await User.findOne<IUser>({ username: user.username });
-        if (!currentUser) {
-            res.status(404).json({ message: "Current user not found!" });
-            return;
-        }
-        if ((user.username !== username) && (currentUser.role !== 'admin')) {
-            res.status(403).json({ message: "Unauthorized action!" });
-            return;
-        }
-
-        const projectExists = await Project.findOne<IProject>({ username, projectName });
-        if (projectExists) {
-            res.status(400).json({ message: 'Project with the same name already exists!' });
-            return;
-        }
-
-        const newProject = new Project({
-            projectName,
-            username,
-            repositoryUrl,
-            framework,
-            description
-        });
-
-        await newProject.save();
+        const newProject = await createProjectService(
+            {
+                projectName,
+                username,
+                repositoryUrl,
+                framework,
+                description
+            },
+            user.username
+        );
         res.status(201).json(newProject);
     } catch (error) {
         next(error);
