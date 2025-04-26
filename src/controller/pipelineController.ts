@@ -1,12 +1,11 @@
-import { generatePipelineScript } from "../utils/generatePipelineScript";
 import { Request, Response, NextFunction } from 'express';
 import Pipeline, {IPipeline} from '../models/Pipeline';
 import Project, {IProject} from '../models/Project';
 import User, { IUser } from '../models/User';
 import jenkins from '../utils/jenkinsClient';
-import { create } from 'xmlbuilder2';
 import { error } from 'console';
 import xml2js from 'xml2js';
+import { createPipelineService, triggerBuildService } from '../services/pipelineService';
 
 interface CreatePipelineRequestParams {
     username: string;
@@ -71,76 +70,16 @@ export const createPipeline = async (
     const { gitBranch } : CreatePipelineRequestBody = req.body;
     const pipelineName = `${username}-${projectName}-pipeline`;
     const user = req.user as IUser;
-    // const { gitUsername, gitPassword } : CreatePipelineRequestBody = req.body;
     try {
-        const userExists = await User.findOne<IUser>({ username });
-        if (!userExists) {
-            res.status(404).json({ message: 'User not found!' });
-            return;
-        }
-        const currentUser = await User.findOne<IUser>({ username: user.username });
-        if (!currentUser) {
-            res.status(404).json({ message: "Current user not found!" });
-            return;
-        }
-        if ((user.username !== username) && (currentUser.role !== 'admin')) {
-            res.status(403).json({ message: "Unauthorized action!" });
-            return;
-        }
-        const projectExists = await Project.findOne<IProject>({ username, projectName });
-        if (!projectExists) {
-            res.status(404).json({message: 'Project not found!'})
-            return;
-        }
-        const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName});
-        if (existingPipeline) {
-            res.status(400).json({ message: 'Pipeline already exists!' });
-            return;
-        }
-        const existingView = await jenkins.view.exists(username);
-        if (!existingView) {
-            await jenkins.view.create(username, "list");
-        }
-
-        const { email } = userExists;
-        const { framework, repositoryUrl } = projectExists;
-
-        const newPipeline = new Pipeline({
-            pipelineName,
-            username,
-            projectName
-        });
-
-        // not tested yet-------------------------------------------------------
-        // const credentialId = `${username}-${projectName}-credentials`;
-        // const credentialsOptions = {
-        //   id: credentialId,
-        //   type: 'usernamePassword',
-        //   username: gitUsername,
-        //   password: gitPassword,
-        //   description: `Credentials for ${username}'s project: ${projectName}`,
-        // };
-        // await jenkins.credentials.create(credentialsOptions);
-        //------------------------------------------------------------------------
-
-        const pipelineScript = generatePipelineScript(projectName, framework, username, gitBranch, repositoryUrl, email);
-      
-        const pipelineJobXML = create({ version: '1.0', encoding: 'UTF-8' })
-            .ele('flow-definition', { plugin: 'workflow-job@2.40' })
-              .ele('description').txt(`Pipeline for project: ${projectName}`).up()
-              .ele('keepDependencies').txt('false').up()
-              .ele('properties').up()
-              .ele('definition', { class: 'org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition', plugin: 'workflow-cps@2.94' })
-                .ele('script').txt(pipelineScript).up()
-                .ele('sandbox').txt('true').up()
-              .up()
-              .ele('triggers').up()
-              .ele('disabled').txt('false').up()
-            .end({ prettyPrint: true });
-
-        await jenkins.job.create(pipelineName, pipelineJobXML);
-        await jenkins.view.add(username, pipelineName);
-        await newPipeline.save();
+        const newPipeline = await createPipelineService(
+            {
+                projectName,
+                username,
+                pipelineName,
+                gitBranch
+            },
+            user.username
+        );
         res.status(201).json({ message: 'Pipeline created successfully', pipeline: newPipeline });   
     }catch(error){
         next(error);
@@ -161,34 +100,14 @@ export const triggerBuild = async (
     const { username, projectName, pipelineName } : TriggerBuildRequestParams = req.params;
     const user = req.user as IUser;
     try {
-        const userExists = await User.findOne<IUser>({ username });
-        if (!userExists) {
-            res.status(404).json({ message: 'User not found!' });
-            return;
-        }
-        const currentUser = await User.findOne<IUser>({ username: user.username });
-        if (!currentUser) {
-            res.status(404).json({ message: "Current user not found!" });
-            return;
-        }
-        if ((user.username !== username) && (currentUser.role !== 'admin')) {
-            res.status(403).json({ message: "Unauthorized action!" });
-            return;
-        }
-        const projectExists = await Project.findOne<IProject>({ username, projectName });
-        if (!projectExists) {
-            res.status(404).json({message: 'Project not found!'})
-            return;
-        }
-        const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName, pipelineName});
-        if (!existingPipeline) {
-            res.status(404).json({ message: 'Pipeline not found!' });
-            return;
-        }
-        await jenkins.job.build(pipelineName);
-        existingPipeline.lastBuildNumber += 1;
-        existingPipeline.lastBuildTime = new Date();
-        await existingPipeline.save();
+        const existingPipeline = await triggerBuildService(
+            {
+                projectName,
+                username,
+                pipelineName,
+            },
+            user.username
+        );
         res.status(201).json({ message: `Build triggered for pipeline: ${pipelineName}`, existingPipeline });
     }catch(error){
         next(error);
