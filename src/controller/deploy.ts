@@ -34,7 +34,7 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
 
     try {
         //Step1: Create a project
-        await createProjectService({
+        const project = await createProjectService({
             projectName,
             username,
             repositoryUrl: body.repositoryUrl,
@@ -59,6 +59,11 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
             res.status(500).json({ message: 'Failed to setup repository!' });
             return;
         }
+
+        project.dockerfileContent = DockerFile;
+        project.orgRepositoryUrl = orgRepoUrl;
+        // project.k8sManifestContent = body.k8sManifestContent; // uncomment when k8s manifest is ready
+        await project.save();
 
         //Step4: Generate repository token and create webhook
 
