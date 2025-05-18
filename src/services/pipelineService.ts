@@ -68,7 +68,7 @@ export const createPipelineService = async (
     }
 
     const { email } = userExists;
-    const { framework, repositoryUrl } = projectExists;
+    const { framework, repositoryUrl, dockerfileContent, k8sManifestContent } = projectExists;
 
     const newPipeline = new Pipeline({
         pipelineName,
@@ -76,7 +76,7 @@ export const createPipelineService = async (
         projectName
     });
 
-    const pipelineScript = generatePipelineScript(projectName, framework, username, gitBranch, repositoryUrl, email);
+    const pipelineScript = generatePipelineScript(projectName, framework, username, gitBranch, repositoryUrl, email, dockerfileContent||'', k8sManifestContent||'');
   
     const pipelineJobXML = create({ version: '1.0', encoding: 'UTF-8' })
         .ele('flow-definition', { plugin: 'workflow-job@2.40' })
@@ -100,7 +100,7 @@ export const createPipelineService = async (
 
 /**
  * @author Mennatallah Ashraf
- * @des Service function for creating a new pipeline
+ * @des Service function for triggering a build for an existing pipeline
  * @throws Will throw an error with appropriate message and status code
  */
 export const triggerBuildService = async (
