@@ -23,7 +23,7 @@ pipeline {
 
 // tools {
 //         //nodejs 'nodejs-23.7.0'
-//         // dockerTool  'docker-latest'
+//         dockerTool  'docker-latest'
 //     }
 
 environment {
@@ -90,21 +90,6 @@ stages {
         catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
             // Run tests and output results in JUnit format
             sh 'npm run test:unit'
-
-            // Publish test results to Jenkins UI / Blue Ocean
-            junit allowEmptyResults: true, keepProperties: true, testResults: 'test-results/junit.xml'
-
-            // Publish code coverage HTML report
-            publishHTML([
-               allowMissing: true,
-               alwaysLinkToLastBuild: true,
-               keepAll: true,
-               reportDir: 'coverage/lcov-report',
-               reportFiles: 'index.html',
-               reportName: 'Code Coverage HTML Report',
-               reportTitles: '',
-               useWrapperFileDirectly: true
-            ])
         }
       }
     }
@@ -212,24 +197,8 @@ stages {
 
             trivy convert \
                 --format template --template "@/usr/local/share/trivy/templates/html.tpl" \
-                --output trivy-image-CRITICAL-results.html trivy-image-CRITICAL-results.json
-
-            trivy convert \
-                --format template --template "@/usr/local/share/trivy/templates/junit.tpl" \
-                --output trivy-image-MEDIUM-results.xml  trivy-image-MEDIUM-results.json 
-
-            trivy convert \
-                --format template --template "@/usr/local/share/trivy/templates/junit.tpl" \
-                --output trivy-image-CRITICAL-results.xml trivy-image-CRITICAL-results.json          
+                --output trivy-image-CRITICAL-results.html trivy-image-CRITICAL-results.json         
         '''
-        junit allowEmptyResults: true, stdioRetention: '', testResults: 'trivy-image-CRITICAL-results.xml'
-
-        junit allowEmptyResults: true, stdioRetention: '', testResults: 'trivy-image-MEDIUM-results.xml'
-
-        publishHTML([allowMissing: true, alwaysLinkToLastBuild: true, keepAll: true, reportDir: './', reportFiles: 'trivy-image-CRITICAL-results.html', reportName: 'Trivy Image Critical Vul Report', reportTitles: '', useWrapperFileDirectly: true])
-
-        publishHTML([allowMissing: true, alwaysLinkToLastBuild: true, keepAll: true, reportDir: './', reportFiles: 'trivy-image-MEDIUM-results.html', reportName: 'Trivy Image Medium Vul Report', reportTitles: '', useWrapperFileDirectly: true])
-     
         // convert reports from HTML to pdf
         sh '''
            wkhtmltopdf trivy-image-MEDIUM-results.html trivy-image-MEDIUM-results.pdf
