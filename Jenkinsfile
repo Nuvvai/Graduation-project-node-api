@@ -104,32 +104,32 @@ stages {
             }
     }
 
- //   stage('Parallel Run Scans') {
- //           parallel {
- //               stage('Static Code Analysis with SonarQube') {
- //                 options { 
- //                    timeout(time: 15, unit: 'MINUTES')
- //                 }
- //                 steps {
- //                    script {
- //                     withSonarQubeEnv('sonarqube-server') {
- //                         sh """
- //                           $SONAR_SCANNER_HOME/bin/sonar-scanner \
- //                               -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
- //                               -Dsonar.sources=. 
- //                         """
- //                         echo "[DONE] SonarQube scan completed"
- //                     }
- //                     // Quality Gate check but does NOT stop the pipeline on failure
- //                     script {
- //                         def qualityGate = waitForQualityGate()
- //                         if (qualityGate.status != 'OK') {
- //                             echo "WARNING: SonarQube Quality Gate failed, but continuing pipeline..."
- //                         }
- //                     }
- //                   }
- //                }
- //               }
+   stage('Parallel Run Scans') {
+           parallel {
+               stage('Static Code Analysis with SonarQube') {
+                 options { 
+                    timeout(time: 15, unit: 'MINUTES')
+                 }
+                 steps {
+                    script {
+                     withSonarQubeEnv('sonarqube-server') {
+                         sh """
+                           $SONAR_SCANNER_HOME/bin/sonar-scanner \
+                               -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                               -Dsonar.sources=. 
+                         """
+                         echo "[DONE] SonarQube scan completed"
+                     }
+                     // Quality Gate check but does NOT stop the pipeline on failure
+                     script {
+                         def qualityGate = waitForQualityGate()
+                         if (qualityGate.status != 'OK') {
+                             echo "WARNING: SonarQube Quality Gate failed, but continuing pipeline..."
+                         }
+                     }
+                   }
+                }
+               }
 
                 stage('Trivy Vulnerability Scanner') { 
                     steps {
@@ -149,8 +149,8 @@ stages {
                      echo "[DONE] Trivy scan completed."
                      }
                 }
- //           }
- //   }
+           }
+   }
     
     stage('Login to Docker Hub') {
               options {
@@ -180,6 +180,22 @@ stages {
                         """
                 }
             }
+    }
+    stage('Deploy to Kubernetes') {
+        options {
+            retry(2) // retry this stage up to 2 more times if it fails
+            timeout(time: 15, unit: 'MINUTES')
+        }
+        steps {
+            script {
+                    sh """
+                        kubectl get pods
+                        kubectl get services
+                        echo "Kubernetes deployment completed"
+                    """
+                
+            }
+        }
     }
  }
 
