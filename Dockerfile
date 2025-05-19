@@ -1,7 +1,7 @@
 # This Dockerfile is used to build a Node.js application image.
 # It consists of multiple stages to optimize the build process and reduce image size.
 
-ARG NODE_VERSION=19.6
+ARG NODE_VERSION=20.10.0
 
 # Stage 1: Base Image
 # - Sets the working directory to /usr/src/app

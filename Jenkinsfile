@@ -21,11 +21,6 @@ pipeline {
         label 'agent'
     }
 
-// tools {
-//         //nodejs 'nodejs-23.7.0'
-//         dockerTool  'docker-latest'
-//     }
-
 environment {
     GIT_REPO_URL = 'https://github.com/Nuvvai/Graduation-project-node-api.git' // github repo where the app exist
     BRANCH_NAME = "main" // the name of the branch where the app exist
