@@ -5,6 +5,7 @@ import OrgGitHubService from './../utils/OrgGitHubService';
 import { createProjectService } from '../services/projectService';
 import { createPipelineService, triggerBuildService } from '../services/pipelineService';
 import { createDeploymentService } from '../services/deploymentService';
+import { generateK8sManifest } from '../utils/generatek8sManifestFiles';
 
 /**
  * Deploys a project by generating a Dockerfile, setting up a GitHub repository, 
@@ -18,8 +19,8 @@ import { createDeploymentService } from '../services/deploymentService';
  * 
  * The function performs the following steps:
  * 1. Creates a project by calling the createProject controller
- * 2. Uses the `GenerateDockerFile` service to create a Dockerfile based on the provided technology and web server.
- * 3. Sets up a GitHub repository with the generated Dockerfile using the `OrgGitHubService`.
+ * 2. Creates a Dockerfile and a Kubernetes manifest file.
+ * 3. Sets up a GitHub repository with the generated Dockerfile and kubernetes manifest file using the `OrgGitHubService`.
  * 4. Generates a repository token and creates a webhook.
  * 5. Creates deployment and pipeline configurations
  * 6. Triggers a build for the project using the `triggerBuild` function.
@@ -42,15 +43,23 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
             description: body.description
         }, username);
 
-        //Step2: Create a Dockerfile
+        //Step2: Create a Dockerfile and Kubernetes manifest
         const DockerFile = await generateDockerFile.technologyPath(body.technology, body.webServer || 'nginx');
         if (!DockerFile){
             res.status(400).json({ message: 'Failed to generate Dockerfile for the specified technology' });
             return;
         }
+        const k8sManifest = generateK8sManifest(username, projectName, body.containerPort || 3000);
+        if (!k8sManifest){
+            res.status(400).json({ message: 'Failed to generate Kubernetes manifest file' });
+            return;
+        }
         const files = [{
             path: 'Dockerfile',
             content: DockerFile
+        },{
+            path: 'k8s-manifest.yaml',
+            content: k8sManifest
         }]
 
         //Step3: Set up GitHub repository with files
@@ -62,7 +71,7 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
 
         project.dockerfileContent = DockerFile;
         project.orgRepositoryUrl = orgRepoUrl;
-        // project.k8sManifestContent = body.k8sManifestContent; // uncomment when k8s manifest is ready
+        project.k8sManifestContent = k8sManifest;
         await project.save();
 
         //Step4: Generate repository token and create webhook

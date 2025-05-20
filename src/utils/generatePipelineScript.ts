@@ -7,8 +7,7 @@
  * @param gitBranch: The git branch to be used in the pipeline.
  * @param repositoryUrl: The URL of the project's repository.
  * @param email: The email of the project owner.
- * @param dockerfileContent: The content of the Dockerfile.
- * @param k8sManifestContent: The content of the Kubernetes manifest.
+ * @param orgRepo: The URL of the organization repository.
  * @returns A string representing the Jenkins pipeline script.
  */
 export const generatePipelineScript = (
@@ -18,8 +17,7 @@ export const generatePipelineScript = (
     gitBranch: string,
     repositoryUrl: string,
     email: string,
-    dockerfileContent: string,
-    k8sManifestContent: string
+    orgRepo: string
 ): string => {
     return `def slackNotificationMethod(String buildStatus = 'STARTED', String PROJECT_NAME, String SLACK_CHANNEL) {
     buildStatus = buildStatus ?: 'SUCCESS'
@@ -40,30 +38,23 @@ export const generatePipelineScript = (
 }
 
 pipeline { 
-    agent any
+    agent{
+        label 'agent'
+    }
     
-    // tools {
-    //     nodejs 'nodejs-23.7.0'
-    //     go 'go-1.24.0'
-    // }
-
     environment {
         DOCKER_HUB_REPO = 'mennahaggag' // name of dockerhub account
-        GIT_REPO_URL = '${repositoryUrl}' // github repo where the app exist
-        PROJECT_NAME = "${projectName}" // the image name 
+        GIT_REPO_URL = "${repositoryUrl}" // github repo where the app exist
+        PROJECT_NAME = "${username}-${projectName}" // the image name 
         BRANCH_Name = "${gitBranch}" // the name of the branch where the app exist
-        TECHNOLOGY = '${framework}' // the technology name (e.g., "nodejs", "django", "golang", etc.)
-        // DOCKERFILES_REPO = 'https://github.com/Nagham94/Dockerfiles2.git' // name of the dockerfile repo
-        // DOCKERFILE_BRANCH = 'main' // the name of the branch where the dockerfile exist
-        DOCKERFILES_CONTENT = '${dockerfileContent}' // the content of the dockerfile
-        DOCKERFILE_NAME = 'Dockerfile' // the name of the dockerfile
-        K8S_MANIFEST_CONTENT = '${k8sManifestContent}' // the content of the k8s manifest
-        K8S_MANIFEST_NAME = 'k8s-manifest.yaml' // the name of the k8s manifest
+        TECHNOLOGY = "${framework}" // the technology name (e.g., "nodejs", "django", "golang", etc.)
+        ORG_BRANCH = "${projectName}" // the name of the branch where the dockerfile and k8s manifest exist
         SONAR_SCANNER_HOME = tool 'sonarqube-scanner702' // sonar scanner server
         SONAR_PROJECT_KEY = 'test1' // sonar scanner project name 
         SLACK_CHANNEL = "#nuvvai-users-builds" // name of slack channel
         USER_NAME = "${username}" // name of the user (for email)
         EMAIL_RECIPIENTS = "${email}" // email of the user
+        orgRepo = "${orgRepo}" // the url of the org repo
     }
 
     options {
@@ -74,70 +65,78 @@ pipeline {
     }
 
     stages {
-        stage('Checkout Repository') {
-            options {
-                retry(2)
-            }
-            steps {
-                script {
-                deleteDir()  // Clears workspace before checking out repo
-                git branch: BRANCH_NAME, credentialsId: 'github_token', url: GIT_REPO_URL
-                echo "Repository checkout successful"
+        stage('Parallel Checkout Repositories') {
+            parallel {
+                stage('Checkout Repository') {
+                    options {
+                        retry(2)
+                    }
+                    steps {
+                        script {
+                        deleteDir()  // Clears workspace before checking out repo
+                        git branch: BRANCH_NAME, credentialsId: 'github_token', url: GIT_REPO_URL
+                        echo "Repository checkout successful"
 
-                // Set GIT_COMMIT variable
-                env.GIT_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-                sh "echo Checked out commit: \${env.GIT_COMMIT}"
+                        // Set GIT_COMMIT variable
+                        // env.GIT_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                        // sh "echo Checked out commit: \${env.GIT_COMMIT}"
 
-                // Set IMAGE_NAME variable
-                env.IMAGE_NAME = "\${DOCKER_HUB_REPO}/\${PROJECT_NAME}:\${env.GIT_COMMIT}"
-                sh "echo Global Image Name: \${env.IMAGE_NAME}"
+                        // Set IMAGE_NAME variable
+                        env.IMAGE_NAME = "\${DOCKER_HUB_REPO}/\${PROJECT_NAME}:latest"
+                        sh "echo Global Image Name: \${env.IMAGE_NAME}"
+                        }
+                    }
+                }
+
+                stage('Checkout and Prepare Dockerfile and K8s Manifest') {
+                    options {
+                        retry(2)
+                    }
+                    steps {
+                        script {
+                            dir('orgRepo') {
+                                git branch: ORG_BRANCH, credentialsId: 'github_token', url: orgRepo //TODO: edit the github token part
+                            }
+                            echo "Organisation repository checkout successful"
+
+                            // Copy Dockerfile to Application Repo
+                            sh """
+                                cp Dockerfile .
+                                echo "Copied Dockerfile to project root"
+                            """
+                            // Copy Kubernetes Manifest to Application Repo
+                            sh """
+                                cp k8s-manifest.yaml .
+                                echo "Copied Kubernetes manifest to project root"
+                            """
+
+                            // Delete organisation Repository
+                            sh """
+                                rm -rf orgRepo
+                                echo "Deleted orgRepo after copying Dockerfile"
+                            """
+                        }
+                    }
                 }
             }
-        }
-
-        // stage('Checkout and Prepare Dockerfile') {
-        //     options {
-        //         retry(2)
-        //     }
+        }    
+        // stage('Prepare Dockerfile') {
         //     steps {
         //         script {
-        //             dir('dockerfiles_repo') {
-        //                 git branch: DOCKERFILE_BRANCH, credentialsId: 'github_token', url: DOCKERFILES_REPO
-        //             }
-        //             echo "Dockerfile repository checkout successful"
-
-        //             // Copy Dockerfile to Application Repo
-        //             sh """
-        //                 cp dockerfiles_repo/Dockerfile .
-        //                 echo "Copied Dockerfile to project root"
-        //             """
-
-        //             // Delete Dockerfiles Repository
-        //             sh """
-        //                 rm -rf dockerfiles_repo
-        //                 echo "Deleted dockerfiles_repo after copying Dockerfile"
-        //             """
+        //             writeFile file: \${DOCKERFILE_NAME}, text: \${DOCKERFILES_CONTENT}
+        //             echo "Dockerfile created successfully"
         //         }
         //     }
         // }
-    
-        stage('Prepare Dockerfile') {
-            steps {
-                script {
-                    writeFile file: \${DOCKERFILE_NAME}, text: \${DOCKERFILES_CONTENT}
-                    echo "Dockerfile created successfully"
-                }
-            }
-        }
 
-        stage('Prepare Kubernetes Manifest') {
-            steps {
-                script {
-                    writeFile file: \${K8S_MANIFEST_NAME}, text: \${K8S_MANIFEST_CONTENT}
-                    echo "Kubernetes manifest created successfully"
-                }
-            }
-        }
+        // stage('Prepare Kubernetes Manifest') {
+        //     steps {
+        //         script {
+        //             writeFile file: \${K8S_MANIFEST_NAME}, text: \${K8S_MANIFEST_CONTENT}
+        //             echo "Kubernetes manifest created successfully"
+        //         }
+        //     }
+        // }
 
         stage('Installing Dependencies') {
             options { 
@@ -351,7 +350,7 @@ pipeline {
                 script {
                     withKubeConfig(credentialsId: 'kubeconfig') {
                         sh """
-                            kubectl apply -f \${K8S_MANIFEST_NAME}
+                            kubectl apply -f k8s-manifest.yaml
                             kubectl get pods
                             kubectl get services
                             echo "Kubernetes deployment completed"
@@ -371,23 +370,8 @@ pipeline {
 
                 trivy convert \\
                     --format template --template "@/usr/local/share/trivy/templates/html.tpl" \\
-                    --output trivy-image-CRITICAL-results.html trivy-image-CRITICAL-results.json
-
-                trivy convert \\
-                    --format template --template "@/usr/local/share/trivy/templates/junit.tpl" \\
-                    --output trivy-image-MEDIUM-results.xml  trivy-image-MEDIUM-results.json 
-
-                trivy convert \\
-                    --format template --template "@/usr/local/share/trivy/templates/junit.tpl" \\
-                    --output trivy-image-CRITICAL-results.xml trivy-image-CRITICAL-results.json          
+                    --output trivy-image-CRITICAL-results.html trivy-image-CRITICAL-results.json        
             '''
-            junit allowEmptyResults: true, stdioRetention: '', testResults: 'trivy-image-CRITICAL-results.xml'
-
-            junit allowEmptyResults: true, stdioRetention: '', testResults: 'trivy-image-MEDIUM-results.xml'
-
-            publishHTML([allowMissing: true, alwaysLinkToLastBuild: true, keepAll: true, reportDir: './', reportFiles: 'trivy-image-CRITICAL-results.html', reportName: 'Trivy Image Critical Vul Report', reportTitles: '', useWrapperFileDirectly: true])
-
-            publishHTML([allowMissing: true, alwaysLinkToLastBuild: true, keepAll: true, reportDir: './', reportFiles: 'trivy-image-MEDIUM-results.html', reportName: 'Trivy Image Medium Vul Report', reportTitles: '', useWrapperFileDirectly: true])
     
             // Parallel notifications
             script {

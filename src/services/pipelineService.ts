@@ -68,7 +68,7 @@ export const createPipelineService = async (
     }
 
     const { email } = userExists;
-    const { framework, repositoryUrl, dockerfileContent, k8sManifestContent } = projectExists;
+    const { framework, repositoryUrl, orgRepositoryUrl } = projectExists;
 
     const newPipeline = new Pipeline({
         pipelineName,
@@ -76,7 +76,7 @@ export const createPipelineService = async (
         projectName
     });
 
-    const pipelineScript = generatePipelineScript(projectName, framework, username, gitBranch, repositoryUrl, email, dockerfileContent||'', k8sManifestContent||'');
+    const pipelineScript = generatePipelineScript(projectName, framework, username, gitBranch, repositoryUrl, email, orgRepositoryUrl||'');
   
     const pipelineJobXML = create({ version: '1.0', encoding: 'UTF-8' })
         .ele('flow-definition', { plugin: 'workflow-job@2.40' })
