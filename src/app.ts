@@ -32,7 +32,7 @@ app.use('/projects', projectsRoutes);
 app.use('/deployments', deploymentRoutes);
 app.use('/pipelines', pipelineRoutes);
 app.use('/users', userRoutes);
-app.use('/deploy',deployRoutes );
+app.use('/deploy',deployRoutes);
 app.use('/admin', verifyAdmin, adminRoutes);
 
 app.use(errorHandler);
