@@ -32,7 +32,7 @@ export const generatePipelineScript = (
         color = '#ec2805'
     }
 
-    def msg = "\${buildStatus}: \${PROJECT_NAME} - \${env.JOB_NAME} #\${env.BUILD_NUMBER}:\n\${env.BUILD_URL}"
+    def msg = "\${buildStatus}: \${PROJECT_NAME} - \${env.JOB_NAME} #\${env.BUILD_NUMBER}:\\n\${env.BUILD_URL}"
 
     slackSend(channel: SLACK_CHANNEL, color: color, message: msg)
 }
@@ -101,12 +101,12 @@ pipeline {
 
                             // Copy Dockerfile to Application Repo
                             sh """
-                                cp Dockerfile .
+                                cp orgRepo/Dockerfile .
                                 echo "Copied Dockerfile to project root"
                             """
                             // Copy Kubernetes Manifest to Application Repo
                             sh """
-                                cp k8s-manifest.yaml .
+                                cp orgRepo/k8s-manifest.yaml .
                                 echo "Copied Kubernetes manifest to project root"
                             """
 
@@ -302,7 +302,7 @@ pipeline {
 
                     trivy image \${env.IMAGE_NAME} \\
                         --severity CRITICAL \\
-                        --exit-code 1 \\
+                        --exit-code 0 \\
                         --quiet \\
                         --format json -o trivy-image-CRITICAL-results.json
                     

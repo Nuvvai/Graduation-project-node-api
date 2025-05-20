@@ -672,6 +672,7 @@ CMD ["nginx", "-g", "daemon off;"]`;
 
     async nodeJS (): Promise<string | void> {
         const { projectName, VERSION: NODE_VERSION, port, runCommand, envVars }: INodeJSDockerfileRequestBody = this.req.body;
+        console.log(projectName, NODE_VERSION, port, runCommand);
         if (!projectName || !NODE_VERSION || !port || !runCommand) {
             this.res.status(406).json({ error: 'Project name, Node version, Port, and Run Command are required' });
             return;
@@ -682,7 +683,7 @@ CMD ["nginx", "-g", "daemon off;"]`;
 # Stage 1: Base Image
 # - Sets the working directory to /usr/src/app
 # - Copies package.json and package-lock.json (if exists) to the working directory
-FROM node:${NODE_VERSION}-slim AS build
+FROM node:${NODE_VERSION}-slim AS base
 WORKDIR /usr/src/app
 
 FROM base AS dependencies
@@ -693,7 +694,7 @@ COPY package*.json* ./
 # - Utilizes Docker build cache for faster builds
 FROM base AS dependencies
 ENV NODE_ENV production
-RUN --mount=type=cache,target=/usr/src/app/.npm \\
+# RUN --mount=type=cache,target=/usr/src/app/.npm \\
     npm set cache /usr/src/app/.npm && \\
     npm install --only=production
 
@@ -704,8 +705,8 @@ RUN --mount=type=cache,target=/usr/src/app/.npm \\
 # - Switch to non-root user
 FROM base AS production
 ENV NODE_ENV production
-COPY --from=dependencies /usr/src/app/node_modules ./node_modules
-COPY --chown=node:node ./src/ .
+# COPY --from=dependencies /usr/src/app/node_modules ./node_modules
+# COPY --chown=node:node ./src/ .
 USER node
 `;
 
@@ -939,7 +940,7 @@ CMD ["sh", "-c", "cp .env.example .env && php artisan key:generate && php artisa
 
     async technologyPath(path: string, webServer: string = 'nginx'): Promise<string | void> {
         
-        switch (path) {
+        switch (path.toLowerCase()) {
             case 'vanilla-jS':
                 if ( webServer === 'nginx') {
                     return await this.nginxStaticWebServer();

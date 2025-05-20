@@ -5,9 +5,9 @@ const router: Router = express.Router();
 
 /**
  * Route for deploying a project.
- * @route POST /deploy/:username/:projectName
+ * @route POST /deploy/:username
  * @access private
  */
-router.post('/:username/:projectName', deployProject);
+router.post('/:username', deployProject);
 
 export default router;

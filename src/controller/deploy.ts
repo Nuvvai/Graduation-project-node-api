@@ -27,11 +27,11 @@ import { generateK8sManifest } from '../utils/generatek8sManifestFiles';
  * 7. Sends a success response if the repository is set up successfully, or an error response otherwise.
  */
 export const deployProject = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { projectName } = req.params;
     const { username } = req.user as IUser;
     const body = req.body;
     const generateDockerFile = new GenerateDockerFile(req, res, username);
     const orgGitHubService = new OrgGitHubService('Nuvvai');
+    const projectName = body.projectName;
 
     try {
         //Step1: Create a project
@@ -40,11 +40,11 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
             username,
             repositoryUrl: body.repositoryUrl,
             framework: body.framework,
-            description: body.description
+            description: body.description || ''
         }, username);
 
         //Step2: Create a Dockerfile and Kubernetes manifest
-        const DockerFile = await generateDockerFile.technologyPath(body.technology, body.webServer || 'nginx');
+        const DockerFile = await generateDockerFile.technologyPath(body.framework, body.webServer || 'nginx');
         if (!DockerFile){
             res.status(400).json({ message: 'Failed to generate Dockerfile for the specified technology' });
             return;
@@ -102,6 +102,8 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
         res.status(200).json({ message: `Project ${projectName} deployed successfully!` });
     } catch (error) {
         console.error('Error deploying project');
-        next(error);
+        if (!res.headersSent) {
+            next(error);
+        }
     }
 }
