@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import GenerateDockerFile from './../utils/generateDockerfile';
-import  { IUser } from '../models/User';
+import  User, { IUser } from '../models/User';
 import OrgGitHubService from './../utils/OrgGitHubService';
+import UserGitHubService from '../utils/UserGitHubService';
 
 /**
  * Deploys a project by generating a Dockerfile, setting up a GitHub repository, 
@@ -26,6 +27,12 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
     const generateDockerFile = new GenerateDockerFile(req, res, username);
     const orgGitHubService = new OrgGitHubService('Nuvvai');
 
+    // Check if the repo name is provided
+    if (!body.repoName) {
+        res.status(400).json({ message: 'Repository name is required!' });
+        return;
+    }
+
     try {
         const DockerFile = await generateDockerFile.technologyPath(body.technology, body.webServer || 'nginx');
         if (!DockerFile) return;
@@ -33,11 +40,37 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
             path: 'Dockerfile',
             content: DockerFile
         }]
+
         const orgRepoUrl = await orgGitHubService.setupRepoWithFiles(username, projectName, files);
         if (!orgRepoUrl) {
             res.status(500).json({ message: 'Failed to setup repository!' });
             return;
         }
+
+        const user = await User.findOne<IUser>({ username });
+        if (!user || !user.github?.username || !user.github?.accessToken) {
+            res.status(404).json({ message: 'User not found!' });
+            return;
+        }
+
+        const userGitHubService = new UserGitHubService(user.github.username, user?.github.accessToken, "https://yourdomain.com/webhook");
+        // const result: { repoToken: string } | void = await userGitHubService.generateRepoToken(body.repoName);
+        // if (!result || !result.repoToken) {
+        //     res.status(500).json({ message: 'Failed to generate repository token!' });
+        //     return;
+        // }
+
+        // console.log('Generated repo token:', result.repoToken);
+
+    
+        const webhookResult = await userGitHubService.createWebhook(body.repoName);
+        if (!webhookResult) {
+            res.status(500).json({ message: 'Failed to create webhook!' });
+            return;
+        }
+
+        console.log('Webhook created successfully:', webhookResult);
+
         res.status(200).json({ message: `Project ${projectName} deployed successfully!` });
     } catch (error) {
         console.error('Error deploying project');
