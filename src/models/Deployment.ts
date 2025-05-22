@@ -13,6 +13,14 @@ export interface IDeployment extends Document {
  * @author Mennatallah Ashraf
  * @description Mongoose model for deployments.
  */
+/**
+ * Schema definition for the Deployment model.
+ *
+ * This schema represents the structure of a deployment document in the database.
+ * It includes fields for deployment details, associated project and user,
+ * status, and timestamps.
+ * 
+ */
 const deploymentSchema: Schema<IDeployment> = new Schema<IDeployment>({
     deploymentName: {
         type: String,

@@ -10,6 +10,12 @@ module.exports = {
   coverageReporters: ["json", "lcov", "text", "clover"],
   reporters: [
     "default",
-    ["jest-junit", { outputDirectory: "test-results", outputName: "junit.xml" }]
+    ["jest-junit", { outputDirectory: "test-results", outputName: "junit.xml" }],
+    ["jest-html-reporter", {
+      pageTitle: "Test Report",
+      outputPath: "test-results/test-report.html",
+      includeFailureMsg: true,
+      includeConsoleLog: true
+    }]
   ]
 };

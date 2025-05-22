@@ -1,5 +1,5 @@
 import express, { Router } from 'express';
-import { createProject, getAllProjects, deleteProject, deleteAllProjects } from '../controller/projectController';
+import { createProject, updateProject, getAllProjects, deleteProject, deleteAllProjects } from '../controller/projectController';
 
 const router: Router = express.Router();
 
@@ -8,6 +8,12 @@ const router: Router = express.Router();
  * @route POST /projects/:username
  */
 router.post('/:username', createProject);
+
+/**
+ * Route for updating a specific project by username and project name.
+ * @route PUT /projects/:username/:projectName
+ */
+router.put('/:username/:projectName', updateProject);
 
 /**
  * Route for retrieving all projects for a specific user.

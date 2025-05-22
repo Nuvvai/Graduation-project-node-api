@@ -1,20 +1,30 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+type FrameworkType = 'React' | 'Angular' | 'VueJS' | 'Wordpress' | 'Svelte' | 'VanillaJS' | 'NodeJS' | 'Golang' | 'Laravel' | 'Flask' | 'Django' | 'PHP';
+
 export interface IProject extends Document {
     projectName: string;
     username: string;
     repositoryUrl: string;
-    framework: 'React' | 'Angular' | 'VueJS' | 'Wordpress' | 'Svelte' | 'VanillaJS'| 'NodeJS' | 'Golang' | 'Laravel' | 'Flask' | 'Django' | 'PHP';
+    framework: FrameworkType;
     description?: string;
-    // add them if needed
-    // buildCommand: string;
-    // startCommand: string;
+    orgRepositoryUrl?: string;
+    dockerfileContent?: string;
+    k8sManifestContent?: string;
     createdAt: Date;
 }
 
 /**
  * @author Mennatallah Ashraf
  * @description Mongoose model for projects.
+ */
+/**
+ * Schema definition for the Project model.
+ * 
+ * This schema represents the structure of a project document in the database.
+ * It includes fields for project details, associated user, repository URLs, 
+ * framework, and additional metadata.
+ * 
  */
 const projectSchema: Schema<IProject> = new Schema<IProject>({
     projectName: {
@@ -57,18 +67,30 @@ const projectSchema: Schema<IProject> = new Schema<IProject>({
     description: {
         type: String,
     },
-    // buildCommand:{
-    //     type: String,
-    //     required: true,
-    // },
-    // startCommand:{
-    //     type: String,
-    //     required: true,
-    // },
+    orgRepositoryUrl: {
+        type: String,
+        validate: {
+            validator: function (value: string): boolean {
+                return /^https:\/\/github\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+(?:\.git)?$/.test(value);
+            },
+            message: "Organization Repository URL must be a valid GitHub repository URL.",
+        }
+    },
+    dockerfileContent: {
+        type: String,
+        default: '',
+    },
+    k8sManifestContent: {
+        type: String,
+        default: '',
+    },
     createdAt: {
         type: Date,
         default: Date.now,
-    },
+    }
 });
+
+projectSchema.index({ username: 1, projectName: 1 });
+projectSchema.index({ repositoryUrl: 1 }, { unique: true });
 
 export default mongoose.model<IProject>('Project', projectSchema);

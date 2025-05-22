@@ -693,7 +693,7 @@ COPY package*.json* ./
 # - Utilizes Docker build cache for faster builds
 FROM base AS dependencies
 ENV NODE_ENV production
-RUN --mount=type=cache,target=/usr/src/app/.npm \\
+# RUN --mount=type=cache,target=/usr/src/app/.npm \\
     npm set cache /usr/src/app/.npm && \\
     npm install --only=production
 
@@ -704,8 +704,8 @@ RUN --mount=type=cache,target=/usr/src/app/.npm \\
 # - Switch to non-root user
 FROM base AS production
 ENV NODE_ENV production
-COPY --from=dependencies /usr/src/app/node_modules ./node_modules
-COPY --chown=node:node ./src/ .
+# COPY --from=dependencies /usr/src/app/node_modules ./node_modules
+# COPY --chown=node:node ./src/ .
 USER node
 `;
 

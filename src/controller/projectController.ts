@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import Project, {IProject} from '../models/Project';
 import User, { IUser } from '../models/User';
+import { createProjectService, CreateProjectData } from '../services/projectService';
 
 interface CreateProjectRequestParams {
     username: string;
@@ -11,6 +12,18 @@ interface CreateProjectRequestBody {
     repositoryUrl: string;
     framework: string;
     description?: string;
+}
+
+interface UpdateProjectRequestParams {
+    username: string;
+    projectName: string;
+}
+
+interface UpdateProjectRequestBody {
+    repositoryUrl: string;
+    framework: string;
+    description?: string;
+    orgRepositoryUrl?: string;
 }
 
 interface GetAllProjectsRequestParams {
@@ -42,10 +55,39 @@ export const createProject = async (
     const user = req.user as IUser;
 
     try {
-        if (!projectName || !username || !repositoryUrl || !framework) {
-            res.status(400).json({ message: 'All required fields must be provided!' });
-            return;
-        }
+        const newProject = await createProjectService(
+            {
+                projectName,
+                username,
+                repositoryUrl,
+                framework,
+                description
+            },
+            user.username
+        );
+        res.status(201).json(newProject);
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+/**
+ * @author Mennatallah Ashraf
+ * @des Controller function for updating a project by username and project name.
+ * @route PUT /projects/:username/:projectName
+ * @access private
+ */
+export const updateProject = async (
+    req: Request<UpdateProjectRequestParams, object, UpdateProjectRequestBody>,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    const { username, projectName } : UpdateProjectRequestParams = req.params;
+    const { repositoryUrl, framework, description, orgRepositoryUrl } : UpdateProjectRequestBody= req.body;
+    const user = req.user as IUser;
+
+    try {
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
@@ -60,27 +102,23 @@ export const createProject = async (
             res.status(403).json({ message: "Unauthorized action!" });
             return;
         }
-
         const projectExists = await Project.findOne<IProject>({ username, projectName });
-        if (projectExists) {
-            res.status(400).json({ message: 'Project with the same name already exists!' });
+        if (!projectExists) {
+            res.status(404).json({ message: 'Project not found!' });
             return;
         }
 
-        const newProject = new Project({
-            projectName,
-            username,
-            repositoryUrl,
-            framework,
-            description
-        });
+        const updatedProject = await Project.findOneAndUpdate<IProject>(
+            { username, projectName },
+            { repositoryUrl, framework, description, orgRepositoryUrl },
+            { new: true }
+        );
 
-        await newProject.save();
-        res.status(201).json(newProject);
+        res.status(200).json({message: "Project updated successfully!", updatedProject });
     } catch (error) {
         next(error);
     }
-};
+}
 
 /**
  * @author Mennatallah Ashraf
