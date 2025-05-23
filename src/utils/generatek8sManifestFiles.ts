@@ -18,8 +18,7 @@ export const generateK8sManifest = (
     const containerName = `${appLabel}-container`;
     const serviceName = `${appLabel}-service`;
 
-    return `
-apiVersion: apps/v1
+    return `apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ${deploymentName}
@@ -53,6 +52,5 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: ${containerPort}
-  type: ClusterIP
-  `.trim();
+  type: ClusterIP`;
 }

@@ -8,7 +8,6 @@ import { createPipelineService, triggerBuildService } from '../services/pipeline
 import { createDeploymentService } from '../services/deploymentService';
 import { generateK8sManifest } from '../utils/generatek8sManifestFiles';
 
-
 /**
  * Deploys a project by generating a Dockerfile, setting up a GitHub repository, 
  * and responding with the deployment status.
@@ -33,10 +32,34 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
     const body = req.body;
     const generateDockerFile = new GenerateDockerFile(req, res, username);
     const orgGitHubService = new OrgGitHubService('Nuvvai');
+    const projectName = body.projectName;
+
+    // Check if the repo name is provided
+    if (!body.repoName) {
+        res.status(400).json({ message: 'Repository name is required!' });
+        return;
+    }
 
     try {
-        const DockerFile = await generateDockerFile.technologyPath(body.technology, body.webServer || 'nginx');
-        if (!DockerFile) return;
+        //Step1: Create a project
+        const project = await createProjectService({
+            projectName,
+            username,
+            repositoryUrl: body.repositoryUrl,
+            framework: body.framework,
+            description: body.description || ''
+        }, username);
+
+        //Step2: Create a Dockerfile and Kubernetes manifest
+        const DockerFile = await generateDockerFile.technologyPath(body.framework, body.webServer || 'nginx');
+        if (!DockerFile){
+            return;
+        }
+        const k8sManifest = generateK8sManifest(username, projectName, body.port);
+        if (!k8sManifest){
+            res.status(400).json({ message: 'Failed to generate Kubernetes manifest file' });
+            return;
+        }
         const files = [{
             path: 'Dockerfile',
             content: DockerFile
@@ -44,11 +67,67 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
             path: 'k8s-manifest.yaml',
             content: k8sManifest
         }]
+
+        //Step3: Set up GitHub repository with files
         const orgRepoUrl = await orgGitHubService.setupRepoWithFiles(username, projectName, files);
         if (!orgRepoUrl) {
             res.status(500).json({ message: 'Failed to setup repository!' });
             return;
         }
+
+        const user = await User.findOne<IUser>({ username });
+        if (!user || !user.github?.username || !user.github?.accessToken) {
+            res.status(404).json({ message: 'User not found!' });
+            return;
+        }
+
+        const userGitHubService = new UserGitHubService(user.github.username, user?.github.accessToken, "https://yourdomain.com/webhook");
+        // const result: { repoToken: string } | void = await userGitHubService.generateRepoToken(body.repoName);
+        // if (!result || !result.repoToken) {
+        //     res.status(500).json({ message: 'Failed to generate repository token!' });
+        //     return;
+        // }
+
+        // console.log('Generated repo token:', result.repoToken);
+
+    
+        const webhookResult = await userGitHubService.createWebhook(body.repoName);
+        if (!webhookResult) {
+            res.status(500).json({ message: 'Failed to create webhook!' });
+            return;
+        }
+
+        console.log('Webhook created successfully:', webhookResult);
+        project.dockerfileContent = DockerFile;
+        project.orgRepositoryUrl = orgRepoUrl;
+        project.k8sManifestContent = k8sManifest;
+        await project.save();
+
+        //Step4: Generate repository token and create webhook
+
+        //Step5: Create a pipeline and deployment
+        const pipelineName = `${username}-${projectName}-pipeline`
+        await createPipelineService({
+            projectName,
+            username,
+            pipelineName,
+            gitBranch: body.gitBranch || 'main'
+        }, username);
+
+        const deploymentName = `${username}-${projectName}-deployment`;
+        await createDeploymentService({
+            username,
+            projectName,
+            deploymentName
+        }, username);
+
+        //Step6: trigger a build
+        await triggerBuildService({
+            projectName,
+            username,
+            pipelineName,
+        }, username);
+
         res.status(200).json({ message: `Project ${projectName} deployed successfully!` });
     } catch (error) {
         console.error('Error deploying project');
