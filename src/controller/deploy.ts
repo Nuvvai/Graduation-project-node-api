@@ -6,7 +6,7 @@ import UserGitHubService from '../utils/UserGitHubService';
 import { createProjectService } from '../services/projectService';
 import { createPipelineService, triggerBuildService } from '../services/pipelineService';
 import { createDeploymentService } from '../services/deploymentService';
-import { generateK8sManifest } from '../utils/generatek8sManifestFiles';
+import k8sManifestGenerator from '../utils/generatek8sManifestFiles';
 
 /**
  * Deploys a project by generating a Dockerfile, setting up a GitHub repository, 
@@ -33,6 +33,8 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
     const generateDockerFile = new GenerateDockerFile(req, res, username);
     const orgGitHubService = new OrgGitHubService('Nuvvai');
     const projectName = body.projectName;
+    const k8sGenerator = new k8sManifestGenerator(req, res, username);
+    body.containerPort = body.port;
 
     // Check if the repo name is provided
     if (!body.repoName) {
@@ -51,13 +53,17 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
         }, username);
 
         //Step2: Create a Dockerfile and Kubernetes manifest
-        const DockerFile = await generateDockerFile.technologyPath(body.framework, body.webServer || 'nginx');
-        if (!DockerFile){
+        const [DockerFile, k8sManifest] = await Promise.all([
+            generateDockerFile.technologyPath(body.framework, body.webServer || 'nginx'),
+            k8sGenerator.generateK8sManifest()
+        ]);
+
+        if (!DockerFile) {
+            res.status(400).json({ message: 'Failed to generate Dockerfile' });
             return;
         }
-        const k8sManifest = generateK8sManifest(username, projectName, body.port);
-        if (!k8sManifest){
-            res.status(400).json({ message: 'Failed to generate Kubernetes manifest file' });
+        if (!k8sManifest) {
+            res.status(400).json({ message: 'Failed to generate Kubernetes manifest' });
             return;
         }
 

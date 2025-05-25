@@ -43,7 +43,7 @@ pipeline {
     }
     
     environment {
-        DOCKER_HUB_REPO = 'mennahaggag' // name of dockerhub account
+        DOCKER_HUB_REPO = 'nuvvai' // name of dockerhub account
         GIT_REPO_URL = "${repositoryUrl}" // github repo where the app exist
         PROJECT_NAME = "${username}-${projectName}" // the image name 
         BRANCH_Name = "${gitBranch}" // the name of the branch where the app exist

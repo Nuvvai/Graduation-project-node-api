@@ -32,6 +32,12 @@ This project is a DevOps deployment platform, allowing users to deploy their pro
    npm run dev
    ```
 
+### Testing
+To run the test suite:
+```bash
+npm test
+```
+
 ## License
 This project is licensed under the MIT License.
 

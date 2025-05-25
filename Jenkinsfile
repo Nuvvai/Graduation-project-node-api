@@ -25,7 +25,7 @@ environment {
     GIT_REPO_URL = 'https://github.com/Nuvvai/Graduation-project-node-api.git' // github repo where the app exist
     BRANCH_NAME = "main" // the name of the branch where the app exist
     PROJECT_NAME = "nuvvai_backend" // used in the image name
-    DOCKER_HUB_REPO = 'mennahaggag' // name of dockerhub repo
+    DOCKER_HUB_REPO = 'nuvvai' // name of dockerhub repo
     SONAR_SCANNER_HOME = tool 'sonarqube-scanner702' // sonar scanner server
     SONAR_PROJECT_KEY = 'test1' // sonar scanner project name
     USER_NAME = "mennauser"
