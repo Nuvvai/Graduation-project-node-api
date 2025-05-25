@@ -60,13 +60,16 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
             res.status(400).json({ message: 'Failed to generate Kubernetes manifest file' });
             return;
         }
+
         const files = [{
             path: 'Dockerfile',
             content: DockerFile
         },{
             path: 'k8s-manifest.yaml',
             content: k8sManifest
-        }]
+            }
+        ]
+
 
         //Step3: Set up GitHub repository with files
         const orgRepoUrl = await orgGitHubService.setupRepoWithFiles(username, projectName, files);
@@ -81,6 +84,7 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
             return;
         }
 
+        //Step4: Generate repository token and create webhook
         const userGitHubService = new UserGitHubService(user.github.username, user?.github.accessToken, "https://yourdomain.com/webhook");
         // const result: { repoToken: string } | void = await userGitHubService.generateRepoToken(body.repoName);
         // if (!result || !result.repoToken) {
@@ -90,7 +94,6 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
 
         // console.log('Generated repo token:', result.repoToken);
 
-    
         const webhookResult = await userGitHubService.createWebhook(body.repoName);
         if (!webhookResult) {
             res.status(500).json({ message: 'Failed to create webhook!' });
@@ -103,7 +106,6 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
         project.k8sManifestContent = k8sManifest;
         await project.save();
 
-        //Step4: Generate repository token and create webhook
 
         //Step5: Create a pipeline and deployment
         const pipelineName = `${username}-${projectName}-pipeline`

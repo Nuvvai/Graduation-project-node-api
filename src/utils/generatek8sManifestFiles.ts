@@ -1,5 +1,5 @@
 /**
- * @author Mennatallah Ashraf, Nada Abdelghany
+ * @author Mennatallah Ashraf
  * @description Generates a Kubernetes deployment and service manifest YAML.
  * @param username - username of the user
  * @param projectName - The project name
