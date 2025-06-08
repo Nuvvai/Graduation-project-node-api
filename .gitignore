@@ -5,3 +5,4 @@ dist
 coverage
 test-results
 .env
+prometheus.yml
