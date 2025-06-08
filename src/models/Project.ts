@@ -90,7 +90,5 @@ const projectSchema: Schema<IProject> = new Schema<IProject>({
     }
 });
 
-projectSchema.index({ username: 1, projectName: 1 });
-projectSchema.index({ repositoryUrl: 1 }, { unique: true });
 
 export default mongoose.model<IProject>('Project', projectSchema);
