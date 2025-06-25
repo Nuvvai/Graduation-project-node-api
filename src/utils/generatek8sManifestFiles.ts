@@ -104,17 +104,7 @@ class k8sManifestGenerator implements IGeneratek8sManifestFiles {
         const podName = `${appLabel}-pod`;
         const containerName = `${appLabel}-container`;
         const serviceName = `${appLabel}-service`;
-        const additionalResources = [];
         let k8sManifestContent = '';
-
-        if (persistentVolume) additionalResources.push('PersistentVolumeClaim');
-        if (horizontalScaling) additionalResources.push('HorizontalPodAutoscaler');
-        if (configMapData) additionalResources.push('ConfigMap');
-        if (secretData) additionalResources.push('Secret');
-        if (additionalResources.length > 0) {
-            k8sManifestContent += `, ${additionalResources.join(', ')}`;
-        }
-        k8sManifestContent += '.\n\n';
 
         if (configMapData && configMapData.length > 0) {
             k8sManifestContent += this.generateConfigMap(configMapData, appLabel);
