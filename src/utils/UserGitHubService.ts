@@ -1,5 +1,4 @@
 import axios from "axios";
-import jwt from "jsonwebtoken";
 
 /**
  * Interface for the UserGitHubService class.
@@ -21,37 +20,7 @@ interface IUserGitHubService {
      * 
      * @HazemSabry
      */
-    getRepos (): Promise<unknown[]>
-
-    /**
-     * Generates a fine-grained GitHub repository token for a specific user and repository.
-     *
-     * @param repoName - The name of the repository for which the token is being generated.
-     * @returns A promise that resolves to an object containing the repository token (`repoToken`) 
-     *          or void if an error occurs.
-     *
-     * @throws Will log an error message to the console if the token generation fails.
-     * 
-     * @HazemSabry
-     */
-    generateRepoToken(repoName: string): Promise<{ repoToken: string } | void>;
-    
-    /**
-     * Creates a GitHub webhook for a specified repository.
-     *
-     * @param repoName - The name of the repository.
-     * @returns A promise that resolves to an object containing a success message and webhook details,
-     *          or undefined if an error occurs.
-     *
-     * @remarks
-     * The webhook is configured to listen to "push" events and sends payloads to the specified URL.
-     * Ensure that the `GITHUB_WEBHOOK_SECRET` environment variable is set for securing the webhook.
-     *
-     * @throws An error if the request to create the webhook fails.
-     * 
-     * @HazemSabry
-     */
-    createWebhook(repoName: string): Promise<{ message: string } | void>;
+    getRepos(): Promise<unknown[]>
 }
 
 /**
@@ -83,7 +52,7 @@ class UserGitHubService implements IUserGitHubService {
         this.JENKINS_URL = JENKINS_URL;
     }
 
-    async getRepos (): Promise<unknown[]> {
+    async getRepos(): Promise<unknown[]> {
         try {
             const response = await axios.get("https://api.github.com/user/repos", {
                 headers: {
@@ -107,79 +76,6 @@ class UserGitHubService implements IUserGitHubService {
             throw new Error("Failed to fetch GitHub repositories");
         }
     };
-
-    async generateRepoToken(repoName: string): Promise<{ repoToken: string } | void> {
-        try {
-            // Step 1: Generate a JWT for the GitHub App
-            const appId = process.env.GITHUB_APP_ID!;
-            const privateKey = process.env.GITHUB_APP_PRIVATE_KEY!;
-            const jwtToken = jwt.sign(
-                {
-                    iat: Math.floor(Date.now() / 1000), // Issued at time
-                    exp: Math.floor(Date.now() / 1000) + 600, // Expiration time (10 minutes)
-                    iss: appId, // GitHub App ID
-                },
-                privateKey,
-                { algorithm: "RS256" }
-            );
-
-            // Step 2: Get the installation ID for the repository
-            const installationResponse = await axios.get(
-                `https://api.github.com/repos/${this.githubUsername}/${repoName}/installation`,
-                {
-                    headers: { Authorization: `Bearer ${jwtToken}` },
-                }
-            );
-            const installationId = installationResponse.data.id;
-
-            // Step 3: Generate an installation access token
-            const tokenResponse = await axios.post(
-                `https://api.github.com/app/installations/${installationId}/access_tokens`,
-                {},
-                {
-                    headers: { Authorization: `Bearer ${jwtToken}` },
-                }
-            );
-
-            return { repoToken: tokenResponse.data.token };
-        } catch (error: unknown) {
-            console.error("❌ Error generating GitHub repo token:", error);
-            return;
-        }
-    }
-    
-    async createWebhook(repoName: string) {
-        /**Configuration for the GitHub webhook.*/
-        const webhookConfig = {
-            name: "web",
-            active: true,
-            events: ["push"],
-            config: {
-                url: this.JENKINS_URL,
-                content_type: "json",
-                secret: process.env.GITHUB_WEBHOOK_SECRET,
-            },
-        };
-
-        try {
-            /**Response of create a webhook for the specified repository.*/
-            const response = await axios.post(
-                `https://api.github.com/repos/${this.githubUsername}/${repoName}/hooks`,
-                webhookConfig,
-                { headers: { Authorization: `token ${this.accessToken}` } }
-            );
-            if (response.status === 200 || response.status === 201) {
-                return({ message: "Webhook created" });
-            } else {
-                console.error("❌ Error creating webhook:", response.statusText);
-                throw new Error(response.statusText);
-            }
-
-        } catch (error) {
-            console.error("❌ Error creating webhook:", error);
-            return;
-        }
-    }
 }
 
 export default UserGitHubService;

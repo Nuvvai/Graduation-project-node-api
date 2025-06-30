@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import GenerateDockerFile from './../utils/generateDockerfile';
-import  User, { IUser } from '../models/User';
+import User, { IUser } from '../models/User';
 import OrgGitHubService from './../utils/OrgGitHubService';
 import UserGitHubService from '../utils/UserGitHubService';
 import { createProjectService } from '../services/projectService';
@@ -32,7 +32,7 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
     const body = req.body;
     const generateDockerFile = new GenerateDockerFile(req, res, username);
     const orgGitHubService = new OrgGitHubService('Nuvvai');
-    const projectName = body.projectName;
+    const projectName = body.inputsObject.projectName;
     const k8sGenerator = new k8sManifestGenerator(req, res, username);
     body.containerPort = body.port;
 
@@ -70,10 +70,10 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
         const files = [{
             path: 'Dockerfile',
             content: DockerFile
-        },{
+        }, {
             path: 'k8s-manifest.yaml',
             content: k8sManifest
-            }
+        }
         ]
 
 
@@ -90,23 +90,6 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
             return;
         }
 
-        //Step4: Generate repository token and create webhook
-        const userGitHubService = new UserGitHubService(user.github.username, user?.github.accessToken, "https://yourdomain.com/webhook");
-        // const result: { repoToken: string } | void = await userGitHubService.generateRepoToken(body.repoName);
-        // if (!result || !result.repoToken) {
-        //     res.status(500).json({ message: 'Failed to generate repository token!' });
-        //     return;
-        // }
-
-        // console.log('Generated repo token:', result.repoToken);
-
-        const webhookResult = await userGitHubService.createWebhook(body.repoName);
-        if (!webhookResult) {
-            res.status(500).json({ message: 'Failed to create webhook!' });
-            return;
-        }
-
-        console.log('Webhook created successfully:', webhookResult);
         project.dockerfileContent = DockerFile;
         project.orgRepositoryUrl = orgRepoUrl;
         project.k8sManifestContent = k8sManifest;
