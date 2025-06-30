@@ -30,16 +30,6 @@ interface IHPAConfig {
     targetMemoryUtilization?: number;
 }
 
-/**
- * Interface representing environment variables for ConfigMap or Secret.
- * @interface IEnvVar
- * @property {string} key - The name of the environment variable.
- * @property {string} value - The value of the environment variable.
- */
-interface IEnvVar {
-    key: string;
-    value: string;
-}
 
 /**
  * Interface representing the request body for generating Kubernetes manifests.
@@ -52,8 +42,6 @@ interface Ik8sManifestRequestBody extends Request {
     containerPort?: number;
     persistentVolume?: IPersistentVolumeConfig;
     horizontalScaling?: IHPAConfig;
-    configMapData?: IEnvVar[];
-    secretData?: IEnvVar[];
 }
 
 /**
@@ -69,8 +57,7 @@ interface IGeneratek8sManifestFiles {
     generateK8sManifest(): Promise<string|void>;
     generatePersistentVolumeClaim(config: IPersistentVolumeConfig, appLabel: string): string;
     generateHorizontalPodAutoscaler(config: IHPAConfig, deploymentName: string, appLabel: string): string;
-    generateConfigMap(data: IEnvVar[], appLabel: string): string;
-    generateSecret(data: IEnvVar[], appLabel: string): string;
+
 }
 
 
@@ -97,33 +84,16 @@ class k8sManifestGenerator implements IGeneratek8sManifestFiles {
     }
 
     public async generateK8sManifest(): Promise<string|void> {
-        const {projectName, containerPort, persistentVolume, horizontalScaling, configMapData, secretData}: Ik8sManifestRequestBody = this.req.body;
+        const {projectName, containerPort, persistentVolume, horizontalScaling}: Ik8sManifestRequestBody = this.req.body;
         const appLabel = `${this.username}-${projectName}`;
         const deploymentName = `${appLabel}-deployment`;
         const imageName = `nuvvai/${appLabel}:latest`;
         const podName = `${appLabel}-pod`;
         const containerName = `${appLabel}-container`;
         const serviceName = `${appLabel}-service`;
-        const additionalResources = [];
         let k8sManifestContent = '';
 
-        if (persistentVolume) additionalResources.push('PersistentVolumeClaim');
-        if (horizontalScaling) additionalResources.push('HorizontalPodAutoscaler');
-        if (configMapData) additionalResources.push('ConfigMap');
-        if (secretData) additionalResources.push('Secret');
-        if (additionalResources.length > 0) {
-            k8sManifestContent += `, ${additionalResources.join(', ')}`;
-        }
-        k8sManifestContent += '.\n\n';
 
-        if (configMapData && configMapData.length > 0) {
-            k8sManifestContent += this.generateConfigMap(configMapData, appLabel);
-            k8sManifestContent += '\n---\n';
-        }
-        if (secretData && secretData.length > 0) {
-            k8sManifestContent += this.generateSecret(secretData, appLabel);
-            k8sManifestContent += '\n---\n';
-        }
         if (persistentVolume) {
             k8sManifestContent += this.generatePersistentVolumeClaim(persistentVolume, appLabel);
             k8sManifestContent += '\n---\n';
@@ -150,18 +120,6 @@ spec:
           ports:
             - containerPort: ${containerPort}`;
 
-
-        if (configMapData && configMapData.length > 0) {
-            k8sManifestContent += `
-          envFrom:
-            - configMapRef:
-                name: ${appLabel}-configmap`;
-        }
-        if (secretData && secretData.length > 0) {
-            k8sManifestContent += `
-            - secretRef:
-                name: ${appLabel}-secret`;
-        }
         if (persistentVolume) {
             k8sManifestContent += `
           volumeMounts:
@@ -249,36 +207,6 @@ spec:
         return hpaContent;
     }
 
-    public generateConfigMap(data: IEnvVar[], appLabel: string): string {
-        let configMapContent = `apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: ${appLabel}-configmap
-  namespace: ${appLabel}
-data:`;
-
-        data.forEach((env) => {
-            configMapContent += `\n  ${env.key}: "${env.value}"`;
-        });
-
-        return configMapContent;
-    }
-
-    public generateSecret(data: IEnvVar[], appLabel: string): string {
-        let secretContent = `apiVersion: v1
-kind: Secret
-metadata:
-  name: ${appLabel}-secret
-  namespace: ${appLabel}
-type: Opaque
-data:`;
-        data.forEach((env) => {
-            const encodedValue = Buffer.from(env.value).toString('base64');
-            secretContent += `\n  ${env.key}: ${encodedValue}`;
-        });
-
-        return secretContent;
-    }
 }
 
 export default k8sManifestGenerator;

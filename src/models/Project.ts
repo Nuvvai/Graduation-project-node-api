@@ -11,6 +11,7 @@ export interface IProject extends Document {
     orgRepositoryUrl?: string;
     dockerfileContent?: string;
     k8sManifestContent?: string;
+    testCommand?: string; //unit test command
     createdAt: Date;
 }
 
@@ -84,13 +85,15 @@ const projectSchema: Schema<IProject> = new Schema<IProject>({
         type: String,
         default: '',
     },
+    testCommand: {
+        type: String,
+        default: '',
+    },
     createdAt: {
         type: Date,
         default: Date.now,
     }
 });
 
-projectSchema.index({ username: 1, projectName: 1 });
-projectSchema.index({ repositoryUrl: 1 }, { unique: true });
 
 export default mongoose.model<IProject>('Project', projectSchema);

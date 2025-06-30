@@ -7,6 +7,7 @@ export interface IDeployment extends Document {
     status: 'No status' | 'Failed' | 'Succeeded';
     startTime: Date;
     endTime: Date;
+    createdAt: Date;
 }
 
 /**
@@ -60,6 +61,10 @@ const deploymentSchema: Schema<IDeployment> = new Schema<IDeployment>({
     endTime: {
         type: Date,
         default: Date.now
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now,
     }
 });
 
