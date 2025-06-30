@@ -685,13 +685,12 @@ CMD ["nginx", "-g", "daemon off;"]`;
 FROM node:${NODE_VERSION}-slim AS build
 WORKDIR /usr/src/app
 
-FROM base AS dependencies
-COPY package*.json* ./
-# Stage 2: Dependencies
+# Stage 2: Dependencies 
 # - Uses the baseImage as the starting point
 # - Installs project dependencies using npm
 # - Utilizes Docker build cache for faster builds
 FROM base AS dependencies
+COPY package*.json* ./
 ENV NODE_ENV production
 # RUN --mount=type=cache,target=/usr/src/app/.npm \\
     npm set cache /usr/src/app/.npm && \\
@@ -731,8 +730,7 @@ CMD ${runCommand}`;
             this.res.status(406).json({ error: 'Project name, Python version, and port are required' });
             return;
         };
-        let dockerfileContent = '';
-        dockerfileContent += `# This Dockerfile is used to build a single-stage Docker image for ${projectName} a Django application For the Application Owner ${this.username}
+        let dockerfileContent = `# This Dockerfile is used to build a single-stage Docker image for ${projectName} a Django application For the Application Owner ${this.username}
 # The stages are: production.
 
 # Stage 1: Base image for Python
@@ -828,8 +826,7 @@ CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app:app"]\n`;
             this.res.status(406).json({ error: 'Project name, Golang version, and port are required' });
             return;
         };
-        let dockerfileContent = '';
-        dockerfileContent += `# This Dockerfile is used to build a multi-stage Docker image for ${projectName} a Golang application For the Application Owner ${this.username}
+        let dockerfileContent = `# This Dockerfile is used to build a multi-stage Docker image for ${projectName} a Golang application For the Application Owner ${this.username}
 # The stages are: build and production.
 
 # Stage 1: Build the Go application

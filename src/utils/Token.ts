@@ -29,7 +29,7 @@ interface IRefreshToken_cookiesProperty {
     /**The path for which the cookie is valid.*/
     path: string;
     /**The maximum age of the cookie in seconds.*/
-    maxAge: number;
+    maxAge?: number;
 }
 
 /**
@@ -124,8 +124,8 @@ class Token implements IToken {
      * @param refreshTokenExpiresIn - The refresh token expiration in milliseconds. Defaults to 7 days from when the token generate.
      * @param accessTokenExpiresIn - The access token expiration in milliseconds. Defaults to 15 mints from when the token generate.
      * @param refreshToken_cookiesProperty - The cookies property used to retrieve the token from the server. Defaults to the value is undefined.
-     */ 
-    constructor(res: Response, FRONTEND_DOMAIN_NAME: string = process.env.FRONTEND_DOMAIN_NAME || 'http://localhost:5173', secretKey: string |undefined = process.env.JWT_Token, refreshTokenExpiresIn: ms.StringValue = '7d', accessTokenExpiresIn: ms.StringValue = '15m', refreshToken_cookiesProperty: IRefreshToken_cookiesProperty | undefined = undefined) {
+     */
+    constructor(res: Response, FRONTEND_DOMAIN_NAME: string = process.env.FRONTEND_DOMAIN_NAME || 'http://localhost:5173', secretKey: string | undefined = process.env.JWT_Token, refreshTokenExpiresIn: ms.StringValue = '7d', accessTokenExpiresIn: ms.StringValue = '15m', refreshToken_cookiesProperty: IRefreshToken_cookiesProperty | undefined = undefined) {
         this.secretKey = secretKey;
         if (!secretKey) {
             res.status(500);
@@ -155,7 +155,9 @@ class Token implements IToken {
     }
 
     async clearRefreshToken() {
-        this.res.clearCookie('refreshToken', this.refreshToken_cookiesProperty);
+        const cookieOptions = this.refreshToken_cookiesProperty;
+        delete cookieOptions.maxAge; // Clear maxAge to ensure the cookie is removed
+        this.res.clearCookie('refreshToken', cookieOptions);
     }
 }
 

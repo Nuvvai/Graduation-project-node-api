@@ -373,6 +373,7 @@ export const githubCallback_controller = async (req: Request, res: Response, nex
                 }
             });
             await token.sendRefreshToken(user);
+            user.save();
             res.redirect(`${FRONTEND_DOMAIN_NAME}/auth/continue`);
             return;
         }

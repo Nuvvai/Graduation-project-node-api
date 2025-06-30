@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import User, { IUser } from '../models/User';
 import axios from 'axios';
 import Validate from '../utils/Validate';
+import Token from '../utils/Token';
 
 
 interface UpdateUserProfileRequestBody {
@@ -23,7 +24,7 @@ export const getUserProfile = async (req: Request, res: Response, next: NextFunc
     const user = req.user as IUser;
     const username = user.username;
     try {
-        const userExists = await User.findOne<IUser>({username}).select('-password'); // Exclude password;
+        const userExists = await User.findOne<IUser>({ username }).select('-password'); // Exclude password;
         if (!userExists) {
             res.status(404).json({ message: 'User not found!' });
             return;
@@ -65,12 +66,16 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
  */
 export const updateUserProfile = async (req: Request<{}, {}, UpdateUserProfileRequestBody>, res: Response, next: NextFunction): Promise<void> => {
     const { newName, newEmail, newPassword, newPasswordAgain, oldPassword }: UpdateUserProfileRequestBody = req.body;
-    if (!newName &&!newEmail &&!newPassword &&!newPasswordAgain) {
+    if (!newName && !newEmail && !newPassword && !newPasswordAgain) {
         res.status(400).json({ message: 'No fields provided to update!' });
         return;
     }
+
     const user = req.user as IUser;
     const username = user.username;
+    /**Creates a new Token instance to handle token-related operations.*/
+    const token = new Token(res);
+
     try {
         const userExists = await User.findOne<IUser>({ username });
         if (!userExists) {
@@ -80,11 +85,11 @@ export const updateUserProfile = async (req: Request<{}, {}, UpdateUserProfileRe
 
         const validate = new Validate(res);
 
-        validate.usernameSyntax(username);
-        if (newEmail) if(!(await validate.emailSyntax(newEmail))) return;
-        if (newPassword) if(!(await validate.passwordSyntax(newPassword))) return;
-        if (newPasswordAgain) if(!(await validate.passwordSyntax(newPasswordAgain))) return;
-        if (oldPassword) if(!(await validate.passwordSyntax(oldPassword))) return;
+        if (newName) if (!(await validate.usernameSyntax(username))) return;
+        if (newEmail) if (!(await validate.emailSyntax(newEmail))) return;
+        if (newPassword) if (!(await validate.passwordSyntax(newPassword))) return;
+        if (newPasswordAgain) if (!(await validate.passwordSyntax(newPasswordAgain))) return;
+        if (oldPassword) if (!(await validate.passwordSyntax(oldPassword))) return;
         // await validate.usernameExists(username);
 
         if (newName) userExists.username = newName;
@@ -110,7 +115,9 @@ export const updateUserProfile = async (req: Request<{}, {}, UpdateUserProfileRe
         }
 
         await userExists.save();
-        res.status(200).json({ message: "Profile updated successfully!", userExists });
+
+        await token.sendRefreshToken(userExists);
+        res.status(200).json({ message: "Profile updated successfully!" });
     } catch (error) {
         next(error);
     }
@@ -145,8 +152,8 @@ export const updateUserProfile = async (req: Request<{}, {}, UpdateUserProfileRe
  * @HazemSabry
  */
 export const updateGithubUserProfile = async (req: Request<object, object, { code: string }>, res: Response): Promise<void> => {
-    const {username} = req.user as IUser;
-    
+    const { username } = req.user as IUser;
+
     const { code } = req.body;
     if (!code) {
         res.status(400).json({ message: "Authorization code is missing" });
@@ -179,10 +186,10 @@ export const updateGithubUserProfile = async (req: Request<object, object, { cod
 
     const githubUser = userResponse.data;
     let user = await User.findOne<IUser>({ 'github.id': githubUser.id });
-    if (user?.username !== username) {
+    if (user && user?.username !== username) {
         res.status(409).json({ message: "GitHub account is already attache to another account" });
         return;
-        
+
     }
 
     user = await User.findOne<IUser>({ username });
@@ -190,14 +197,14 @@ export const updateGithubUserProfile = async (req: Request<object, object, { cod
         res.status(404).json({ message: 'User not found!' });
         return;
     }
-    
+
     user.github = {
         id: githubUser.id,
         username: githubUser.login,
         email: githubUser.email,
         accessToken: githubAccessToken,
     };
-    
+
     await user.save();
 
     res.status(200).json({ message: "GitHub profile updated successfully!", user });
@@ -220,7 +227,7 @@ export const updateGithubUserProfile = async (req: Request<object, object, { cod
  * 
  * @HazemSabry
  */
-export const updateGitlabUserProfile = async (req: Request<object, object, {code:string}>, res:Response): Promise<void> => {
+export const updateGitlabUserProfile = async (req: Request<object, object, { code: string }>, res: Response): Promise<void> => {
     // const { code } = req.body;
     // Implement Gitlab OAuth flow and update user's profile with Gitlab data.
     res.status(501).json({ message: "This feature is not supported" });
@@ -246,7 +253,7 @@ export const updateGitlabUserProfile = async (req: Request<object, object, {code
  * 
  * @HazemSabry
  */
-export const updateBitbucketUserProfile = async (req: Request<object, object, {code:string}>, res:Response): Promise<void> => {
+export const updateBitbucketUserProfile = async (req: Request<object, object, { code: string }>, res: Response): Promise<void> => {
     // const { code } = req.body;
     // Implement Gitlab OAuth flow and update user's profile with Gitlab data.
     res.status(501).json({ message: "This feature is not supported" });
@@ -273,7 +280,7 @@ export const updateBitbucketUserProfile = async (req: Request<object, object, {c
  * 
  * @HazemSabry
  */
-export const updateAzureDevOpsUserProfile = async (req: Request<object, object, {code:string}>, res:Response): Promise<void> => {
+export const updateAzureDevOpsUserProfile = async (req: Request<object, object, { code: string }>, res: Response): Promise<void> => {
     // const { code } = req.body;
     // Implement Gitlab OAuth flow and update user's profile with Gitlab data.
     res.status(501).json({ message: "This feature is not supported" });
