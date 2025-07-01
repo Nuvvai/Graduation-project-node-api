@@ -49,19 +49,24 @@ export const createDeployment = async (
     res: Response,
     next: NextFunction
 ): Promise<void> => {
-    const { username, projectName} : CreateDeploymentRequestParams = req.params;
-    const deploymentName = `${username}-${projectName}-deployment`;
+    const {username, projectName} : CreateDeploymentRequestParams = req.params;
     const user = req.user as IUser;
+    const deploymentName = `${username}-${projectName}-deployment`;
     try {
         const newDeployment = await createDeploymentService(
             {
                 username,
                 projectName,
-                deploymentName
+                deploymentName,
             },
             user.username
         );
-        res.status(201).json(newDeployment)
+        
+        if (!newDeployment.success) {
+            res.status(newDeployment.statusCode).json({ message: newDeployment.message });
+            return;
+        }
+        res.status(201).json({message: 'Deployment created successfully', newDeployment: newDeployment.deployment})
     } catch (error) {
         next(error);
     }

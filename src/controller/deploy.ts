@@ -3,9 +3,9 @@ import GenerateDockerFile from './../utils/generateDockerfile';
 import User, { IUser } from '../models/User';
 import OrgGitHubService from './../utils/OrgGitHubService';
 // import UserGitHubService from '../utils/UserGitHubService';
-// import { createProjectService } from '../services/projectService';
-// import { createPipelineService, triggerBuildService } from '../services/pipelineService';
-// import { createDeploymentService } from '../services/deploymentService';
+import { createProjectService } from '../services/projectService';
+import { createPipelineService, triggerBuildService } from '../services/pipelineService';
+import { createDeploymentService } from '../services/deploymentService';
 import k8sManifestGenerator from '../utils/generatek8sManifestFiles';
 
 /**
@@ -44,13 +44,18 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
 
     try {
         //Step1: Create a project
-        // const project = await createProjectService({
-        //     projectName,
-        //     username,
-        //     repositoryUrl: body.repositoryUrl,
-        //     technology: body.technology,
-        //     description: body.description || ''
-        // }, username);
+        const project = await createProjectService({
+            projectName,
+            username,
+            repositoryUrl: body.repositoryUrl,
+            technology: body.technology,
+            description: body.description || ''
+        }, username);
+
+        if (!project.success) {
+            res.status(project.statusCode).json({ message: project.message });
+            return;
+        }
 
         //Step2: Create a Dockerfile and Kubernetes manifest
         const [DockerFile, k8sManifest] = await Promise.all([
@@ -90,35 +95,55 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
             return;
         }
 
-        // project.dockerfileContent = DockerFile;
-        // project.orgRepositoryUrl = orgRepoUrl;
-        // project.k8sManifestContent = k8sManifest;
-        // await project.save();
+        const projectDoc = project.project;
+        projectDoc.dockerfileContent = DockerFile;
+        projectDoc.orgRepositoryUrl = orgRepoUrl;
+        projectDoc.k8sManifestContent = k8sManifest;
+        try {
+            await projectDoc.save();
+        } catch (error) {
+            res.status(500).json({ message: 'Failed to save project document' });
+            return;
+        }
 
 
         //Step5: Create a pipeline and deployment
-        // const pipelineName = `${username}-${projectName}-pipeline`
-        // await createPipelineService({
-        //     projectName,
-        //     username,
-        //     pipelineName,
-        //     gitBranch: body.gitBranch || 'main'
-        // }, username);
+        const pipelineName = `${username}-${projectName}-pipeline`
+        const pipeline = await createPipelineService({
+            projectName,
+            username,
+            pipelineName,
+            gitBranch: body.gitBranch || 'main'
+        }, username);
 
-        // const deploymentName = `${username}-${projectName}-deployment`;
-        // await createDeploymentService({
-        //     username,
-        //     projectName,
-        //     deploymentName
-        // }, username);
+        if(!pipeline.success){
+            res.status(pipeline.statusCode).json({ message: pipeline.message });
+            return;
+        }
+
+        const deploymentName = `${username}-${projectName}-deployment`;
+        const deployment = await createDeploymentService({
+            username,
+            projectName,
+            deploymentName
+        }, username);
+
+        if (!deployment.success) {
+            res.status(deployment.statusCode).json({ message: deployment.message });
+            return;
+        }
 
         //Step6: trigger a build
-        // await triggerBuildService({
-        //     projectName,
-        //     username,
-        //     pipelineName,
-        // }, username);
+        const triggerResult = await triggerBuildService({
+            projectName,
+            username,
+            pipelineName,
+        }, username);
 
+        if (!triggerResult.success) {
+            res.status(triggerResult.statusCode).json({ message: triggerResult.message });
+            return;
+        }
         res.status(200).json({ message: `Project ${projectName} deployed successfully!` });
     } catch (error) {
         console.error('Error deploying project');

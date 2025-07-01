@@ -98,7 +98,12 @@ class k8sManifestGenerator implements IGeneratek8sManifestFiles {
             k8sManifestContent += this.generatePersistentVolumeClaim(persistentVolume, appLabel);
             k8sManifestContent += '\n---\n';
         }
-        k8sManifestContent += `apiVersion: apps/v1
+        k8sManifestContent += `apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${appLabel}
+---     
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ${deploymentName}
@@ -117,6 +122,7 @@ spec:
       containers:
         - name: ${containerName}
           image: ${imageName}
+          imagePullPolicy: Always
           ports:
             - containerPort: ${containerPort}`;
 
@@ -124,10 +130,7 @@ spec:
             k8sManifestContent += `
           volumeMounts:
             - name: ${persistentVolume.name}
-              mountPath: ${persistentVolume.mountPath}`;
-        }
-        if (persistentVolume) {
-            k8sManifestContent += `
+              mountPath: ${persistentVolume.mountPath}
       volumes:
         - name: ${persistentVolume.name}
           persistentVolumeClaim:

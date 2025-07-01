@@ -18,15 +18,18 @@ export interface TriggerBuildData {
     pipelineName: string;
 }
 
+type PipelineServiceResult =
+    | { success: true; pipeline: IPipeline }
+    | { success: false; statusCode: number; message: string };
+
 /**
  * @author Mennatallah Ashraf
  * @des Service function for creating a new pipeline
- * @throws Will throw an error with appropriate message and status code
  */
 export const createPipelineService = async (
     data: CreatePipelineData,
     currentUsername: string
-): Promise<IPipeline> => {
+): Promise<PipelineServiceResult> => {
     const {
         pipelineName,
         username,
@@ -36,31 +39,22 @@ export const createPipelineService = async (
 
     const userExists = await User.findOne<IUser>({ username });
     if (!userExists) {
-        const error = new Error('User not found!') as any;
-        error.statusCode = 404;
-        throw error;
+        return {success:false, statusCode: 404, message: "User not found!"};
     }
     const currentUser = await User.findOne<IUser>({ username: currentUsername });
     if (!currentUser) {
-        const error = new Error('Current user not found!') as any;
-        error.statusCode = 404;
-        throw error;
+        return {success:false, statusCode: 404, message: "Current user not found!"};
     }
     if ((currentUsername !== username) && (currentUser.role !== 'admin')) {
-        const error = new Error('Unauthorized action!') as any;
-        error.statusCode = 403;
-        throw error;
+        return {success:false, statusCode: 403, message: "Unauthorized action!"};
     }
     const projectExists = await Project.findOne<IProject>({ username, projectName });
     if (!projectExists) {
-        const error = new Error('Project not found!') as any;
-        error.statusCode = 404;
-        throw error;
+        return {success:false, statusCode: 404, message: "Project not found!"};
     }
     const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName });
     if (existingPipeline) {
-        const error = new Error('Pipeline already exists!') as any;
-        error.statusCode = 400;
+        return {success:false, statusCode: 400, message: "Pipeline already exists!"};
     }
     const existingView = await jenkins.view.exists(username);
     if (!existingView) {
@@ -68,7 +62,7 @@ export const createPipelineService = async (
     }
 
     const { email } = userExists;
-    const { framework, repositoryUrl, orgRepositoryUrl } = projectExists;
+    const { technology, repositoryUrl, orgRepositoryUrl } = projectExists;
 
     const newPipeline = new Pipeline({
         pipelineName,
@@ -76,7 +70,7 @@ export const createPipelineService = async (
         projectName
     });
 
-    const pipelineScript = generatePipelineScript(projectName, framework, username, gitBranch, repositoryUrl, email, orgRepositoryUrl || '');
+    const pipelineScript = generatePipelineScript(projectName, technology, username, gitBranch, repositoryUrl, email, orgRepositoryUrl || '');
 
     const pipelineJobXML = create({ version: '1.0', encoding: 'UTF-8' })
         .ele('flow-definition', { plugin: 'workflow-job@2.40' })
@@ -94,19 +88,18 @@ export const createPipelineService = async (
     await jenkins.job.create(pipelineName, pipelineJobXML);
     await jenkins.view.add(username, pipelineName);
     await newPipeline.save();
-    return newPipeline;
+    return { success: true, pipeline: newPipeline };
 };
 
 
 /**
  * @author Mennatallah Ashraf
  * @des Service function for triggering a build for an existing pipeline
- * @throws Will throw an error with appropriate message and status code
  */
 export const triggerBuildService = async (
     data: TriggerBuildData,
     currentUsername: string
-): Promise<IPipeline> => {
+): Promise<PipelineServiceResult> => {
     const {
         pipelineName,
         username,
@@ -115,37 +108,27 @@ export const triggerBuildService = async (
 
     const userExists = await User.findOne<IUser>({ username });
     if (!userExists) {
-        const error = new Error('User not found!') as any;
-        error.statusCode = 404;
-        throw error;
+        return {success:false, statusCode: 404, message: "User not found!"};
     }
     const currentUser = await User.findOne<IUser>({ username: currentUsername });
     if (!currentUser) {
-        const error = new Error('Current user not found!') as any;
-        error.statusCode = 404;
-        throw error;
+        return {success:false, statusCode: 404, message: "Current user not found!"};
     }
     if ((currentUsername !== username) && (currentUser.role !== 'admin')) {
-        const error = new Error('Unauthorized action!') as any;
-        error.statusCode = 403;
-        throw error;
+        return {success:false, statusCode: 403, message: "Unauthorized action!"};
     }
     const projectExists = await Project.findOne<IProject>({ username, projectName });
     if (!projectExists) {
-        const error = new Error('Project not found!') as any;
-        error.statusCode = 404;
-        throw error;
+        return {success:false, statusCode: 404, message: "Project not found!"};
     }
     const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName });
     if (!existingPipeline) {
-        const error = new Error('Pipeline not found!') as any;
-        error.statusCode = 400;
-        throw error;
+        return {success:false, statusCode: 404, message: "Pipeline not found!"};
     }
     await jenkins.job.build(pipelineName);
     existingPipeline.lastBuildNumber += 1;
     existingPipeline.lastBuildTime = new Date();
     await existingPipeline.save();
 
-    return existingPipeline;
+    return { success: true, pipeline: existingPipeline };
 };

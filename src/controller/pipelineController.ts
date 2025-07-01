@@ -80,7 +80,11 @@ export const createPipeline = async (
             },
             user.username
         );
-        res.status(201).json({ message: 'Pipeline created successfully', pipeline: newPipeline });   
+        if (!newPipeline.success) {
+            res.status(newPipeline.statusCode).json({ message: newPipeline.message });
+            return;
+        }
+        res.status(201).json({ message: 'Pipeline created successfully', newPipeline: newPipeline.pipeline });   
     }catch(error){
         next(error);
     }
@@ -108,7 +112,11 @@ export const triggerBuild = async (
             },
             user.username
         );
-        res.status(201).json({ message: `Build triggered for pipeline: ${pipelineName}`, existingPipeline });
+        if (!existingPipeline.success) {
+            res.status(existingPipeline.statusCode).json({ message: existingPipeline.message });
+            return;
+        }
+        res.status(201).json({ message: `Build triggered for pipeline: ${pipelineName}`, existingPipeline: existingPipeline.pipeline });
     }catch(error){
         next(error);
     }

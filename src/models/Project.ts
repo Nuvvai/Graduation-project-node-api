@@ -6,7 +6,7 @@ export interface IProject extends Document {
     projectName: string;
     username: string;
     repositoryUrl: string;
-    framework: FrameworkType;
+    technology: FrameworkType;
     description?: string;
     orgRepositoryUrl?: string;
     dockerfileContent?: string;
@@ -60,7 +60,7 @@ const projectSchema: Schema<IProject> = new Schema<IProject>({
             message: "Repository URL must be a valid GitHub repository URL.",
         }        
     },
-    framework: {
+    technology: {
         type: String,
         required: true,
         enum: ['React', 'Angular', 'VueJS', 'Wordpress', 'Svelte', 'VanillaJS', 'NodeJS', 'Golang', 'Laravel', 'Flask', 'Django', 'PHP'],
