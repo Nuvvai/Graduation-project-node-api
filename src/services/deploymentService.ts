@@ -11,15 +11,19 @@ interface CreateDeploymentData {
     endTime?: Date;
 }
 
+type DeploymentServiceResult =
+    | { success: true; deployment: IDeployment }
+    | { success: false; statusCode: number; message: string };
+
+
 /**
  * @author Mennatallah Ashraf
  * @des Service function for creating a new deployment for a project.
- * @throws Will throw an error with appropriate message and status code if validation fails
  */
 export const createDeploymentService = async (
     data: CreateDeploymentData,
     currentUsername: string
-): Promise<IDeployment> => {
+): Promise<DeploymentServiceResult> => {
     const {
         username,
         projectName,
@@ -29,37 +33,24 @@ export const createDeploymentService = async (
         endTime = new Date(),
     } = data;
 
-    if (!deploymentName) {
-        const error = new Error('Deployment name is required!') as any;
-        error.statusCode = 400;
-        throw error;
-    }
 
     const userExists = await User.findOne<IUser>({ username });
     if (!userExists) {
-        const error = new Error('User not found!') as any;
-        error.statusCode = 404;
-        throw error;
+        return {success:false, statusCode: 404, message: "User not found!"};
     }
 
     const currentUser = await User.findOne<IUser>({ username: currentUsername });
     if (!currentUser) {
-        const error = new Error('Current user not found!') as any;
-        error.statusCode = 404;
-        throw error;
+        return {success:false, statusCode: 404, message: "Current user not found!"};
     }
 
     if ((currentUsername !== username) && (currentUser.role !== 'admin')) {
-        const error = new Error('Unauthorized action!') as any;
-        error.statusCode = 403;
-        throw error;
+        return {success:false, statusCode: 403, message: "Unauthorized action!"};
     }
 
     const projectExists = await Project.findOne<IProject>({ username, projectName });
     if (!projectExists) {
-        const error = new Error('Project not found!') as any;
-        error.statusCode = 404;
-        throw error;
+        return {success:false, statusCode: 404, message: "Project not found!"};
     }
 
     const deploymentExists = await Deployment.findOne<IDeployment>({
@@ -69,9 +60,7 @@ export const createDeploymentService = async (
     });
 
     if (deploymentExists) {
-        const error = new Error('Deployment with the same name already exists!') as any;
-        error.statusCode = 403;
-        throw error;
+        return {success:false, statusCode: 403, message: "Deployment with the same name already exists!"};
     }
     const deployment = new Deployment({
         deploymentName,
@@ -83,5 +72,5 @@ export const createDeploymentService = async (
     });
 
     await deployment.save();
-    return deployment;
+    return { success: true, deployment };
 };

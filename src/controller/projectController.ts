@@ -65,7 +65,11 @@ export const createProject = async (
             },
             user.username
         );
-        res.status(201).json(newProject);
+        if (!newProject.success) {
+            res.status(newProject.statusCode).json({ message: newProject.message });
+            return;
+        }
+        res.status(201).json({message: 'Project created successfully', newProject: newProject.project});
     } catch (error) {
         next(error);
     }
