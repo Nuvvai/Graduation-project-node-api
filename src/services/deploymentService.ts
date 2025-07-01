@@ -20,12 +20,12 @@ export const createDeploymentService = async (
     data: CreateDeploymentData,
     currentUsername: string
 ): Promise<IDeployment> => {
-    const { 
-        username, 
-        projectName, 
-        deploymentName, 
-        status = 'No status', 
-        startTime = new Date(), 
+    const {
+        username,
+        projectName,
+        deploymentName,
+        status = 'No status',
+        startTime = new Date(),
         endTime = new Date(),
     } = data;
 
@@ -67,7 +67,7 @@ export const createDeploymentService = async (
         projectName,
         deploymentName
     });
-    
+
     if (deploymentExists) {
         const error = new Error('Deployment with the same name already exists!') as any;
         error.statusCode = 403;

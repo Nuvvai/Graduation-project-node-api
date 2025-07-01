@@ -2,10 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import GenerateDockerFile from './../utils/generateDockerfile';
 import User, { IUser } from '../models/User';
 import OrgGitHubService from './../utils/OrgGitHubService';
-import UserGitHubService from '../utils/UserGitHubService';
-import { createProjectService } from '../services/projectService';
-import { createPipelineService, triggerBuildService } from '../services/pipelineService';
-import { createDeploymentService } from '../services/deploymentService';
+// import UserGitHubService from '../utils/UserGitHubService';
+// import { createProjectService } from '../services/projectService';
+// import { createPipelineService, triggerBuildService } from '../services/pipelineService';
+// import { createDeploymentService } from '../services/deploymentService';
 import k8sManifestGenerator from '../utils/generatek8sManifestFiles';
 
 /**
@@ -44,17 +44,17 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
 
     try {
         //Step1: Create a project
-        const project = await createProjectService({
-            projectName,
-            username,
-            repositoryUrl: body.repositoryUrl,
-            framework: body.framework,
-            description: body.description || ''
-        }, username);
+        // const project = await createProjectService({
+        //     projectName,
+        //     username,
+        //     repositoryUrl: body.repositoryUrl,
+        //     technology: body.technology,
+        //     description: body.description || ''
+        // }, username);
 
         //Step2: Create a Dockerfile and Kubernetes manifest
         const [DockerFile, k8sManifest] = await Promise.all([
-            generateDockerFile.technologyPath(body.framework, body.webServer || 'nginx'),
+            generateDockerFile.technologyPath(body.technology, body.webServer || 'nginx'),
             k8sGenerator.generateK8sManifest()
         ]);
 
@@ -90,34 +90,34 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
             return;
         }
 
-        project.dockerfileContent = DockerFile;
-        project.orgRepositoryUrl = orgRepoUrl;
-        project.k8sManifestContent = k8sManifest;
-        await project.save();
+        // project.dockerfileContent = DockerFile;
+        // project.orgRepositoryUrl = orgRepoUrl;
+        // project.k8sManifestContent = k8sManifest;
+        // await project.save();
 
 
         //Step5: Create a pipeline and deployment
-        const pipelineName = `${username}-${projectName}-pipeline`
-        await createPipelineService({
-            projectName,
-            username,
-            pipelineName,
-            gitBranch: body.gitBranch || 'main'
-        }, username);
+        // const pipelineName = `${username}-${projectName}-pipeline`
+        // await createPipelineService({
+        //     projectName,
+        //     username,
+        //     pipelineName,
+        //     gitBranch: body.gitBranch || 'main'
+        // }, username);
 
-        const deploymentName = `${username}-${projectName}-deployment`;
-        await createDeploymentService({
-            username,
-            projectName,
-            deploymentName
-        }, username);
+        // const deploymentName = `${username}-${projectName}-deployment`;
+        // await createDeploymentService({
+        //     username,
+        //     projectName,
+        //     deploymentName
+        // }, username);
 
         //Step6: trigger a build
-        await triggerBuildService({
-            projectName,
-            username,
-            pipelineName,
-        }, username);
+        // await triggerBuildService({
+        //     projectName,
+        //     username,
+        //     pipelineName,
+        // }, username);
 
         res.status(200).json({ message: `Project ${projectName} deployed successfully!` });
     } catch (error) {

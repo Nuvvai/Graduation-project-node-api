@@ -1,6 +1,6 @@
 import Project, { IProject } from '../models/Project';
 import User, { IUser } from '../models/User';
-import Pipeline, {IPipeline} from '../models/Pipeline';
+import Pipeline, { IPipeline } from '../models/Pipeline';
 import { generatePipelineScript } from "../utils/generatePipelineScript";
 import jenkins from '../utils/jenkinsClient';
 import { create } from 'xmlbuilder2';
@@ -12,7 +12,7 @@ export interface CreatePipelineData {
     gitBranch: string;
 }
 
-export interface TriggerBuildData{
+export interface TriggerBuildData {
     username: string;
     projectName: string;
     pipelineName: string;
@@ -24,8 +24,8 @@ export interface TriggerBuildData{
  * @throws Will throw an error with appropriate message and status code
  */
 export const createPipelineService = async (
-  data: CreatePipelineData, 
-  currentUsername: string
+    data: CreatePipelineData,
+    currentUsername: string
 ): Promise<IPipeline> => {
     const {
         pipelineName,
@@ -33,7 +33,7 @@ export const createPipelineService = async (
         projectName,
         gitBranch
     } = data;
-    
+
     const userExists = await User.findOne<IUser>({ username });
     if (!userExists) {
         const error = new Error('User not found!') as any;
@@ -57,7 +57,7 @@ export const createPipelineService = async (
         error.statusCode = 404;
         throw error;
     }
-    const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName});
+    const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName });
     if (existingPipeline) {
         const error = new Error('Pipeline already exists!') as any;
         error.statusCode = 400;
@@ -76,19 +76,19 @@ export const createPipelineService = async (
         projectName
     });
 
-    const pipelineScript = generatePipelineScript(projectName, framework, username, gitBranch, repositoryUrl, email, orgRepositoryUrl||'');
-  
+    const pipelineScript = generatePipelineScript(projectName, framework, username, gitBranch, repositoryUrl, email, orgRepositoryUrl || '');
+
     const pipelineJobXML = create({ version: '1.0', encoding: 'UTF-8' })
         .ele('flow-definition', { plugin: 'workflow-job@2.40' })
-          .ele('description').txt(`Pipeline for project: ${projectName}`).up()
-          .ele('keepDependencies').txt('false').up()
-          .ele('properties').up()
-          .ele('definition', { class: 'org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition', plugin: 'workflow-cps@2.94' })
-            .ele('script').txt(pipelineScript).up()
-            .ele('sandbox').txt('true').up()
-          .up()
-          .ele('triggers').up()
-          .ele('disabled').txt('false').up()
+        .ele('description').txt(`Pipeline for project: ${projectName}`).up()
+        .ele('keepDependencies').txt('false').up()
+        .ele('properties').up()
+        .ele('definition', { class: 'org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition', plugin: 'workflow-cps@2.94' })
+        .ele('script').txt(pipelineScript).up()
+        .ele('sandbox').txt('true').up()
+        .up()
+        .ele('triggers').up()
+        .ele('disabled').txt('false').up()
         .end({ prettyPrint: true });
 
     await jenkins.job.create(pipelineName, pipelineJobXML);
@@ -104,7 +104,7 @@ export const createPipelineService = async (
  * @throws Will throw an error with appropriate message and status code
  */
 export const triggerBuildService = async (
-    data: TriggerBuildData, 
+    data: TriggerBuildData,
     currentUsername: string
 ): Promise<IPipeline> => {
     const {
@@ -112,7 +112,7 @@ export const triggerBuildService = async (
         username,
         projectName,
     } = data;
-    
+
     const userExists = await User.findOne<IUser>({ username });
     if (!userExists) {
         const error = new Error('User not found!') as any;
@@ -136,7 +136,7 @@ export const triggerBuildService = async (
         error.statusCode = 404;
         throw error;
     }
-    const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName});
+    const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName });
     if (!existingPipeline) {
         const error = new Error('Pipeline not found!') as any;
         error.statusCode = 400;
