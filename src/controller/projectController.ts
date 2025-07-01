@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import Project, {IProject} from '../models/Project';
 import User, { IUser } from '../models/User';
-import { createProjectService, CreateProjectData } from '../services/projectService';
+import { createProjectService } from '../services/projectService';
 
 interface CreateProjectRequestParams {
     username: string;
@@ -10,7 +10,7 @@ interface CreateProjectRequestParams {
 interface CreateProjectRequestBody {
     projectName: string;
     repositoryUrl: string;
-    framework: string;
+    technology: string;
     description?: string;
 }
 
@@ -21,7 +21,7 @@ interface UpdateProjectRequestParams {
 
 interface UpdateProjectRequestBody {
     repositoryUrl: string;
-    framework: string;
+    technology: string;
     description?: string;
     orgRepositoryUrl?: string;
 }
@@ -51,7 +51,7 @@ export const createProject = async (
     next: NextFunction
 ): Promise<void> => {
     const { username } : CreateProjectRequestParams = req.params;
-    const { projectName, repositoryUrl, framework, description } : CreateProjectRequestBody= req.body;
+    const { projectName, repositoryUrl, technology, description } : CreateProjectRequestBody= req.body;
     const user = req.user as IUser;
 
     try {
@@ -60,7 +60,7 @@ export const createProject = async (
                 projectName,
                 username,
                 repositoryUrl,
-                framework,
+                technology,
                 description
             },
             user.username
@@ -88,7 +88,7 @@ export const updateProject = async (
     next: NextFunction
 ): Promise<void> => {
     const { username, projectName } : UpdateProjectRequestParams = req.params;
-    const { repositoryUrl, framework, description, orgRepositoryUrl } : UpdateProjectRequestBody= req.body;
+    const { repositoryUrl, technology, description, orgRepositoryUrl } : UpdateProjectRequestBody= req.body;
     const user = req.user as IUser;
 
     try {
@@ -114,7 +114,7 @@ export const updateProject = async (
 
         const updatedProject = await Project.findOneAndUpdate<IProject>(
             { username, projectName },
-            { repositoryUrl, framework, description, orgRepositoryUrl },
+            { repositoryUrl, technology, description, orgRepositoryUrl },
             { new: true }
         );
 

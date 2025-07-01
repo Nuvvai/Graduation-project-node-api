@@ -5,7 +5,7 @@ export interface CreateProjectData {
     projectName: string;
     username: string;
     repositoryUrl: string;
-    framework: string;
+    technology: string;
     description?: string;
     orgRepositoryUrl?: string;
 }
@@ -26,11 +26,11 @@ export const createProjectService = async (
         projectName, 
         username, 
         repositoryUrl, 
-        framework, 
+        technology, 
         description 
     } = data;
     
-    if (!projectName || !username || !repositoryUrl || !framework) {
+    if (!projectName || !username || !repositoryUrl || !technology) {
         return {success:false, statusCode: 400, message: "All required fields must be provided!"};
     }
     
@@ -57,7 +57,7 @@ export const createProjectService = async (
         projectName,
         username,
         repositoryUrl,
-        framework,
+        technology,
         description,
         orgRepositoryUrl: data.orgRepositoryUrl
     });
