@@ -122,6 +122,7 @@ spec:
       containers:
         - name: ${containerName}
           image: ${imageName}
+          imagePullPolicy: Always
           ports:
             - containerPort: ${containerPort}`;
 
@@ -129,10 +130,7 @@ spec:
             k8sManifestContent += `
           volumeMounts:
             - name: ${persistentVolume.name}
-              mountPath: ${persistentVolume.mountPath}`;
-        }
-        if (persistentVolume) {
-            k8sManifestContent += `
+              mountPath: ${persistentVolume.mountPath}
       volumes:
         - name: ${persistentVolume.name}
           persistentVolumeClaim:
