@@ -1,28 +1,31 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: Nuvvai-backend-deployment
+  name: nuvvai-backend-deployment
   labels:
-    app: Nuvvai-backend-deployment
+    app: nuvvai-backend-deployment
     kind: backend
-  namespace: Nuvvai
+  namespace: nuvvai
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: Nuvvai-backend-pod
+      app: nuvvai-backend-pod
       kind: backend
   template:
     metadata:
-      name: Nuvvai-backend-pod
+      name: nuvvai-backend-pod
       labels:
-        app: Nuvvai-backend-pod
+        app: nuvvai-backend-pod
         kind: backend
     spec:
       containers:
-        - image: hazem196/Nuvvai-backend-frontend
-          name: Nuvvai-backend
+        - image: hazem196/nuvvai-backend
+          name: nuvvai-backend
           imagePullPolicy: Always
+          env:
+            - name: MONGO_URL
+              value: mongodb://nuvvai-database-service
           ports:
             - containerPort: 5000
               protocol: TCP
@@ -38,18 +41,18 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: Nuvvai-backend-service
+  name: nuvvai-backend-service
   labels:
-    app: Nuvvai-backend-service
+    app: nuvvai-backend-service
     kind: backend
-  namespace: Nuvvai
+  namespace: nuvvai
 spec:
   type: ClusterIP
   ports:
     - name: http
-      port: 5000
+      port: 80
       targetPort: 5000
       protocol: TCP
   selector:
-    app: Nuvvai-backend-pod
+    app: nuvvai-backend-pod
     kind: backend

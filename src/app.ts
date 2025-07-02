@@ -1,4 +1,4 @@
-import express,{Express} from 'express';
+import express, { Express } from 'express';
 import adminRoutes from './routes/adminRoutes';
 import authRouter from './routes/auth';
 import projectsRoutes from './routes/projectRoutes';
@@ -34,9 +34,9 @@ register.registerMetric(httpRequestCounter);
 app.use((req, res, next) => {
     res.on('finish', () => {
         httpRequestCounter.inc({
-        method: req.method,
-        route: req.route?.path || req.path || req.url,
-        statusCode: res.statusCode.toString(),
+            method: req.method,
+            route: req.route?.path || req.path || req.url,
+            statusCode: res.statusCode.toString(),
         });
     });
     next();
@@ -53,15 +53,15 @@ app.use(helmet());
 app.use(cors({ origin: FRONTEND_DOMAIN_NAME, credentials: true }));
 
 
-app.use('/auth', authRouter);
+app.use('/api/auth', authRouter);
 app.use(verifyToken);
-app.use('/providers', providerRoutes);
-app.use('/projects', projectsRoutes);
-app.use('/deployments', deploymentRoutes);
-app.use('/pipelines', pipelineRoutes);
-app.use('/users', userRoutes);
-app.use('/deploy',deployRoutes);
-app.use('/admin', verifyAdmin, adminRoutes);
+app.use('/api/providers', providerRoutes);
+app.use('/api/projects', projectsRoutes);
+app.use('/api/deployments', deploymentRoutes);
+app.use('/api/pipelines', pipelineRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/deploy', deployRoutes);
+app.use('/api/admin', verifyAdmin, adminRoutes);
 
 app.use(errorHandler);
 
