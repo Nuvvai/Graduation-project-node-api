@@ -34,3 +34,22 @@ spec:
               cpu: "250m"
               memory: "64Mi"
       restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: Nuvvai-backend-service
+  labels:
+    app: Nuvvai-backend-service
+    kind: backend
+  namespace: Nuvvai
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000
+      protocol: TCP
+  selector:
+    app: Nuvvai-backend-pod
+    kind: backend
