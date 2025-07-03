@@ -78,7 +78,7 @@ class UserGitHubService implements IUserGitHubService {
     };
 
     async getRepoUrl(repoName: string): Promise<string> {
-        return `https://github.com/repos/${this.githubUsername}/${repoName}`;
+        return `https://github.com/${this.githubUsername}/${repoName}.git`;
     }
 }
 

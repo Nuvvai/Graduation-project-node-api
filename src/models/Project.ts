@@ -63,7 +63,7 @@ const projectSchema: Schema<IProject> = new Schema<IProject>({
     technology: {
         type: String,
         required: true,
-        enum: ['React', 'Angular', 'VueJS', 'Wordpress', 'Svelte', 'VanillaJS', 'NodeJS', 'Golang', 'Laravel', 'Flask', 'Django', 'PHP'],
+        // enum: ['React', 'Angular', 'VueJS', 'Wordpress', 'Svelte', 'VanillaJS', 'NodeJS', 'Golang', 'Laravel', 'Flask', 'Django', 'PHP'],
     },
     description: {
         type: String,

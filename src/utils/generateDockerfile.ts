@@ -44,7 +44,7 @@ interface IDockerfileRequestBody {
  * 
  * @HazemSabry
  */
-interface ITechnologyDockerfileRequestBody extends IDockerfileRequestBody { 
+interface ITechnologyDockerfileRequestBody extends IDockerfileRequestBody {
     /**The version of the technology to be used in the Dockerfile.*/
     VERSION: string,
     /**Optional array of environment variables to be included in the Dockerfile.*/
@@ -115,7 +115,7 @@ interface INodeJSDockerfileRequestBody extends IBackendDockerfileRequestBody {
     runCommand: string
 }
 
-interface IGenerateDockerfile { 
+interface IGenerateDockerfile {
     /**
      * Generates a Dockerfile for an Nginx static web server.
      * 
@@ -244,7 +244,7 @@ interface IGenerateDockerfile {
      *                                   If the `projectName, NODE_VERSION, port, runCommand` is not provided in the request body, it sends a 406
      *                                   HTTP response with an error message and returns `void`.     * 
      * @HazemSabry
-     */ 
+     */
     nodeJS(): Promise<string | void>;
 
     /**
@@ -318,17 +318,17 @@ interface IGenerateDockerfile {
      * 
      * @param name - The name of the technology for which the Dockerfile should be generated.
      *               Supported values include:
-     *               - 'Vanilla JS': Generates a Dockerfile for a static web server using Nginx or Apache.
-     *               - 'PHP': Generates a Dockerfile for a PHP web server.
-     *               - 'React': Generates a Dockerfile for a React application.
-     *               - 'Angular': Generates a Dockerfile for an Angular application.
-     *               - 'Vue': Generates a Dockerfile for a Vue application.
-     *               - 'Svelte': Generates a Dockerfile for a Svelte application.
-     *               - 'Node.js': Generates a Dockerfile for a Node.js application.
-     *               - 'Django': Generates a Dockerfile for a Django application.
-     *               - 'Flask': Generates a Dockerfile for a Flask application.
-     *               - 'Golang': Generates a Dockerfile for a Go application.
-     *               - 'Laravel': Generates a Dockerfile for a Laravel application.
+     *               - 'vanilla-js': Generates a Dockerfile for a static web server using Nginx or Apache.
+     *               - 'php': Generates a Dockerfile for a PHP web server.
+     *               - 'react': Generates a Dockerfile for a React application.
+     *               - 'angular': Generates a Dockerfile for an Angular application.
+     *               - 'vue': Generates a Dockerfile for a Vue application.
+     *               - 'svelte': Generates a Dockerfile for a Svelte application.
+     *               - 'nodejs': Generates a Dockerfile for a Node.js application.
+     *               - 'django': Generates a Dockerfile for a Django application.
+     *               - 'flask': Generates a Dockerfile for a Flask application.
+     *               - 'golang': Generates a Dockerfile for a Go application.
+     *               - 'laravel': Generates a Dockerfile for a Laravel application.
      * @param webServer - The web server to be used (e.g., 'nginx' or 'apache').
      * 
      * @returns A promise that resolves to a string containing the generated Dockerfile content
@@ -384,13 +384,13 @@ class GenerateDockerFile implements IGenerateDockerfile {
         this.username = username;
     }
 
-    async nginxStaticWebServer (): Promise<string | void> {
+    async nginxStaticWebServer(): Promise<string | void> {
         const { projectName }: IDockerfileRequestBody = this.req.body;
         if (!projectName) {
             this.res.status(406).json({ error: 'Project name is required' });
             return;
         };
-        
+
         const dockerfileContent = `# This Dockerfile is used a single-stage to build ${projectName} a Nginx server For the Application Owner ${this.username}.
 # The stage is: production.
 
@@ -410,11 +410,11 @@ EXPOSE 80
 
 # - Start Nginx
 CMD ["nginx", "-g", "daemon off;"]`;
-        
+
         return dockerfileContent;
     };
 
-    async apacheStaticWebServer (): Promise<string | void> {
+    async apacheStaticWebServer(): Promise<string | void> {
         const { projectName }: IDockerfileRequestBody = this.req.body;
         if (!projectName) {
             this.res.status(406).json({ error: 'Project name is required' });
@@ -440,13 +440,13 @@ EXPOSE 80
 
 # - Start Apache in foreground mode
 CMD ["httpd", "-D", "FOREGROUND"]`;
-    
+
         return dockerfileContent;
     };
 
-    async apachePHPWebServer (): Promise<string | void> {
+    async apachePHPWebServer(): Promise<string | void> {
         const { projectName, VERSION: PHP_VERSION, envVars }: IBackendDockerfileRequestBody = this.req.body;
-        if (!projectName || !PHP_VERSION ) {
+        if (!projectName || !PHP_VERSION) {
             this.res.status(406).json({ error: 'Project name and PHP version are required' });
             return;
         };
@@ -488,11 +488,11 @@ RUN chmod -R 755 /var/www/html && \\
 EXPOSE 80
 # - Start Apache
 CMD ["apache2-foreground"]`;
-    
+
         return dockerfileContent;
     };
-    
-    async angular (): Promise<string | void> {
+
+    async angular(): Promise<string | void> {
         const { projectName, APP_NAME, VERSION: NODE_VERSION, buildCommand, publishDirectory, envVars }: IAngularDockerfileRequestBody = this.req.body;
         if (!projectName || !APP_NAME || !NODE_VERSION || !buildCommand || !publishDirectory) {
             this.res.status(406).json({ error: 'Project name, Node version, Build Command, and Publish Directory are required' });
@@ -539,11 +539,11 @@ USER nginx
 
 # - Run the application
 CMD ["nginx", "-g", "daemon off;"]`;
-    
+
         return dockerfileContent;
     };
 
-    async react (): Promise<string | void> {
+    async react(): Promise<string | void> {
         const { projectName, VERSION: NODE_VERSION, buildCommand, envVars, publishDirectory }: IFrontendDockerfileRequestBody = this.req.body.inputsObject;
         if (!projectName || !NODE_VERSION || !buildCommand || !publishDirectory) {
             this.res.status(406).json({ error: 'Project name, Node version, Build Command, and Publish Directory are required' });
@@ -574,7 +574,7 @@ RUN --mount=type=cache,target=/usr/src/app/.npm \\
 # - Runs the build script
 FROM dependencies AS build
 COPY . .
-RUN ${ buildCommand}
+RUN ${buildCommand}
 
 # Stage 4: Nginx production
 # - Copies the Nginx configuration file
@@ -600,11 +600,11 @@ USER nginx
 
 # - Run the application
 CMD ["nginx", "-g", "daemon off;"]`;
-    
+
         return dockerfileContent;
     };
 
-    async vue (): Promise<string | void> {
+    async vue(): Promise<string | void> {
         const { projectName, VERSION: NODE_VERSION, buildCommand, envVars, publishDirectory }: IFrontendDockerfileRequestBody = this.req.body;
         if (!projectName || !NODE_VERSION || !buildCommand || !publishDirectory) {
             this.res.status(406).json({ error: 'Project name, Node version, Build Command, and Publish Directory are required' });
@@ -661,7 +661,7 @@ USER nginx
 
 # - Run the application
 CMD ["nginx", "-g", "daemon off;"]`;
-    
+
         return dockerfileContent;
     };
 
@@ -670,7 +670,7 @@ CMD ["nginx", "-g", "daemon off;"]`;
         return;
     }
 
-    async nodeJS (): Promise<string | void> {
+    async nodeJS(): Promise<string | void> {
         const { projectName, VERSION: NODE_VERSION, port, runCommand, envVars }: INodeJSDockerfileRequestBody = this.req.body;
         if (!projectName || !NODE_VERSION || !port || !runCommand) {
             this.res.status(406).json({ error: 'Project name, Node version, Port, and Run Command are required' });
@@ -720,11 +720,11 @@ EXPOSE ${port}
 
 # Sets the default command to run the production server
 CMD ${runCommand}`;
-    
+
         return dockerfileContent;
     };
 
-    async django (): Promise<string | void> {
+    async django(): Promise<string | void> {
         const { projectName, VERSION: PYTHON_VERSION, port, envVars }: IBackendDockerfileRequestBody = this.req.body;
         if (!projectName || !PYTHON_VERSION || !port) {
             this.res.status(406).json({ error: 'Project name, Python version, and port are required' });
@@ -769,17 +769,17 @@ EXPOSE ${port}
 
 # - Use Gunicorn for production
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "project.wsgi:application"]`;
-    
+
         return dockerfileContent;
     };
 
-    async flask (): Promise<string | void> {
+    async flask(): Promise<string | void> {
         const { projectName, VERSION: PYTHON_VERSION, port, envVars }: IBackendDockerfileRequestBody = this.req.body;
         if (!projectName || !PYTHON_VERSION || !port) {
             this.res.status(406).json({ error: 'Project name, Python version, and port are required' });
             return;
         };
-        let dockerfileContent =  `# This Dockerfile is used to build a single-stage Docker image for ${projectName} a Django application For the Application Owner ${this.username}
+        let dockerfileContent = `# This Dockerfile is used to build a single-stage Docker image for ${projectName} a Django application For the Application Owner ${this.username}
 # The stages are: production.
 
 # Stage 1: Base image for Python
@@ -816,11 +816,11 @@ EXPOSE ${port}
 
 # - Use Gunicorn for production
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app:app"]\n`;
-    
+
         return dockerfileContent;
     };
 
-    async golang (): Promise<string | void> {
+    async golang(): Promise<string | void> {
         const { projectName, VERSION: GOLANG_VERSION, port, envVars }: IBackendDockerfileRequestBody = this.req.body;
         if (!projectName || !GOLANG_VERSION || !port) {
             this.res.status(406).json({ error: 'Project name, Golang version, and port are required' });
@@ -836,7 +836,7 @@ CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app:app"]\n`;
 # - Download dependencies
 # - Copy the source code
 # - Build the application
-FROM golang:${ GOLANG_VERSION} -slim AS build
+FROM golang:${GOLANG_VERSION} -slim AS build
 WORKDIR /build
 ENV CGO_ENABLED=0
 COPY go.* .
@@ -867,11 +867,11 @@ EXPOSE ${port}
 
 # - Start the application
 CMD ["/app/bin"]`;
-    
+
         return dockerfileContent;
     };
 
-    async laravel (): Promise<string | void> {
+    async laravel(): Promise<string | void> {
         const { projectName, VERSION: PHP_VERSION, port, envVars }: IBackendDockerfileRequestBody = this.req.body;
         if (!projectName || !PHP_VERSION || !port) {
             this.res.status(406).json({ error: 'Project name, PHP version, and port are required' });
@@ -930,15 +930,15 @@ RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available
 
 # - Start Laravel
 CMD ["sh", "-c", "cp .env.example .env && php artisan key:generate && php artisan migrate --force && apache2-foreground"]`;
-    
+
         return dockerfileContent;
     };
 
     async technologyPath(path: string, webServer: string = 'nginx'): Promise<string | void> {
-        
+
         switch (path) {
-            case 'vanilla-jS':
-                if ( webServer === 'nginx') {
+            case 'vanilla-js':
+                if (webServer === 'nginx') {
                     return await this.nginxStaticWebServer();
                 } else if (webServer === 'apache') {
                     return await this.apacheStaticWebServer();

@@ -55,7 +55,7 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
         const project = await createProjectService({
             projectName,
             username,
-            repositoryUrl: body.repositoryUrl || userGitHubService.getRepoUrl(body.repoName),
+            repositoryUrl: body.repositoryUrl || await userGitHubService.getRepoUrl(body.repoName),
             technology: body.technology,
             description: body.description || ''
         }, username);
