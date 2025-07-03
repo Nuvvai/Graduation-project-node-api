@@ -67,10 +67,10 @@ export interface IUser extends Document {
  * @HazemSabry
  */
 const details = {
-        id: { type: String, unique: true, sparse: true },
-        username: { type: String, unique: true, sparse: true  },
-        email: { type: String, unique: true, sparse: true },
-        accessToken: { type: String, unique: true },
+    id: { type: String, unique: true, sparse: true },
+    username: { type: String, unique: true, sparse: true },
+    email: { type: String, unique: true, sparse: true },
+    accessToken: { type: String, unique: true },
 }
 
 /**
@@ -88,7 +88,7 @@ const details = {
  * 
  * @HazemSabry
  */
-const userSchema = new Schema < IUser > ({
+const userSchema = new Schema<IUser>({
     username: { type: String, required: true, unique: true },
     email: { type: String, unique: true },
     password: { type: String, required: false },
@@ -100,4 +100,4 @@ const userSchema = new Schema < IUser > ({
     createdAt: { type: Date, default: Date.now },
 });
 
-export default model<IUser> ('User', userSchema);
+export default model<IUser>('User', userSchema);

@@ -76,6 +76,10 @@ class UserGitHubService implements IUserGitHubService {
             throw new Error("Failed to fetch GitHub repositories");
         }
     };
+
+    async getRepoUrl(repoName: string): Promise<string> {
+        return `https://github.com/repos/${this.githubUsername}/${repoName}`;
+    }
 }
 
 export default UserGitHubService;

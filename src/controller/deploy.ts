@@ -7,6 +7,7 @@ import { createProjectService } from '../services/projectService';
 import { createPipelineService, triggerBuildService } from '../services/pipelineService';
 import { createDeploymentService } from '../services/deploymentService';
 import k8sManifestGenerator from '../utils/generatek8sManifestFiles';
+import UserGitHubService from './../utils/UserGitHubService';
 
 /**
  * Deploys a project by generating a Dockerfile, setting up a GitHub repository, 
@@ -30,11 +31,18 @@ import k8sManifestGenerator from '../utils/generatek8sManifestFiles';
 export const deployProject = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { username } = req.user as IUser;
     const body = req.body;
+    const projectName = body.inputsObject.projectName;
+    body.containerPort = body.inputObject?.port || '80'; // Default to port 80 if not provided
     const generateDockerFile = new GenerateDockerFile(req, res, username);
     const orgGitHubService = new OrgGitHubService('Nuvvai');
-    const projectName = body.inputsObject.projectName;
     const k8sGenerator = new k8sManifestGenerator(req, res, username);
-    body.containerPort = body.port;
+
+    const user = await User.findOne<IUser>({ username });
+    if (!user?.github) {
+        res.status(404).json({ message: 'User not found!' });
+        return;
+    }
+    const userGitHubService = new UserGitHubService(user?.github?.username, user?.github?.accessToken);
 
     // Check if the repo name is provided
     if (!body.repoName) {
@@ -47,7 +55,7 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
         const project = await createProjectService({
             projectName,
             username,
-            repositoryUrl: body.repositoryUrl,
+            repositoryUrl: body.repositoryUrl || userGitHubService.getRepoUrl(body.repoName),
             technology: body.technology,
             description: body.description || ''
         }, username);
@@ -89,7 +97,6 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
             return;
         }
 
-        const user = await User.findOne<IUser>({ username });
         if (!user || !user.github?.username || !user.github?.accessToken) {
             res.status(404).json({ message: 'User not found!' });
             return;
@@ -101,7 +108,8 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
         projectDoc.k8sManifestContent = k8sManifest;
         try {
             await projectDoc.save();
-        } catch (error) {
+        } catch (error: unknown) {
+            console.error('Failed to save project document:', error);
             res.status(500).json({ message: 'Failed to save project document' });
             return;
         }
@@ -116,7 +124,7 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
             gitBranch: body.gitBranch || 'main'
         }, username);
 
-        if(!pipeline.success){
+        if (!pipeline.success) {
             res.status(pipeline.statusCode).json({ message: pipeline.message });
             return;
         }

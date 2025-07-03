@@ -1,12 +1,12 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-type FrameworkType = 'React' | 'Angular' | 'VueJS' | 'Wordpress' | 'Svelte' | 'VanillaJS' | 'NodeJS' | 'Golang' | 'Laravel' | 'Flask' | 'Django' | 'PHP';
+// type FrameworkType = 'React' | 'Angular' | 'VueJS' | 'Wordpress' | 'Svelte' | 'VanillaJS' | 'NodeJS' | 'Golang' | 'Laravel' | 'Flask' | 'Django' | 'PHP';
 
 export interface IProject extends Document {
     projectName: string;
     username: string;
     repositoryUrl: string;
-    technology: FrameworkType;
+    technology: string;
     description?: string;
     orgRepositoryUrl?: string;
     dockerfileContent?: string;
@@ -58,7 +58,7 @@ const projectSchema: Schema<IProject> = new Schema<IProject>({
                 return /^https:\/\/github\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+(?:\.git)?$/.test(value);
             },
             message: "Repository URL must be a valid GitHub repository URL.",
-        }        
+        }
     },
     technology: {
         type: String,
