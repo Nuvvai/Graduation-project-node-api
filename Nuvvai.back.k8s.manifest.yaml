@@ -43,6 +43,7 @@ kind: Service
 metadata:
   name: nuvvai-backend-service
   labels:
+    job: nuvvai-api
     app: nuvvai-backend-service
     kind: backend
   namespace: nuvvai
