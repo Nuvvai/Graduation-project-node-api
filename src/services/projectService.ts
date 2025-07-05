@@ -7,7 +7,11 @@ export interface CreateProjectData {
     repositoryUrl: string;
     technology: string;
     description?: string;
-    orgRepositoryUrl?: string;
+    baseDirectory?: string;
+    publishDirectory?: string;
+    version?: string;
+    buildCommand?: string;
+    testCommand?: string;
 }
 
 type ProjectServiceResult =
@@ -59,7 +63,11 @@ export const createProjectService = async (
         repositoryUrl,
         technology,
         description,
-        orgRepositoryUrl: data.orgRepositoryUrl
+        baseDirectory: data.baseDirectory || '/',
+        publishDirectory: data.publishDirectory || '/',
+        version: data.version || '1.0.0',
+        buildCommand: data.buildCommand || '',
+        testCommand: data.testCommand || '',
     });
 
     await newProject.save();

@@ -11,6 +11,11 @@ export interface IProject extends Document {
     orgRepositoryUrl?: string;
     dockerfileContent?: string;
     k8sManifestContent?: string;
+    baseDirectory?: string;
+    publishDirectory?: string;
+    version?: string;
+    buildCommand?: string;
+    installation_id?: string;
     testCommand?: string; //unit test command
     createdAt: Date;
 }
@@ -82,6 +87,26 @@ const projectSchema: Schema<IProject> = new Schema<IProject>({
         default: '',
     },
     k8sManifestContent: {
+        type: String,
+        default: '',
+    },
+    baseDirectory: {
+        type: String,
+        default: '/',
+    },
+    publishDirectory: {
+        type: String,
+        default: '/',
+    },
+    version: {
+        type: String,
+        default: '1.0.0',
+    },
+    buildCommand: {
+        type: String,
+        default: '',
+    },
+    installation_id: {
         type: String,
         default: '',
     },
