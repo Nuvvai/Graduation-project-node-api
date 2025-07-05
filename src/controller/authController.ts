@@ -66,7 +66,7 @@ interface LoginRequestBody {
  * 
  * @HazemSabry
  */
-export interface IJwtSignPayload  {
+export interface IJwtSignPayload {
     /**
      * The unique identifier of the user.
      */
@@ -93,12 +93,12 @@ export interface IJwtSignPayload  {
  * @access public 
  * @HazemSabry
  */
-export const register_controller = async (req:Request<object, object, RegisterRequestBody>, res:Response, next:NextFunction):Promise<void> => {
-    const { username, email, password}: RegisterRequestBody = req.body;
-    
+export const register_controller = async (req: Request<object, object, RegisterRequestBody>, res: Response, next: NextFunction): Promise<void> => {
+    const { username, email, password }: RegisterRequestBody = req.body;
+
     const validate = new Validate(res);
 
-    try {       
+    try {
         if (!username || !email || !password) {
             res.status(406).json({ message: "Not accepted, missing parameter" });
             return;
@@ -106,13 +106,13 @@ export const register_controller = async (req:Request<object, object, RegisterRe
             if (!(await validate.usernameSyntax(username))) return;
             if (!(await validate.emailSyntax(email))) return;
             if (!(await validate.passwordSyntax(password))) return;
-            
+
             if (await validate.usernameExists(username)) return;
             if (await validate.emailExists(email)) return;
         }
 
-        const hashedPassword:string = await bcrypt.hash(password, 12);
-        const newUser:IUser = new User({ username, email, password: hashedPassword });
+        const hashedPassword: string = await bcrypt.hash(password, 12);
+        const newUser: IUser = new User({ username, email, password: hashedPassword });
         await newUser.save();
 
         const token = new Token(res);
@@ -157,12 +157,12 @@ export const login_controller = async (req: Request<object, object, LoginRequest
             return;
         }
 
-        let existingUser:IUser | null = null;
+        let existingUser: IUser | null = null;
         if (usernameOrEmail.indexOf('@') === -1) {  //user login with username.
-            const UserName:string = usernameOrEmail;
+            const UserName: string = usernameOrEmail;
             existingUser = await User.findOne<IUser>({ username: UserName });
         } else if (usernameOrEmail.indexOf('@') !== -1) {   //user login with email.
-            const UserEmail:string = usernameOrEmail;
+            const UserEmail: string = usernameOrEmail;
             existingUser = await User.findOne<IUser>({ email: UserEmail });
         }
 
@@ -216,7 +216,7 @@ export const refreshToken_controller = async (req: Request, res: Response, next:
         const refreshToken: string | undefined = req.cookies.refreshToken;
         if (!refreshToken) {
             res.status(401).json({ message: 'Unauthorized, no refreshToken provided' });
-            return; 
+            return;
         }
 
         jwt.verify(refreshToken, secretKey, async (err: unknown, decoded: unknown) => {
@@ -224,13 +224,13 @@ export const refreshToken_controller = async (req: Request, res: Response, next:
                 res.status(403).json({ message: "Invalid or expired refresh token" });
                 return;
             }
-            if (!decoded ) {
+            if (!decoded) {
                 res.status(403).json({ message: 'Invalid refresh token' });
                 return;
             }
 
             const user = decoded as IJwtSignPayload;
-            const token = new Token(res); 
+            const token = new Token(res);
             const accessToken: string = await token.generateAccessToken(user);
             res.status(200).json({ accessToken });
         });
@@ -253,7 +253,7 @@ export const logout_controller = async (req: Request, res: Response, next: NextF
         const refreshToken: string | undefined = req.cookies.refreshToken;
         if (!refreshToken) {
             res.status(401).json({ message: 'Unauthorized, no refreshToken provided' });
-            return; 
+            return;
         }
 
         const token = new Token(res);
@@ -405,7 +405,7 @@ export const githubCallback_controller = async (req: Request, res: Response, nex
  * 
  * @HazemSabry
  */
-export const status_controller = async (req:Request, res:Response): Promise<void> => {
+export const status_controller = async (req: Request, res: Response): Promise<void> => {
     try {
         const token = req.cookies.refreshToken; // Get token from cookies
         if (!token) {
@@ -421,7 +421,7 @@ export const status_controller = async (req:Request, res:Response): Promise<void
 
         const decoded = jwt.verify(token, secretKey) as { id: string; username: string; email: string };
 
-        const user = await User.findOne<IUser>({username:decoded.username});
+        const user = await User.findOne<IUser>({ username: decoded.username });
 
         res.status(200).json({
             isAuthenticated: true,
