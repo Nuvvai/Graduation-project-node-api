@@ -32,11 +32,11 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
     const { username } = req.user as IUser;
     const body = req.body;
     const projectName = body.inputsObject.projectName;
-    body.containerPort = body.inputObject?.port || '80'; // Default to port 80 if not provided
+    body.containerPort = body.inputsObject?.port || '80'; // Default to port 80 if not provided
     const generateDockerFile = new GenerateDockerFile(req, res, username);
     const orgGitHubService = new OrgGitHubService('Nuvvai');
     const k8sGenerator = new k8sManifestGenerator(req, res, username);
-
+    
     const user = await User.findOne<IUser>({ username });
     if (!user?.github) {
         res.status(404).json({ message: 'User not found!' });
@@ -57,7 +57,12 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
             username,
             repositoryUrl: body.repositoryUrl || await userGitHubService.getRepoUrl(body.repoName),
             technology: body.technology,
-            description: body.description || ''
+            description: body.description || '',
+            baseDirectory: body.inputsObject.baseDirectory || '/',
+            publishDirectory: body.inputsObject.publishDirectory || '/',
+            version: body.inputsObject.VERSION || '1.0.0',
+            buildCommand: body.inputsObject.buildCommand || '',
+            testCommand: body.inputsObject.testCommand || '',
         }, username);
 
         if (!project.success) {
@@ -116,12 +121,17 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
 
 
         //Step5: Create a pipeline and deployment
-        const pipelineName = `${username}-${projectName}-pipeline`
+        const namespace = `${username}-${projectName}`;
+        const pipelineName = `${namespace}-pipeline`
+        const deploymentName = `${namespace}-deployment`;
         const pipeline = await createPipelineService({
             projectName,
             username,
             pipelineName,
-            gitBranch: body.gitBranch || 'main'
+            gitBranch: body.inputsObject.branch || 'main',
+            installationId: body.inputsObject.installation_id,
+            deploymentName, 
+            namespace
         }, username);
 
         if (!pipeline.success) {
@@ -129,7 +139,6 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
             return;
         }
 
-        const deploymentName = `${username}-${projectName}-deployment`;
         const deployment = await createDeploymentService({
             username,
             projectName,

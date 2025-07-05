@@ -8,6 +8,9 @@
  * @param repositoryUrl: The URL of the project's repository.
  * @param email: The email of the project owner.
  * @param orgRepo: The URL of the organization repository.
+ * @param installationId: The GitHub App installation ID for the user.
+ * @param deploymentName: The name of the deployment.
+ * @param namespace: The namespace for the deployment.
  * @returns A string representing the Jenkins pipeline script.
  */
 export const generatePipelineScript = (
@@ -17,7 +20,10 @@ export const generatePipelineScript = (
     gitBranch: string,
     repositoryUrl: string,
     email: string,
-    orgRepo: string
+    orgRepo: string,
+    installationId: string,
+    deploymentName: string,
+    namespace: string
 ): string => {
     return `def slackNotificationMethod(String buildStatus = 'STARTED', String PROJECT_NAME, String SLACK_CHANNEL) {
     buildStatus = buildStatus ?: 'SUCCESS'
@@ -55,6 +61,10 @@ pipeline {
         USER_NAME = "${username}" // name of the user (for email)
         EMAIL_RECIPIENTS = "${email}" // email of the user
         orgRepo = "${orgRepo}" // the url of the org repo
+        DEPLOYMENT_NAME = "${deploymentName}" // the name of the deployment
+        NAMESPACE = "${namespace}" // the namespace for the deployment
+        UNIT_TEST_COMMAND = '' // Default empty, will be set based on TECHNOLOGY
+        GITHUB_APP_INSTALLATION_ID = "${installationId}"
     }
 
     options {
@@ -65,78 +75,64 @@ pipeline {
     }
 
     stages {
-        stage('Parallel Checkout Repositories') {
-            parallel {
-                stage('Checkout Repository') {
-                    options {
-                        retry(2)
-                    }
-                    steps {
-                        script {
-                        deleteDir()  // Clears workspace before checking out repo
-                        git branch: BRANCH_NAME, credentialsId: 'github_token', url: GIT_REPO_URL
-                        echo "Repository checkout successful"
-
-                        // Set GIT_COMMIT variable
-                        // env.GIT_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-                        // sh "echo Checked out commit: \${env.GIT_COMMIT}"
-
-                        // Set IMAGE_NAME variable
-                        env.IMAGE_NAME = "\${DOCKER_HUB_REPO}/\${PROJECT_NAME}:latest"
-                        sh "echo Global Image Name: \${env.IMAGE_NAME}"
-                        }
-                    }
+            stage('Checkout Repository') {
+                options {
+                    retry(2)
                 }
+                steps {
+                    script {
+                       deleteDir()  // Clears workspace before checking out repo
+                       git branch: BRANCH_NAME, credentialsId: 'github_token', url: GIT_REPO_URL
+                       echo "Repository checkout successful"
 
-                stage('Checkout and Prepare Dockerfile and K8s Manifest') {
-                    options {
-                        retry(2)
-                    }
-                    steps {
-                        script {
-                            dir('orgRepo') {
-                                git branch: ORG_BRANCH, credentialsId: 'github_token', url: orgRepo //TODO: edit the github token part
-                            }
-                            echo "Organisation repository checkout successful"
+                      // Set IMAGE_NAME variable
+                      env.IMAGE_NAME = "\${DOCKER_HUB_REPO}/\${PROJECT_NAME}:latest"
+                      sh "echo Global Image Name: \${env.IMAGE_NAME}"
 
-                            // Copy Dockerfile to Application Repo
-                            sh """
-                                cp orgRepo/Dockerfile .
-                                echo "Copied Dockerfile to project root"
-                            """
-                            // Copy Kubernetes Manifest to Application Repo
-                            sh """
-                                cp orgRepo/k8s-manifest.yaml .
-                                echo "Copied Kubernetes manifest to project root"
-                            """
-
-                            // Delete organisation Repository
-                            sh """
-                                rm -rf orgRepo
-                                echo "Deleted orgRepo after copying Dockerfile"
-                            """
-                        }
+                      echo "Checking for conflicting files in user repo..."
+                      sh '''
+                           for file in Dockerfile Jenkinsfile k8s-manifest.yaml; do
+                              if [ -f "$file" ]; then
+                                 echo "Found conflicting file: $file. Deleting..."
+                                 rm -f "$file"
+                              fi
+                           done
+                           echo "Cleanup complete."
+                      '''
                     }
                 }
             }
-        }    
-        // stage('Prepare Dockerfile') {
-        //     steps {
-        //         script {
-        //             writeFile file: \${DOCKERFILE_NAME}, text: \${DOCKERFILES_CONTENT}
-        //             echo "Dockerfile created successfully"
-        //         }
-        //     }
-        // }
 
-        // stage('Prepare Kubernetes Manifest') {
-        //     steps {
-        //         script {
-        //             writeFile file: \${K8S_MANIFEST_NAME}, text: \${K8S_MANIFEST_CONTENT}
-        //             echo "Kubernetes manifest created successfully"
-        //         }
-        //     }
-        // }
+            stage('Checkout and Prepare Dockerfile and K8s Manifest') {
+                options {
+                    retry(2)
+                }
+                steps {
+                    script {
+                        dir('orgRepo') {
+                            git branch: ORG_BRANCH, credentialsId: 'github_token', url: orgRepo
+                        }
+                        echo "Organisation repository checkout successful"
+
+                        // Copy Dockerfile to Application Repo
+                        sh """
+                            cp orgRepo/Dockerfile .
+                            echo "Copied Dockerfile to project root"
+                        """
+                        // Copy Kubernetes Manifest to Application Repo
+                        sh """
+                            cp orgRepo/k8s-manifest.yaml .
+                            echo "Copied Kubernetes manifest to project root"
+                        """
+
+                        // Delete organisation Repository
+                        sh """
+                            rm -rf orgRepo
+                            echo "Deleted orgRepo after copying Dockerfile"
+                        """
+                    }
+                }
+            }   
 
         stage('Installing Dependencies') {
             options { 
@@ -176,6 +172,8 @@ pipeline {
                         
                         default:
                             echo "No matching technology found or TECHNOLOGY variable not set. Skipping dependency installation."
+                        
+                    echo "[DONE] Dependencies installed successfully"
                     }
                 } 
             }
@@ -210,6 +208,18 @@ pipeline {
                     }
                 }
             }
+        }
+
+        stage('Running Unit Tests') {
+            steps {
+                script { 
+                     if (env.UNIT_TEST_COMMAND?.trim()) {
+                         sh "\${env.UNIT_TEST_COMMAND}"
+                     } else {
+                         echo "UNIT_TEST_COMMAND is not set. Skipping tests."
+                     }
+                }
+             }
         }
 
         stage('Build Docker Image') {
@@ -286,30 +296,29 @@ pipeline {
                               echo "WARNING: SonarQube Quality Gate failed, but continuing pipeline..."
                             }
                         }
-                    
                     }
                 }
             }
 
-           stage('Trivy Vulnerability Scanner') {
-              steps {
-                sh  """ 
-                    trivy image \${env.IMAGE_NAME} \\
-                        --severity LOW,MEDIUM,HIGH \\
-                        --exit-code 0 \\
-                        --quiet \\
-                        --format json -o trivy-image-MEDIUM-results.json
+                stage('Trivy Vulnerability Scanner') {
+                    steps {
+                        sh  """ 
+                            trivy image \${env.IMAGE_NAME} \\
+                                --severity LOW,MEDIUM,HIGH \\
+                                --exit-code 0 \\
+                                --quiet \\
+                                --format json -o trivy-image-MEDIUM-results.json
 
-                    trivy image \${env.IMAGE_NAME} \\
-                        --severity CRITICAL \\
-                        --exit-code 0 \\
-                        --quiet \\
-                        --format json -o trivy-image-CRITICAL-results.json
-                    
-                    echo "[DONE] Trivy scan completed."
-                """
-            }
-        }
+                            trivy image \${env.IMAGE_NAME} \\
+                                --severity CRITICAL \\
+                                --exit-code 1 \\
+                                --quiet \\
+                                --format json -o trivy-image-CRITICAL-results.json
+                            
+                            echo "[DONE] Trivy scan completed."
+                        """
+                    }
+                }
             }
         }
         
@@ -348,14 +357,31 @@ pipeline {
             }
             steps {
                 script {
-                    withKubeConfig(credentialsId: 'kubeconfig') {
-                        sh """
-                            kubectl apply -f k8s-manifest.yaml
-                            kubectl get pods
-                            kubectl get services
-                            echo "Kubernetes deployment completed"
-                        """
-                    }
+                    sh """
+                        echo "Ensuring namespace '$NAMESPACE' exists..."
+                        kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+
+                        echo "Waiting for namespace '$NAMESPACE' to become available..."
+                        for i in {1..10}; do
+                        kubectl get namespace $NAMESPACE >/dev/null 2>&1 && break
+                        echo "Namespace not ready yet. Retrying in 2s..."
+                        sleep 2
+                        done
+
+                        if ! kubectl get deployment $DEPLOYMENT_NAME -n $NAMESPACE >/dev/null 2>&1; then
+                            echo "Deployment not found. Applying manifests..."
+                            kubectl apply -f .
+                        else
+
+                        echo "Applying all Kubernetes manifests in the current directory..."
+                        kubectl apply -f .
+
+                        echo "Forcing a rolling restart of the deployment..."
+                        kubectl rollout restart deployment $DEPLOYMENT_NAME -n $NAMESPACE
+                        kubectl rollout status deployment $DEPLOYMENT_NAME -n $NAMESPACE
+
+                        echo "Deployment complete and all resources updated."
+                    """
                 }
             }
         }

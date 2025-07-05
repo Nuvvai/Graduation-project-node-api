@@ -10,6 +10,9 @@ export interface CreatePipelineData {
     username: string;
     projectName: string;
     gitBranch: string;
+    installationId: string;
+    deploymentName: string;
+    namespace: string;
 }
 
 export interface TriggerBuildData {
@@ -34,7 +37,10 @@ export const createPipelineService = async (
         pipelineName,
         username,
         projectName,
-        gitBranch
+        gitBranch,
+        installationId,
+        deploymentName,
+        namespace
     } = data;
 
     const userExists = await User.findOne<IUser>({ username });
@@ -70,7 +76,18 @@ export const createPipelineService = async (
         projectName
     });
 
-    const pipelineScript = generatePipelineScript(projectName, technology, username, gitBranch, repositoryUrl, email, orgRepositoryUrl || '');
+    const pipelineScript = generatePipelineScript(
+        projectName, 
+        technology, 
+        username, 
+        gitBranch, 
+        repositoryUrl, 
+        email, 
+        orgRepositoryUrl || '', 
+        installationId,
+        deploymentName,
+        namespace
+    );
 
     const pipelineJobXML = create({ version: '1.0', encoding: 'UTF-8' })
         .ele('flow-definition', { plugin: 'workflow-job@2.40' })

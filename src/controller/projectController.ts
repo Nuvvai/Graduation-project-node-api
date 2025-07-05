@@ -12,6 +12,11 @@ interface CreateProjectRequestBody {
     repositoryUrl: string;
     technology: string;
     description?: string;
+    baseDirectory?: string;
+    publishDirectory?: string;
+    version?: string;
+    buildCommand?: string;
+    testCommand?: string;
 }
 
 interface UpdateProjectRequestParams {
@@ -51,7 +56,7 @@ export const createProject = async (
     next: NextFunction
 ): Promise<void> => {
     const { username } : CreateProjectRequestParams = req.params;
-    const { projectName, repositoryUrl, technology, description } : CreateProjectRequestBody= req.body;
+    const { projectName, repositoryUrl, technology, description, baseDirectory, publishDirectory, version, buildCommand,testCommand } : CreateProjectRequestBody= req.body;
     const user = req.user as IUser;
 
     try {
@@ -61,7 +66,12 @@ export const createProject = async (
                 username,
                 repositoryUrl,
                 technology,
-                description
+                description,
+                baseDirectory,
+                publishDirectory,
+                version,
+                buildCommand,
+                testCommand
             },
             user.username
         );
