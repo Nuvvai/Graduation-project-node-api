@@ -411,13 +411,6 @@ pipeline {
     
             // Parallel notifications
             script {
-                sh '''
-                    if [ -f "$TEST_RESULTS_DIR/test-report.pdf" ]; then
-                        cp "$TEST_RESULTS_DIR/test-report.pdf" .
-                    else
-                        echo "Test report not found at $TEST_RESULTS_DIR/test-report.pdf"
-                    fi
-                '''
                 parallel (
                     slack_notify: {
                         // Slack Message
