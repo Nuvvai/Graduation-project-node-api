@@ -129,7 +129,7 @@ export const deployProject = async (req: Request, res: Response, next: NextFunct
             username,
             pipelineName,
             gitBranch: body.inputsObject.branch || 'main',
-            installationId: body.inputsObject.installation_id,
+            installationId: body.installation_id,
             deploymentName, 
             namespace,
             testCommand: body.inputsObject.testCommand || '',
