@@ -188,12 +188,31 @@ stages {
         }
         steps {
             script {
-                    sh """
-                        kubectl apply -f Nuvvai.back.k8s.manifest.yaml
-                        kubectl get deployments -n nuvvai
-                        echo "Kubernetes deployment completed"
-                    """
-                
+                sh """
+                    echo "Ensuring namespace 'nuvvai' exists..."
+                    kubectl create namespace nuvvai --dry-run=client -o yaml | kubectl apply -f -
+    
+                    echo "Waiting for namespace 'nuvvai' to become available..."
+                    for i in {1..10}; do
+                      kubectl get namespace nuvvai >/dev/null 2>&1 && break
+                      echo "Namespace not ready yet. Retrying in 2s..."
+                      sleep 2
+                    done
+    
+                    if ! kubectl get deployment nuvvai-backend-deployment -n nuvvai >/dev/null 2>&1; then
+                        echo "Deployment not found. Applying manifests..."
+                        kubectl apply -f .
+                    else
+                    
+                    echo "Applying all Kubernetes manifests in the current directory..."
+                    kubectl apply -f .
+    
+                    echo "Forcing a rolling restart of the deployment..."
+                    kubectl rollout restart deployment nuvvai-backend-deployment -n nuvvai
+                    kubectl rollout status deployment nuvvai-backend-deployment -n nuvvai
+    
+                    echo "Deployment complete and all resources updated."
+                """
             }
         }
     }
