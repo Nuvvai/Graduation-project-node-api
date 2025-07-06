@@ -27,7 +27,7 @@ environment {
     PROJECT_NAME = "nuvvai_backend" // used in the image name
     DOCKER_HUB_REPO = 'nuvvai' // name of dockerhub repo
     SONAR_SCANNER_HOME = tool 'sonarqube-scanner702' // sonar scanner server
-    SONAR_PROJECT_KEY = 'test1' // sonar scanner project name
+    SONAR_PROJECT_KEY = 'test2' // sonar scanner project name
     USER_NAME = "mennauser"
     EMAIL_RECIPIENTS = "mennaa619@gmail.com" // email of the user
     SLACK_CHANNEL = "#nuvvai-app-build-status" // name of slack channel
