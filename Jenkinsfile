@@ -189,6 +189,7 @@ stages {
         steps {
             script {
                     sh """
+                        kubectl apply -f Nuvvai.back.k8s.manifest.yaml
                         kubectl get pods
                         kubectl get services
                         echo "Kubernetes deployment completed"
