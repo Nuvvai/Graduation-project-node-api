@@ -134,7 +134,7 @@ class Token implements IToken {
         this.FRONTEND_DOMAIN_NAME = FRONTEND_DOMAIN_NAME;
         this.refreshTokenExpiresIn = refreshTokenExpiresIn;
         this.accessTokenExpiresIn = accessTokenExpiresIn;
-        this.refreshToken_cookiesProperty = refreshToken_cookiesProperty || { httpOnly: true, secure: true, sameSite: 'none', Domain: FRONTEND_DOMAIN_NAME, path: '/', maxAge: 7 * 24 * 60 * 60 * 1000 };
+        this.refreshToken_cookiesProperty = refreshToken_cookiesProperty || { httpOnly: true, secure: false, sameSite: 'lax', Domain: FRONTEND_DOMAIN_NAME, path: '/', maxAge: 7 * 24 * 60 * 60 * 1000 };
         this.res = res;
     }
 

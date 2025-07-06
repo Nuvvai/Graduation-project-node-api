@@ -27,7 +27,7 @@ spec:
             - name: MONGO_URL
               value: mongodb://nuvvai-database-service
             - name: FRONTEND_DOMAIN_NAME
-              value: http://localhost
+              value: http://k8s-nuvvai-nuvvaiin-74fbaea7ca-1502209035.us-east-1.elb.amazonaws.com
           ports:
             - containerPort: 5000
               protocol: TCP
