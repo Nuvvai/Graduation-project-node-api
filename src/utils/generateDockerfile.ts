@@ -564,9 +564,7 @@ WORKDIR /usr/src/app
 # - Utilizes Docker build cache for faster builds
 FROM base AS dependencies
 COPY package*.json* ./
-RUN --mount=type=cache,target=/usr/src/app/.npm \\ 
-    npm set cache / usr / src / app /.npm && \\
-    npm install--only = production
+RUN npm install --only=production
 
 # Stage 3: Build the application
 # - Uses the dependencies stage as the starting point
@@ -625,9 +623,7 @@ WORKDIR /usr/src/app
 # - Utilizes Docker build cache for faster builds
 FROM base AS dependencies
 COPY package*.json* ./
-RUN --mount=type=cache,target=/usr/src/app/.npm \\
-    npm set cache /usr/src/app/.npm && \\
-    npm install --only=production
+RUN npm install --only=production
 
 # Stage 3: Build the application
 # - Uses the dependencies stage as the starting point
@@ -692,9 +688,7 @@ WORKDIR /usr/src/app
 FROM base AS dependencies
 COPY package*.json* ./
 ENV NODE_ENV production
-# RUN --mount=type=cache,target=/usr/src/app/.npm \\
-    npm set cache /usr/src/app/.npm && \\
-    npm install --only=production
+# RUN npm install --only=production
 
 # Stage 3: Production
 # - Uses the base stage as the starting point
