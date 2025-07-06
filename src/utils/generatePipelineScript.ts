@@ -11,6 +11,8 @@
  * @param installationId: The GitHub App installation ID for the user.
  * @param deploymentName: The name of the deployment.
  * @param namespace: The namespace for the deployment.
+ * @param testCommand: The command to run unit tests, if applicable.
+ * @param testDirectory: The directory where test results are located, if applicable.
  * @returns A string representing the Jenkins pipeline script.
  */
 export const generatePipelineScript = (
@@ -23,7 +25,9 @@ export const generatePipelineScript = (
     orgRepo: string,
     installationId: string,
     deploymentName: string,
-    namespace: string
+    namespace: string,
+    testCommand: string,
+    testDirectory: string
 ): string => {
     return `def slackNotificationMethod(String buildStatus = 'STARTED', String PROJECT_NAME, String SLACK_CHANNEL) {
     buildStatus = buildStatus ?: 'SUCCESS'
@@ -56,15 +60,16 @@ pipeline {
         TECHNOLOGY = "${framework}" // the technology name (e.g., "nodejs", "django", "golang", etc.)
         ORG_BRANCH = "${projectName}" // the name of the branch where the dockerfile and k8s manifest exist
         SONAR_SCANNER_HOME = tool 'sonarqube-scanner702' // sonar scanner server
-        SONAR_PROJECT_KEY = 'test1' // sonar scanner project name 
+        SONAR_PROJECT_KEY = 'test2' // sonar scanner project name 
         SLACK_CHANNEL = "#nuvvai-users-builds" // name of slack channel
         USER_NAME = "${username}" // name of the user (for email)
         EMAIL_RECIPIENTS = "${email}" // email of the user
         orgRepo = "${orgRepo}" // the url of the org repo
         DEPLOYMENT_NAME = "${deploymentName}" // the name of the deployment
         NAMESPACE = "${namespace}" // the namespace for the deployment
-        UNIT_TEST_COMMAND = '' // Default empty, will be set based on TECHNOLOGY
+        UNIT_TEST_COMMAND = "${testCommand}" // command to run unit tests, if provided
         GITHUB_APP_INSTALLATION_ID = "${installationId}"
+        TEST_RESULTS_DIR = "${testDirectory}"
     }
 
     options {
@@ -81,8 +86,13 @@ pipeline {
                 }
                 steps {
                     script {
-                       deleteDir()  // Clears workspace before checking out repo
-                       git branch: BRANCH_NAME, credentialsId: 'github_token', url: GIT_REPO_URL
+                        deleteDir()  // Clears workspace before checking out repo
+                        withCredentials([gitHubApp(
+                        appID: 'GITHUB_APP_ID', // edit this later
+                        installationID: "\${GITHUB_APP_INSTALLATION_ID}"
+                        )]) {
+                            git branch: BRANCH_NAME, url: GIT_REPO_URL
+                        }
                        echo "Repository checkout successful"
 
                       // Set IMAGE_NAME variable
@@ -213,7 +223,7 @@ pipeline {
         stage('Running Unit Tests') {
             steps {
                 script { 
-                     if (env.UNIT_TEST_COMMAND?.trim()) {
+                     if (env.UNIT_TEST_COMMAND && env.UNIT_TEST_COMMAND?.trim()) {
                          sh "\${env.UNIT_TEST_COMMAND}"
                      } else {
                          echo "UNIT_TEST_COMMAND is not set. Skipping tests."
@@ -420,6 +430,12 @@ pipeline {
                             filePath: "trivy-image-CRITICAL-results.pdf",
                             initialComment: "Trivy Critical Vulnerability Report for Build #\${env.BUILD_NUMBER}"
                         )
+                        
+                        slackUploadFile(
+                        channel: SLACK_CHANNEL,
+                        filePath: "\${env.TEST_RESULTS_DIR}/test-report.pdf",
+                        initialComment: "JUnit Test Report for Build #\${env.BUILD_NUMBER}"
+                        )
                     },
 
                     send_email: {
@@ -441,7 +457,7 @@ pipeline {
                             """,
                             to: EMAIL_RECIPIENTS,
                             mimeType: 'text/html',
-                            attachmentsPattern: 'trivy-image-MEDIUM-results.pdf,trivy-image-CRITICAL-results.pdf'
+                            attachmentsPattern: 'trivy-image-MEDIUM-results.pdf,trivy-image-CRITICAL-results.pdf, \${env.TEST_RESULTS_DIR}/test-report.pdf'
                         )
                     }
                 )

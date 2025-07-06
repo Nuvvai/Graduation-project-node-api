@@ -14,9 +14,12 @@ interface CreatePipelineRequestParams {
 
 interface CreatePipelineRequestBody {
     pipelineName: string;
-    gitBranch: string;
-    // gitUsername: string;
-    // gitPassword: string;
+    installationId: string;
+    inputsObject: {
+        branch: string;
+        testCommand?: string;
+        testDirectory?: string;
+    };
 }
 
 interface TriggerBuildRequestParams {
@@ -67,8 +70,10 @@ export const createPipeline = async (
     next: NextFunction
 ): Promise<void> => {
     const { username, projectName } : CreatePipelineRequestParams= req.params;
-    const { gitBranch } : CreatePipelineRequestBody = req.body;
-    const pipelineName = `${username}-${projectName}-pipeline`;
+    const { branch, testCommand, testDirectory } = req.body.inputsObject;
+    const namespace = `${username}-${projectName}`;
+    const pipelineName = `${namespace}-pipeline`
+    const deploymentName = `${namespace}-deployment`;
     const user = req.user as IUser;
     try {
         const newPipeline = await createPipelineService(
@@ -76,7 +81,12 @@ export const createPipeline = async (
                 projectName,
                 username,
                 pipelineName,
-                gitBranch
+                gitBranch: branch || 'main',
+                installationId: req.body.installationId, 
+                deploymentName, 
+                namespace,
+                testCommand: testCommand || '',
+                testDirectory: testDirectory || '',
             },
             user.username
         );
