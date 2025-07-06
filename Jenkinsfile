@@ -204,12 +204,13 @@ stages {
                         kubectl apply -f .
                     else
                     
-                    echo "Applying all Kubernetes manifests in the current directory..."
-                    kubectl apply -f .
-    
-                    echo "Forcing a rolling restart of the deployment..."
-                    kubectl rollout restart deployment nuvvai-backend-deployment -n nuvvai
-                    kubectl rollout status deployment nuvvai-backend-deployment -n nuvvai
+                        echo "Applying all Kubernetes manifests in the current directory..."
+                        kubectl apply -f Nuvvai.back.k8s.manifest.yaml
+        
+                        echo "Forcing a rolling restart of the deployment..."
+                        kubectl rollout restart deployment nuvvai-backend-deployment -n nuvvai
+                        kubectl rollout status deployment nuvvai-backend-deployment -n nuvvai
+                    fi
     
                     echo "Deployment complete and all resources updated."
                 """
