@@ -13,6 +13,8 @@ export interface CreatePipelineData {
     installationId: string;
     deploymentName: string;
     namespace: string;
+    testCommand?: string;
+    testDirectory?: string;
 }
 
 export interface TriggerBuildData {
@@ -40,7 +42,9 @@ export const createPipelineService = async (
         gitBranch,
         installationId,
         deploymentName,
-        namespace
+        namespace,
+        testCommand,
+        testDirectory
     } = data;
 
     const userExists = await User.findOne<IUser>({ username });
@@ -86,7 +90,9 @@ export const createPipelineService = async (
         orgRepositoryUrl || '', 
         installationId,
         deploymentName,
-        namespace
+        namespace,
+        testCommand || '',
+        testDirectory || ''
     );
 
     const pipelineJobXML = create({ version: '1.0', encoding: 'UTF-8' })
