@@ -385,7 +385,7 @@ class GenerateDockerFile implements IGenerateDockerfile {
     }
 
     async nginxStaticWebServer(): Promise<string | void> {
-        const { projectName }: IDockerfileRequestBody = this.req.body;
+        const { projectName }: IDockerfileRequestBody = this.req.body.inputsObject;
         if (!projectName) {
             this.res.status(406).json({ error: 'Project name is required' });
             return;
@@ -415,7 +415,7 @@ CMD ["nginx", "-g", "daemon off;"]`;
     };
 
     async apacheStaticWebServer(): Promise<string | void> {
-        const { projectName }: IDockerfileRequestBody = this.req.body;
+        const { projectName }: IDockerfileRequestBody = this.req.body.inputsObject;
         if (!projectName) {
             this.res.status(406).json({ error: 'Project name is required' });
             return;
@@ -445,7 +445,7 @@ CMD ["httpd", "-D", "FOREGROUND"]`;
     };
 
     async apachePHPWebServer(): Promise<string | void> {
-        const { projectName, VERSION: PHP_VERSION, envVars }: IBackendDockerfileRequestBody = this.req.body;
+        const { projectName, VERSION: PHP_VERSION, envVars }: IBackendDockerfileRequestBody = this.req.body.inputsObject;
         if (!projectName || !PHP_VERSION) {
             this.res.status(406).json({ error: 'Project name and PHP version are required' });
             return;
@@ -493,7 +493,7 @@ CMD ["apache2-foreground"]`;
     };
 
     async angular(): Promise<string | void> {
-        const { projectName, APP_NAME, VERSION: NODE_VERSION, buildCommand, publishDirectory, envVars }: IAngularDockerfileRequestBody = this.req.body;
+        const { projectName, APP_NAME, VERSION: NODE_VERSION, buildCommand, publishDirectory, envVars }: IAngularDockerfileRequestBody = this.req.body.inputsObject;
         if (!projectName || !APP_NAME || !NODE_VERSION || !buildCommand || !publishDirectory) {
             this.res.status(406).json({ error: 'Project name, Node version, Build Command, and Publish Directory are required' });
             return;
@@ -603,7 +603,7 @@ CMD ["nginx", "-g", "daemon off;"]`;
     };
 
     async vue(): Promise<string | void> {
-        const { projectName, VERSION: NODE_VERSION, buildCommand, envVars, publishDirectory }: IFrontendDockerfileRequestBody = this.req.body;
+        const { projectName, VERSION: NODE_VERSION, buildCommand, envVars, publishDirectory }: IFrontendDockerfileRequestBody = this.req.body.inputsObject;
         if (!projectName || !NODE_VERSION || !buildCommand || !publishDirectory) {
             this.res.status(406).json({ error: 'Project name, Node version, Build Command, and Publish Directory are required' });
             return;
@@ -667,7 +667,7 @@ CMD ["nginx", "-g", "daemon off;"]`;
     }
 
     async nodeJS(): Promise<string | void> {
-        const { projectName, VERSION: NODE_VERSION, port, runCommand, envVars }: INodeJSDockerfileRequestBody = this.req.body;
+        const { projectName, VERSION: NODE_VERSION, port, runCommand, envVars }: INodeJSDockerfileRequestBody = this.req.body.inputsObject;
         if (!projectName || !NODE_VERSION || !port || !runCommand) {
             this.res.status(406).json({ error: 'Project name, Node version, Port, and Run Command are required' });
             return;
@@ -719,7 +719,7 @@ CMD ${runCommand}`;
     };
 
     async django(): Promise<string | void> {
-        const { projectName, VERSION: PYTHON_VERSION, port, envVars }: IBackendDockerfileRequestBody = this.req.body;
+        const { projectName, VERSION: PYTHON_VERSION, port, envVars }: IBackendDockerfileRequestBody = this.req.body.inputsObject;
         if (!projectName || !PYTHON_VERSION || !port) {
             this.res.status(406).json({ error: 'Project name, Python version, and port are required' });
             return;
@@ -768,7 +768,7 @@ CMD ["gunicorn", "--bind", "0.0.0.0:8000", "project.wsgi:application"]`;
     };
 
     async flask(): Promise<string | void> {
-        const { projectName, VERSION: PYTHON_VERSION, port, envVars }: IBackendDockerfileRequestBody = this.req.body;
+        const { projectName, VERSION: PYTHON_VERSION, port, envVars }: IBackendDockerfileRequestBody = this.req.body.inputsObject;
         if (!projectName || !PYTHON_VERSION || !port) {
             this.res.status(406).json({ error: 'Project name, Python version, and port are required' });
             return;
@@ -815,7 +815,7 @@ CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app:app"]\n`;
     };
 
     async golang(): Promise<string | void> {
-        const { projectName, VERSION: GOLANG_VERSION, port, envVars }: IBackendDockerfileRequestBody = this.req.body;
+        const { projectName, VERSION: GOLANG_VERSION, port, envVars }: IBackendDockerfileRequestBody = this.req.body.inputsObject;
         if (!projectName || !GOLANG_VERSION || !port) {
             this.res.status(406).json({ error: 'Project name, Golang version, and port are required' });
             return;
@@ -866,7 +866,7 @@ CMD ["/app/bin"]`;
     };
 
     async laravel(): Promise<string | void> {
-        const { projectName, VERSION: PHP_VERSION, port, envVars }: IBackendDockerfileRequestBody = this.req.body;
+        const { projectName, VERSION: PHP_VERSION, port, envVars }: IBackendDockerfileRequestBody = this.req.body.inputsObject;
         if (!projectName || !PHP_VERSION || !port) {
             this.res.status(406).json({ error: 'Project name, PHP version, and port are required' });
             return '';
