@@ -383,12 +383,13 @@ pipeline {
                             kubectl apply -f .
                         else
 
-                        echo "Applying all Kubernetes manifests in the current directory..."
-                        kubectl apply -f .
+			echo "Applying all Kubernetes manifests in the current directory..."
+			kubectl apply -f .
 
-                        echo "Forcing a rolling restart of the deployment..."
-                        kubectl rollout restart deployment $DEPLOYMENT_NAME -n $NAMESPACE
-                        kubectl rollout status deployment $DEPLOYMENT_NAME -n $NAMESPACE
+			echo "Forcing a rolling restart of the deployment..."
+			kubectl rollout restart deployment $DEPLOYMENT_NAME -n $NAMESPACE
+			kubectl rollout status deployment $DEPLOYMENT_NAME -n $NAMESPACE
+			fi
 
                         echo "Deployment complete and all resources updated."
                     """
