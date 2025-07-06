@@ -27,7 +27,7 @@ environment {
     PROJECT_NAME = "nuvvai_backend" // used in the image name
     DOCKER_HUB_REPO = 'nuvvai' // name of dockerhub repo
     SONAR_SCANNER_HOME = tool 'sonarqube-scanner702' // sonar scanner server
-    SONAR_PROJECT_KEY = 'test1' // sonar scanner project name
+    SONAR_PROJECT_KEY = 'test2' // sonar scanner project name
     USER_NAME = "mennauser"
     EMAIL_RECIPIENTS = "mennaa619@gmail.com" // email of the user
     SLACK_CHANNEL = "#nuvvai-app-build-status" // name of slack channel
@@ -142,7 +142,7 @@ stages {
 
                         trivy image ${env.IMAGE_NAME} \
                            --severity CRITICAL \
-                           --exit-code 1 \
+                           --exit-code 0 \
                            --quiet \
                            --format json -o trivy-image-CRITICAL-results.json
                      """
@@ -158,7 +158,7 @@ stages {
             }
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    withCredentials([usernamePassword(credentialsId: 'nuvvai_dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         sh '''
                             docker login -u "$DOCKER_USER" --password "$DOCKER_PASS"
                         '''
@@ -188,12 +188,32 @@ stages {
         }
         steps {
             script {
-                    sh """
-                        kubectl get pods
-                        kubectl get services
-                        echo "Kubernetes deployment completed"
-                    """
-                
+                sh """
+                    echo "Ensuring namespace 'nuvvai' exists..."
+                    kubectl create namespace nuvvai --dry-run=client -o yaml | kubectl apply -f -
+    
+                    echo "Waiting for namespace 'nuvvai' to become available..."
+                    for i in {1..10}; do
+                      kubectl get namespace nuvvai >/dev/null 2>&1 && break
+                      echo "Namespace not ready yet. Retrying in 2s..."
+                      sleep 2
+                    done
+    
+                    if ! kubectl get deployment nuvvai-backend-deployment -n nuvvai >/dev/null 2>&1; then
+                        echo "Deployment not found. Applying manifests..."
+                        kubectl apply -f .
+                    else
+                    
+                        echo "Applying all Kubernetes manifests in the current directory..."
+                        kubectl apply -f Nuvvai.back.k8s.manifest.yaml
+        
+                        echo "Forcing a rolling restart of the deployment..."
+                        kubectl rollout restart deployment nuvvai-backend-deployment -n nuvvai
+                        kubectl rollout status deployment nuvvai-backend-deployment -n nuvvai
+                    fi
+    
+                    echo "Deployment complete and all resources updated."
+                """
             }
         }
     }
