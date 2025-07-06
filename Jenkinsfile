@@ -201,11 +201,13 @@ stages {
     
                     if ! kubectl get deployment nuvvai-backend-deployment -n nuvvai >/dev/null 2>&1; then
                         echo "Deployment not found. Applying manifests..."
-                        kubectl apply -f .
+                        kubectl apply -f Nuvvai.back.k8s.manifest.yaml
+                        kubectl apply -f service-monitor.yaml
                     else
                     
                         echo "Applying all Kubernetes manifests in the current directory..."
-                        kubectl apply -f .
+                        kubectl apply -f Nuvvai.back.k8s.manifest.yaml
+                        kubectl apply -f service-monitor.yaml
         
                         echo "Forcing a rolling restart of the deployment..."
                         kubectl rollout restart deployment nuvvai-backend-deployment -n nuvvai
