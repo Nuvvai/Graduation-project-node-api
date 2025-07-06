@@ -205,7 +205,7 @@ stages {
                     else
                     
                         echo "Applying all Kubernetes manifests in the current directory..."
-                        kubectl apply -f Nuvvai.back.k8s.manifest.yaml
+                        kubectl apply -f .
         
                         echo "Forcing a rolling restart of the deployment..."
                         kubectl rollout restart deployment nuvvai-backend-deployment -n nuvvai
