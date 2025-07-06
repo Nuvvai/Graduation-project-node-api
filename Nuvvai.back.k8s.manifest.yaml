@@ -26,6 +26,8 @@ spec:
           env:
             - name: MONGO_URL
               value: mongodb://nuvvai-database-service
+            - name: FRONTEND_DOMAIN_NAME
+              value: http://localhost
           ports:
             - containerPort: 5000
               protocol: TCP

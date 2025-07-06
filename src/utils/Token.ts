@@ -119,7 +119,7 @@ class Token implements IToken {
      * Constructs a new instance of the Token utility class.
      *
      * @param res - The HTTP response object used to send tokens and set cookies.
-     * @param FRONTEND_DOMAIN_NAME - The domain name of the frontend application. Defaults to the value of the `FRONTEND_DOMAIN_NAME` environment variable or `'http://localhost:5173'` if not provided.
+     * @param FRONTEND_DOMAIN_NAME - The domain name of the frontend application. Defaults to the value of the `FRONTEND_DOMAIN_NAME` environment variable.
      * @param secretKey - The secret key used to retrieve the token from the server. Defaults to the value of the `secretKey` environment variable.
      * @param refreshTokenExpiresIn - The refresh token expiration in milliseconds. Defaults to 7 days from when the token generate.
      * @param accessTokenExpiresIn - The access token expiration in milliseconds. Defaults to 15 mints from when the token generate.
