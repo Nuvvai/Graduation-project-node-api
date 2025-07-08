@@ -88,6 +88,7 @@ pipeline {
                     script {
                         deleteDir()  // Clears workspace before checking out repo
                         withCredentials([gitHubApp(
+                        credentialsId: 'UserGitHubApp', // This matches the ID you set above
                         appID: '1482154',
                         installationID: "\${GITHUB_APP_INSTALLATION_ID}"
                         )]) {
