@@ -49,22 +49,22 @@ export const createPipelineService = async (
 
     const userExists = await User.findOne<IUser>({ username });
     if (!userExists) {
-        return {success:false, statusCode: 404, message: "User not found!"};
+        return { success: false, statusCode: 404, message: "User not found!" };
     }
     const currentUser = await User.findOne<IUser>({ username: currentUsername });
     if (!currentUser) {
-        return {success:false, statusCode: 404, message: "Current user not found!"};
+        return { success: false, statusCode: 404, message: "Current user not found!" };
     }
     if ((currentUsername !== username) && (currentUser.role !== 'admin')) {
-        return {success:false, statusCode: 403, message: "Unauthorized action!"};
+        return { success: false, statusCode: 403, message: "Unauthorized action!" };
     }
     const projectExists = await Project.findOne<IProject>({ username, projectName });
     if (!projectExists) {
-        return {success:false, statusCode: 404, message: "Project not found!"};
+        return { success: false, statusCode: 404, message: "Project not found!" };
     }
     const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName });
     if (existingPipeline) {
-        return {success:false, statusCode: 400, message: "Pipeline already exists!"};
+        return { success: false, statusCode: 400, message: "Pipeline already exists!" };
     }
     const existingView = await jenkins.view.exists(username);
     if (!existingView) {
@@ -81,13 +81,13 @@ export const createPipelineService = async (
     });
 
     const pipelineScript = generatePipelineScript(
-        projectName, 
-        technology, 
-        username, 
-        gitBranch, 
-        repositoryUrl, 
-        email, 
-        orgRepositoryUrl || '', 
+        projectName,
+        technology,
+        username,
+        gitBranch,
+        repositoryUrl,
+        email,
+        orgRepositoryUrl || '',
         installationId,
         deploymentName,
         namespace,
@@ -131,22 +131,22 @@ export const triggerBuildService = async (
 
     const userExists = await User.findOne<IUser>({ username });
     if (!userExists) {
-        return {success:false, statusCode: 404, message: "User not found!"};
+        return { success: false, statusCode: 404, message: "User not found!" };
     }
     const currentUser = await User.findOne<IUser>({ username: currentUsername });
     if (!currentUser) {
-        return {success:false, statusCode: 404, message: "Current user not found!"};
+        return { success: false, statusCode: 404, message: "Current user not found!" };
     }
     if ((currentUsername !== username) && (currentUser.role !== 'admin')) {
-        return {success:false, statusCode: 403, message: "Unauthorized action!"};
+        return { success: false, statusCode: 403, message: "Unauthorized action!" };
     }
     const projectExists = await Project.findOne<IProject>({ username, projectName });
     if (!projectExists) {
-        return {success:false, statusCode: 404, message: "Project not found!"};
+        return { success: false, statusCode: 404, message: "Project not found!" };
     }
     const existingPipeline = await Pipeline.findOne<IPipeline>({ username, projectName });
     if (!existingPipeline) {
-        return {success:false, statusCode: 404, message: "Pipeline not found!"};
+        return { success: false, statusCode: 404, message: "Pipeline not found!" };
     }
     await jenkins.job.build(pipelineName);
     existingPipeline.lastBuildNumber += 1;

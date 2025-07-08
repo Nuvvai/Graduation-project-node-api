@@ -27,9 +27,9 @@ spec:
             - name: MONGO_URL
               value: mongodb://nuvvai-database-service
             - name: FRONTEND_DOMAIN_NAME
-              value: http://k8s-nuvvai-nuvvaiin-74fbaea7ca-1502209035.us-east-1.elb.amazonaws.com
+              value: http://k8s-nuvvai-nuvvaiin-74fbaea7ca-1086298358.us-east-1.elb.amazonaws.com
             - name: JENKINS_URL
-              value: http://menna:menna@jenkins.jenkins.svc.cluster.local
+              value: http://menna:11cf37d5b7e15d9d88cf04a7fce34e4d7c@jenkins.jenkins.svc.cluster.local
           ports:
             - containerPort: 5000
               protocol: TCP
