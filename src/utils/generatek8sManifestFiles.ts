@@ -147,7 +147,7 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: ${containerPort}
-  type: ClusterIP`;
+  type: LoadBalancer`;
 
         if (horizontalScaling) {
             k8sManifestContent += '\n---\n';

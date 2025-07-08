@@ -119,8 +119,14 @@ pipeline {
                 }
                 steps {
                     script {
-                        dir('orgRepo') {
-                            git branch: ORG_BRANCH, credentialsId: 'github_token', url: orgRepo
+                        // dir('orgRepo') {
+                        //     git branch: ORG_BRANCH, credentialsId: 'github_token', url: orgRepo
+                        // }
+                        withCredentials([gitHubApp(
+                        appID: 'GITHUB_APP_ID', // edit this later
+                        installationID: "\${GITHUB_APP_INSTALLATION_ID}"
+                        )]) {
+                            git branch: BRANCH_NAME, url: GIT_REPO_URL
                         }
                         echo "Organisation repository checkout successful"
 
