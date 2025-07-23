@@ -130,12 +130,12 @@ npm run dev
 
 Run unit tests:
 ```bash
-npm test:unit
+npm run test:unit
 ```
 
 Run integration tests:
 ```bash
-npm test:integration
+npm run test:integration
 ```
 
 Run both:
