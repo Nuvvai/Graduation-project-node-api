@@ -144,6 +144,7 @@ npm test
 ```
 
 
-## License
-This project is licensed under the MIT License.
+## License  
+This project is licensed under the [MIT License](LICENSE).
+
 
